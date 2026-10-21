@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrossTax AI — Streamlit UI 线框图</title>
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-accent: #0f172a;
+      --c-red: #dc2626;
+      --c-amber: #d97706;
+      --c-green: #16a34a;
+      --c-blue: #2563eb;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--c-bg);
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      padding: 32px;
+    }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 2px solid var(--c-border);
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto 32px;
+    }
+
+    .diagram-header {
+      border-bottom: 1px solid var(--c-border);
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .diagram-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .diagram-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .diagram-meta {
+      text-align: right;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      line-height: 1.6;
+    }
+
+    /* === Browser Chrome === */
+    .browser-frame {
+      border: 1px solid var(--c-border);
+      margin-bottom: 24px;
+    }
+
+    .browser-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .browser-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--c-border-dark);
+      border-radius: 50%;
+    }
+
+    .browser-url {
+      flex: 1;
+      margin-left: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      padding: 3px 8px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .browser-body {
+      display: flex;
+      min-height: 520px;
+    }
+
+    /* === Sidebar === */
+    .sidebar {
+      width: 260px;
+      border-right: 1px solid var(--c-border);
+      padding: 16px;
+      background: var(--c-bg);
+      flex-shrink: 0;
+    }
+
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-logo {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .sidebar-section {
+      margin-bottom: 16px;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-select::after {
+      content: '▾';
+      font-size: 10px;
+      color: var(--c-text-sub);
+    }
+
+    .upload-zone {
+      border: 2px dashed var(--c-border);
+      padding: 20px 12px;
+      text-align: center;
+      background: var(--c-canvas);
+      margin-bottom: 8px;
+    }
+
+    .upload-icon {
+      font-size: 20px;
+      color: var(--c-border-dark);
+      margin-bottom: 6px;
+    }
+
+    .upload-text {
+      font-size: 11px;
+      color: var(--c-text-sub);
+      line-height: 1.5;
+    }
+
+    .upload-text strong {
+      color: var(--c-text-main);
+    }
+
+    .sidebar-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--c-accent);
+      background: var(--c-accent);
+      color: var(--c-canvas);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      margin-bottom: 6px;
+      cursor: default;
+    }
+
+    .sidebar-btn--outline {
+      background: var(--c-canvas);
+      color: var(--c-text-main);
+    }
+
+    .rule-version {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      padding: 6px 8px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      line-height: 1.6;
+    }
+
+    .rule-version strong {
+      color: var(--c-text-main);
+    }
+
+    /* === Main Content === */
+    .main-content {
+      flex: 1;
+      padding: 16px 20px;
+      overflow: hidden;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .main-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* === Status Pipeline === */
+    .pipeline-status {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+    }
+
+    .pipeline-step {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--c-border);
+      border-right: none;
+      text-align: center;
+      position: relative;
+    }
+
+    .pipeline-step:last-child {
+      border-right: 1px solid var(--c-border);
+    }
+
+    .pipeline-step--done {
+      background: var(--c-bg);
+      border-color: var(--c-border-dark);
+    }
+
+    .pipeline-step--active {
+      background: var(--c-accent);
+      color: var(--c-canvas);
+      border-color: var(--c-accent);
+    }
+
+    .pipeline-step--pending {
+      background: var(--c-canvas);
+    }
+
+    .pipeline-step-num {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.7;
+    }
+
+    .pipeline-step-name {
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* === Verdict Banner === */
+    .verdict-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 2px solid;
+      margin-bottom: 16px;
+    }
+
+    .verdict-banner--pass {
+      border-color: var(--c-green);
+      background: #f0fdf4;
+    }
+
+    .verdict-banner--fix {
+      border-color: var(--c-red);
+      background: #fef2f2;
+    }
+
+    .verdict-banner--triage {
+      border-color: var(--c-amber);
+      background: #fffbeb;
+    }
+
+    .verdict-badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 3px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--c-canvas);
+    }
+
+    .verdict-badge--pass { background: var(--c-green); }
+    .verdict-badge--fix { background: var(--c-red); }
+    .verdict-badge--triage { background: var(--c-amber); }
+
+    .verdict-text {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .verdict-detail {
+      font-size: 11px;
+      color: var(--c-text-sub);
+      margin-left: auto;
+      font-family: var(--font-mono);
+    }
+
+    /* === Content Grid === */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .content-grid--full {
+      grid-template-columns: 1fr;
+    }
+
+    .panel {
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    /* === Data Table === */
+    .data-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--c-border);
+      font-weight: 500;
+    }
+
+    .data-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--c-border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .field-name {
+      color: var(--c-text-sub);
+      font-size: 10px;
+    }
+
+    .field-value {
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .field-value--error {
+      color: var(--c-red);
+      font-weight: 600;
+    }
+
+    .confidence-bar {
+      display: inline-block;
+      width: 40px;
+      height: 4px;
+      background: var(--c-border);
+      position: relative;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    .confidence-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--c-green);
+    }
+
+    .confidence-fill--low {
+      background: var(--c-amber);
+    }
+
+    /* === Remediation Card === */
+    .remediation-card {
+      border: 1px solid var(--c-red);
+      border-left: 3px solid var(--c-red);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--c-canvas);
+    }
+
+    .remediation-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .remediation-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .remediation-code {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--c-red);
+      padding: 1px 5px;
+      border: 1px solid var(--c-red);
+    }
+
+    .remediation-field {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .remediation-message {
+      font-size: 12px;
+      color: var(--c-text-main);
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+
+    .remediation-hint {
+      font-size: 10px;
+      color: var(--c-text-sub);
+      font-style: italic;
+    }
+
+    /* === Conflict Evidence === */
+    .conflict-item {
+      border: 1px solid var(--c-amber);
+      border-left: 3px solid var(--c-amber);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .conflict-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .conflict-scenario {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-amber);
+      font-weight: 600;
+    }
+
+    .confidence-score {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      margin-left: auto;
+    }
+
+    .conflict-detail {
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--c-text-main);
+    }
+
+    .conflict-detail .label {
+      color: var(--c-text-sub);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .conflict-detail .value {
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    .conflict-detail .value--highlight {
+      color: var(--c-amber);
+      font-weight: 600;
+    }
+
+    /* === Audit Section === */
+    .audit-section {
+      border: 1px solid var(--c-border);
+      margin-top: 12px;
+    }
+
+    .audit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .audit-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .audit-download {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-blue);
+      padding: 3px 8px;
+      border: 1px solid var(--c-blue);
+      text-decoration: none;
+    }
+
+    .audit-body {
+      padding: 10px 12px;
+    }
+
+    .audit-row {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      line-height: 1.8;
+    }
+
+    .audit-key {
+      color: var(--c-text-sub);
+      min-width: 120px;
+    }
+
+    .audit-val {
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    /* === Annotation === */
+    .annotation {
+      position: relative;
+    }
+
+    .annotation-label {
+      position: absolute;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--c-blue);
+      background: var(--c-canvas);
+      padding: 2px 6px;
+      border: 1px solid var(--c-blue);
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .annotation-label--top-left {
+      top: -10px;
+      left: -4px;
+    }
+
+    .annotation-label--top-right {
+      top: -10px;
+      right: -4px;
+    }
+
+    .annotation-label--bottom-left {
+      bottom: -10px;
+      left: -4px;
+    }
+
+    /* === Zone Label === */
+    .zone-label {
+      display: inline-block;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      border: 1px dashed var(--c-border);
+      margin-bottom: 8px;
+    }
+
+    /* === Section Divider === */
+    .section-divider {
+      margin: 32px 0 24px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      font-size: 12px;
+      color: var(--c-text-sub);
+      margin-top: 4px;
+    }
+
+    /* === Hot Reload Demo === */
+    .hot-reload-demo {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }
+
+    .hot-reload-before, .hot-reload-after {
+      flex: 1;
+      border: 1px solid var(--c-border);
+    }
+
+    .hot-reload-label {
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hot-reload-body {
+      padding: 10px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      line-height: 1.7;
+    }
+
+    .hot-reload-arrow {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      color: var(--c-border-dark);
+      padding: 0 4px;
+    }
+
+    .highlight-new {
+      background: #fef3c7;
+      padding: 0 3px;
+      border: 1px solid var(--c-amber);
+    }
+
+    /* === Footer === */
+    .diagram-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--c-border);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border: 1px solid;
+    }
+
+    .doc-ref {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* === Interaction Notes === */
+    .interaction-notes {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px dashed var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .interaction-notes-title {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .interaction-list {
+      list-style: none;
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--c-text-main);
+    }
+
+    .interaction-list li::before {
+      content: '→ ';
+      color: var(--c-text-sub);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 1: NEED_USER_FIX (TIN Error + Missing Signature) -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div class="diagram-header">
+      <div>
+        <h1 class="diagram-title">CrossTax AI — Streamlit UI 线框图</h1>
+        <p class="diagram-subtitle">COMPLIANCE AUDIT WORKBENCH · INTERACTION WIREFRAME · 5 SCREENS</p>
+      </div>
+      <div class="diagram-meta">
+        REV 1.0 · 2026-10-22<br/>
+        FRAMEWORK: STREAMLIT 1.x<br/>
+        RESOLUTION: 1280px+
+      </div>
+    </div>
+
+    <!-- Screen 1: NEED_USER_FIX -->
+    <div style="margin-bottom: 8px;">
+      <span class="zone-label">Screen 1 / 5 — NEED_USER_FIX · Case B: TIN 校验失败 + 签名缺失</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:8501</div>
+      </div>
+      <div class="browser-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sidebar-title">CrossTax AI</div>
+          <div class="sidebar-logo">Global Compliance Audit Engine</div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择</div>
+            <div class="socket-select sidebar-select">Case B — TIN 错误</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case A — 完美表单</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case D — 离岸冲突</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">文件上传</div>
+            <div class="upload-zone">
+              <div class="upload-icon">⇧</div>
+              <div class="upload-text">
+                拖拽 <strong>PDF / JPG / PNG</strong> 至此<br/>
+                或点击选择文件
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本</div>
+            <div class="rule-version">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-btn sidebar-btn--outline">⟳ 加载 OECD 规则补丁</div>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+          <div class="main-header">
+            <span class="main-title">审核结果 — Case B</span>
+            <span style="font-size: 10px; font-family: var(--font-mono); color: var(--c-text-sub);">SESSION: a3f7c2e1 · 2026-10-22T14:32:07Z</span>
+          </div>
+
+          <!-- Pipeline Status -->
+          <div class="pipeline-status">
+            <div class="pipeline-step pipeline-step--done">
+              <div class="pipeline-step-num">01</div>
+              <div class="pipeline-step-name">接收</div>
+            </div>
+            <div class="pipeline-step pipeline-step--done">
+              <div class="pipeline-step-num">02</div>
+              <div class="pipeline-step-name">抽取</div>
+            </div>
+            <div class="pipeline-step pipeline-step--done">
+              <div class="pipeline-step-num">03</div>
+              <div class="pipeline-step-name">校验</div>
+            </div>
+            <div class="pipeline-step pipeline-step--done">
+              <div class="pipeline-step-num">04</div>
+              <div class="pipeline-step-name">研判</div>
+            </div>
+            <div class="pipeline-step pipeline-step--done">
+              <div class="pipeline-step-num">05</div>
+              <div class="pipeline-step-name">裁决</div>
+            </div>
+          </div>
+
+          <!-- Verdict Banner -->
+          <div class="verdict-banner verdict-banner--fix">
+            <span class="verdict-badge verdict-badge--fix">NEED_USER_FIX</span>
+            <span class="verdict-text">表单存在阻断级错误，需修正后重新提交</span>
+            <span class="verdict-detail">2 BLOCKERS · 0 WARNINGS</span>
+          </div>
+
+          <!-- Extracted Data + Issues -->
+          <div class="content-grid">
+            <!-- Left: Extracted Data -->
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">抽取结果 · CRSFormData</span>
+                <span style="font-size: 9px; font-family: var(--font-mono); color: var(--c-text-sub);">AVG CONFIDENCE: 0.87</span>
+              </div>
+              <div class="panel-body">
+                <table class="data-table">
+                  <tr>
+                    <td class="field-name">holder_name</td>
+                    <td class="field-value">ACME Trading Ltd</td>
+                    <td><span class="confidence-bar"><span class="confidence-fill" style="width: 95%;"></span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="field-name">jurisdiction_code</td>
+                    <td class="field-value">HK</td>
+                    <td><span class="confidence-bar"><span class="confidence-fill" style="width: 92%;"></span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="field-name">tin</td>
+                    <td class="field-value field-value--error">A123456(8)</td>
+                    <td><span class="confidence-bar"><span class="confidence-fill confidence-fill--low" style="width: 60%;"></span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="field-name">has_signature</td>
+                    <td class="field-value field-value--error">FALSE</td>
+                    <td><span class="confidence-bar"><span class="confidence-fill confidence-fill--low" style="width: 45%;"></span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="field-name">signing_date</td>
+                    <td class="field-value">2026-09-01</td>
+                    <td><span class="confidence-bar"><span class="confidence-fill" style="width: 88%;"></span></span></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Remediation Cards -->
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">修复建议 · Remediation Cards</span>
+                <span class="verdict-badge verdict-badge--fix" style="font-size: 9px;">BLOCKER ×2</span>
+              </div>
+              <div class="panel-body">
+                <div class="remediation-card">
+                  <div class="remediation-header">
+                    <span class="remediation-code">INVALID_TIN</span>
+                    <span class="remediation-field">field: tin</span>
+                  </div>
+                  <div class="remediation-message">
+                    TIN 校验位不匹配。法域 HK 使用 HKID_WEIGHT 算法，当前末位 (8) 与预期校验值 (7) 不一致。
+                  </div>
+                  <div class="remediation-hint">请核对您的纳税人识别号，修正后重新上传。</div>
+                </div>
+                <div class="remediation-card">
+                  <div class="remediation-header">
+                    <span class="remediation-code">NO_SIGNATURE</span>
+                    <span class="remediation-field">field: has_signature</span>
+                  </div>
+                  <div class="remediation-message">
+                    未检测到表单签名。CRS 自证表单必须在声明人签字处签署。
+                  </div>
+                  <div class="remediation-hint">请在签名栏签字后重新扫描上传。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit Trail -->
+          <div class="audit-section">
+            <div class="audit-header">
+              <span class="audit-title">审计底稿 · Audit Trail</span>
+              <span class="audit-download">↓ 下载 HTML 报告</span>
+            </div>
+            <div class="audit-body">
+              <div class="audit-row"><span class="audit-key">session_id</span> <span class="audit-val">a3f7c2e1-9d4b-4f3a-b8c2-1e5f7a9d3b4c</span></div>
+              <div class="audit-row"><span class="audit-key">merchant_id</span> <span class="audit-val">MER-0042</span></div>
+              <div class="audit-row"><span class="audit-key">file_hash</span> <span class="audit-val">sha256:e3b0c44298fc1c149afbf4c8996fb924...</span></div>
+              <div class="audit-row"><span class="audit-key">rule_version</span> <span class="audit-val">20261001-r1</span></div>
+              <div class="audit-row"><span class="audit-key">verdict</span> <span class="audit-val" style="color: var(--c-red);">NEED_USER_FIX</span></div>
+              <div class="audit-row"><span class="audit-key">timestamp</span> <span class="audit-val">2026-10-22T14:32:07.482Z</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interaction-notes">
+      <div class="interaction-notes-title">交互说明 · Screen 1</div>
+      <ul class="interaction-list">
+        <li>左侧样本选择器切换 Case，主区域自动刷新审核结果</li>
+        <li>文件上传后自动触发完整流水线，Pipeline 状态逐步点亮</li>
+        <li>修复卡片按 BLOCKER 严重度排序，字段名可点击跳转至抽取结果高亮</li>
+        <li>审计报告下载为独立 HTML 文件，含全链路溯源信息</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 2: AUTO_PASS -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 8px;">
+      <span class="zone-label">Screen 2 / 5 — AUTO_PASS · Case A: 完美表单，无任何异常</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:8501</div>
+      </div>
+      <div class="browser-body">
+        <div class="sidebar">
+          <div class="sidebar-title">CrossTax AI</div>
+          <div class="sidebar-logo">Global Compliance Audit Engine</div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择</div>
+            <div class="sidebar-select">Case A — 完美表单</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case B — TIN 错误</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case D — 离岸冲突</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">文件上传</div>
+            <div class="upload-zone">
+              <div class="upload-icon">⇧</div>
+              <div class="upload-text">拖拽 <strong>PDF / JPG / PNG</strong> 至此</div>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本</div>
+            <div class="rule-version">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="main-header">
+            <span class="main-title">审核结果 — Case A</span>
+            <span style="font-size: 10px; font-family: var(--font-mono); color: var(--c-text-sub);">SESSION: b8e2d4a7 · 2026-10-22T14:33:12Z</span>
+          </div>
+          <div class="pipeline-status">
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">01</div><div class="pipeline-step-name">接收</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">02</div><div class="pipeline-step-name">抽取</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">03</div><div class="pipeline-step-name">校验</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">04</div><div class="pipeline-step-name">研判</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">05</div><div class="pipeline-step-name">裁决</div></div>
+          </div>
+          <div class="verdict-banner verdict-banner--pass">
+            <span class="verdict-badge verdict-badge--pass">AUTO_PASS</span>
+            <span class="verdict-text">审核通过 — 纳税声明自动生效</span>
+            <span class="verdict-detail">0 BLOCKERS · 0 WARNINGS</span>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">抽取结果 · CRSFormData</span>
+                <span style="font-size: 9px; font-family: var(--font-mono); color: var(--c-text-sub);">AVG CONFIDENCE: 0.96</span>
+              </div>
+              <div class="panel-body">
+                <table class="data-table">
+                  <tr><td class="field-name">holder_name</td><td class="field-value">Global Ventures Corp</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 98%;"></span></span></td></tr>
+                  <tr><td class="field-name">jurisdiction_code</td><td class="field-value">SG</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 97%;"></span></span></td></tr>
+                  <tr><td class="field-name">tin</td><td class="field-value">98765432A</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 95%;"></span></span></td></tr>
+                  <tr><td class="field-name">has_signature</td><td class="field-value">TRUE</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 94%;"></span></span></td></tr>
+                  <tr><td class="field-name">signing_date</td><td class="field-value">2026-10-15</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 96%;"></span></span></td></tr>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">校验结果</span>
+                <span class="verdict-badge verdict-badge--pass" style="font-size: 9px;">ALL PASSED</span>
+              </div>
+              <div class="panel-body">
+                <table class="data-table">
+                  <tr><td class="field-name">TIN 格式</td><td class="field-value" style="color: var(--c-green);">✓ PASS</td><td class="field-name">SG REGEX + NRIC_WEIGHT</td></tr>
+                  <tr><td class="field-name">签名检测</td><td class="field-value" style="color: var(--c-green);">✓ PASS</td><td class="field-name">has_signature = True</td></tr>
+                  <tr><td class="field-name">日期校验</td><td class="field-value" style="color: var(--c-green);">✓ PASS</td><td class="field-name">2026-10-15 ≤ today</td></tr>
+                  <tr><td class="field-name">跨源冲突</td><td class="field-value" style="color: var(--c-green);">✓ NONE</td><td class="field-name">0 conflicts detected</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="audit-section">
+            <div class="audit-header">
+              <span class="audit-title">审计底稿</span>
+              <span class="audit-download">↓ 下载 HTML 报告</span>
+            </div>
+            <div class="audit-body">
+              <div class="audit-row"><span class="audit-key">session_id</span> <span class="audit-val">b8e2d4a7-3c1f-4e8a-9d2b-7f5a1c3e8b4d</span></div>
+              <div class="audit-row"><span class="audit-key">verdict</span> <span class="audit-val" style="color: var(--c-green);">AUTO_PASS</span></div>
+              <div class="audit-row"><span class="audit-key">action</span> <span class="audit-val">纳税声明生效 → 激活结算账户</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 3: MANUAL_TRIAGE -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 8px;">
+      <span class="zone-label">Screen 3 / 5 — MANUAL_TRIAGE · Case D: 离岸主体税籍隐瞒</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:8501</div>
+      </div>
+      <div class="browser-body">
+        <div class="sidebar">
+          <div class="sidebar-title">CrossTax AI</div>
+          <div class="sidebar-logo">Global Compliance Audit Engine</div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择</div>
+            <div class="sidebar-select">Case D — 离岸冲突</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case A — 完美表单</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case B — TIN 错误</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="sidebar-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本</div>
+            <div class="rule-version">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="main-header">
+            <span class="main-title">审核结果 — Case D</span>
+            <span style="font-size: 10px; font-family: var(--font-mono); color: var(--c-text-sub);">SESSION: c5d9f1b2 · 2026-10-22T14:34:51Z</span>
+          </div>
+          <div class="pipeline-status">
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">01</div><div class="pipeline-step-name">接收</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">02</div><div class="pipeline-step-name">抽取</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">03</div><div class="pipeline-step-name">校验</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">04</div><div class="pipeline-step-name">研判</div></div>
+            <div class="pipeline-step pipeline-step--done"><div class="pipeline-step-num">05</div><div class="pipeline-step-name">裁决</div></div>
+          </div>
+          <div class="verdict-banner verdict-banner--triage">
+            <span class="verdict-badge verdict-badge--triage">MANUAL_TRIAGE</span>
+            <span class="verdict-text">检测到税籍指示冲突，需合规官人工复核</span>
+            <span class="verdict-detail">0 BLOCKERS · 2 WARNINGS</span>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">抽取结果 · CRSFormData</span>
+                <span style="font-size: 9px; font-family: var(--font-mono); color: var(--c-text-sub);">AVG CONFIDENCE: 0.91</span>
+              </div>
+              <div class="panel-body">
+                <table class="data-table">
+                  <tr><td class="field-name">holder_name</td><td class="field-value">Pacific Holdings Ltd</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 94%;"></span></span></td></tr>
+                  <tr><td class="field-name">jurisdiction_code</td><td class="field-value" style="color: var(--c-amber); font-weight: 600;">CN</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 90%;"></span></span></td></tr>
+                  <tr><td class="field-name">tin</td><td class="field-value">91310000MA1FL8XX2J</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 93%;"></span></span></td></tr>
+                  <tr><td class="field-name">has_signature</td><td class="field-value">TRUE</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 91%;"></span></span></td></tr>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">冲突证据链 · Indicia Conflicts</span>
+                <span class="verdict-badge verdict-badge--triage" style="font-size: 9px;">WARNING ×2</span>
+              </div>
+              <div class="panel-body">
+                <div class="conflict-item">
+                  <div class="conflict-header">
+                    <span class="conflict-scenario">场景 2 · 离岸主体税籍隐瞒</span>
+                    <span class="confidence-score">confidence: 0.92</span>
+                  </div>
+                  <div class="conflict-detail">
+                    <div><span class="label">incorporation_jurisdiction:</span> <span class="value value--highlight">HK (离岸金融中心)</span></div>
+                    <div><span class="label">declared_jurisdiction:</span> <span class="value">CN</span></div>
+                    <div style="margin-top: 4px; font-size: 10px; color: var(--c-text-sub);">注册于 HK，但 CRS 申报 CN 税籍，存在隐瞒离岸税务居民身份的指示</div>
+                  </div>
+                </div>
+                <div class="conflict-item">
+                  <div class="conflict-header">
+                    <span class="conflict-scenario">场景 1 · 单国申报 vs 境外运营</span>
+                    <span class="confidence-score">confidence: 0.85</span>
+                  </div>
+                  <div class="conflict-detail">
+                    <div><span class="label">primary_operating_country:</span> <span class="value value--highlight">GB</span></div>
+                    <div><span class="label">declared_jurisdiction:</span> <span class="value">CN</span></div>
+                    <div style="margin-top: 4px; font-size: 10px; color: var(--c-text-sub);">申报中国税籍，但核心运营仓储位于英国</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="audit-section">
+            <div class="audit-header">
+              <span class="audit-title">审计底稿</span>
+              <span class="audit-download">↓ 下载 HTML 报告</span>
+            </div>
+            <div class="audit-body">
+              <div class="audit-row"><span class="audit-key">verdict</span> <span class="audit-val" style="color: var(--c-amber);">MANUAL_TRIAGE</span></div>
+              <div class="audit-row"><span class="audit-key">action</span> <span class="audit-val">推送合规官审查工作台 → 增强型尽职调查</span></div>
+              <div class="audit-row"><span class="audit-key">conflicts</span> <span class="audit-val">2 items (scenario 1 + scenario 2)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 4: HOT RELOAD DEMO -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 8px;">
+      <span class="zone-label">Screen 4 / 5 — 规则热重载演示 · 一键加载 OECD 规则补丁</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:8501</div>
+      </div>
+      <div class="browser-body" style="min-height: auto; flex-direction: column; padding: 20px;">
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">规则热重载演示</div>
+          <div style="font-size: 11px; color: var(--c-text-sub); font-family: var(--font-mono);">点击按钮 → 原子替换内存规则字典 → ≤3s 生效 → 无需重启服务</div>
+        </div>
+
+        <div class="hot-reload-demo">
+          <div class="hot-reload-before">
+            <div class="hot-reload-label">BEFORE · rules_v1_base.json</div>
+            <div class="hot-reload-body">
+              <div><strong>version:</strong> 20261001-r1</div>
+              <div><strong>jurisdictions:</strong> CN, HK, SG</div>
+              <div><strong>TIN algorithms:</strong></div>
+              <div>  CN: MOD11_2</div>
+              <div>  HK: HKID_WEIGHT</div>
+              <div>  SG: NRIC_WEIGHT</div>
+              <div><strong>offshore_list:</strong> [HK, SG, KY, BVI]</div>
+            </div>
+          </div>
+          <div class="hot-reload-arrow">→</div>
+          <div class="hot-reload-after" style="border-color: var(--c-green);">
+            <div class="hot-reload-label" style="background: #f0fdf4; color: var(--c-green);">AFTER · rules_v2_patch.json <span style="color: var(--c-green);">✓ LOADED</span></div>
+            <div class="hot-reload-body">
+              <div><strong>version:</strong> <span class="highlight-new">20261022-r2</span></div>
+              <div><strong>jurisdictions:</strong> CN, HK, SG, <span class="highlight-new">JP, KR, AU</span></div>
+              <div><strong>TIN algorithms:</strong></div>
+              <div>  CN: MOD11_2</div>
+              <div>  HK: HKID_WEIGHT</div>
+              <div>  SG: NRIC_WEIGHT</div>
+              <div>  <span class="highlight-new">JP: REGEX_ONLY (13-digit)</span></div>
+              <div>  <span class="highlight-new">KR: MOD11_2 variant</span></div>
+              <div>  <span class="highlight-new">AU: REGEX_ONLY (8-digit TFN)</span></div>
+              <div><strong>offshore_list:</strong> [HK, SG, KY, BVI, <span class="highlight-new">MO, PW</span>]</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding: 12px; border: 1px solid var(--c-border); background: var(--c-bg);">
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--c-text-sub); margin-bottom: 8px;">RELOAD STATUS</div>
+          <div style="display: flex; justify-content: center; gap: 24px; font-size: 12px;">
+            <span><strong>耗时:</strong> <span style="color: var(--c-green); font-family: var(--font-mono);">1.2s</span></span>
+            <span><strong>新增法域:</strong> <span style="font-family: var(--font-mono);">JP, KR, AU</span></span>
+            <span><strong>规则版本:</strong> <span style="font-family: var(--font-mono);">20261001-r1 → 20261022-r2</span></span>
+            <span><strong>服务状态:</strong> <span style="color: var(--c-green); font-family: var(--font-mono);">RUNNING (无重启)</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 5: LAYOUT ANNOTATIONS -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 16px;">
+      <span class="zone-label">Screen 5 / 5 — 布局标注与组件规范</span>
+    </div>
+
+    <div class="content-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+      <!-- Layout Spec -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">布局规范 · Layout Specification</span>
+        </div>
+        <div class="panel-body" style="font-size: 11px; line-height: 2; font-family: var(--font-mono);">
+          <div><strong>整体布局:</strong> st.sidebar + st.main (Streamlit 原生)</div>
+          <div><strong>Sidebar 宽度:</strong> 260px (固定)</div>
+          <div><strong>Main 内边距:</strong> 20px</div>
+          <div><strong>最小分辨率:</strong> 1280 × 720</div>
+          <div><strong>Grid 系统:</strong> st.columns(2) 等分</div>
+          <div><strong>间距规范:</strong> 12px (组件间) / 16px (区块间)</div>
+        </div>
+      </div>
+
+      <!-- Component Spec -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">组件清单 · Component Inventory</span>
+        </div>
+        <div class="panel-body" style="font-size: 11px; line-height: 1.9;">
+          <table class="data-table">
+            <tr><th>组件</th><th>Streamlit API</th><th>用途</th></tr>
+            <tr><td>样本选择器</td><td style="color: var(--c-text-sub);">st.selectbox</td><td>切换 5 个预置 Case</td></tr>
+            <tr><td>文件上传</td><td style="color: var(--c-text-sub);">st.file_uploader</td><td>PDF / 图片上传</td></tr>
+            <tr><td>Pipeline 状态</td><td style="color: var(--c-text-sub);">st.status / spinner</td><td>5 步执行进度</td></tr>
+            <tr><td>裁决横幅</td><td style="color: var(--c-state);">st.success / error / warning</td><td>三态裁决结果</td></tr>
+            <tr><td>数据表格</td><td style="color: var(--c-text-sub);">st.dataframe / st.json</td><td>CRSFormData 展示</td></tr>
+            <tr><td>修复卡片</td><td style="color: var(--c-text-sub);">st.expander + custom</td><td>BLOCKER 整改建议</td></tr>
+            <tr><td>冲突证据</td><td style="color: var(--c-text-sub);">st.expander + custom</td><td>WARNING 冲突详情</td></tr>
+            <tr><td>规则热重载</td><td style="color: var(--c-text-sub);">st.button</td><td>触发 load_rules()</td></tr>
+            <tr><td>报告下载</td><td style="color: var(--c-text-sub);">st.download_button</td><td>HTML 审计报告</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Color Spec -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">色彩规范 · Color Specification</span>
+        </div>
+        <div class="panel-body">
+          <table class="data-table">
+            <tr><th>语义</th><th>色值</th><th>用途</th></tr>
+            <tr>
+              <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-green); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> PASS</td>
+              <td style="font-family: var(--font-mono); font-size: 11px;">#16a34a</td>
+              <td style="font-size: 11px;">AUTO_PASS 裁决、校验通过</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-red); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> FIX</td>
+              <td style="font-family: var(--font-mono); font-size: 11px;">#dc2626</td>
+              <td style="font-size: 11px;">NEED_USER_FIX、BLOCKER 错误</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-amber); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> TRIAGE</td>
+              <td style="font-family: var(--font-mono); font-size: 11px;">#d97706</td>
+              <td style="font-size: 11px;">MANUAL_TRIAGE、WARNING 冲突</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-blue); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> INFO</td>
+              <td style="font-family: var(--font-mono); font-size: 11px;">#2563eb</td>
+              <td style="font-size: 11px;">链接、下载按钮</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">字体规范 · Typography</span>
+        </div>
+        <div class="panel-body" style="font-size: 11px; line-height: 2; font-family: var(--font-mono);">
+          <div><strong>UI 字体:</strong> system-ui, -apple-system, 'Segoe UI'</div>
+          <div><strong>数据字体:</strong> 'SF Mono', Monaco, Consolas</div>
+          <div><strong>标题:</strong> 15px / 600 weight</div>
+          <div><strong>正文:</strong> 12-13px / 400 weight</div>
+          <div><strong>标签:</strong> 10-11px / uppercase / letter-spacing</div>
+          <div><strong>数据:</strong> 11px / mono / 500 weight</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interaction-notes" style="margin-top: 16px;">
+      <div class="interaction-notes-title">Streamlit 实现说明</div>
+      <ul class="interaction-list">
+        <li>使用 <code>st.columns([1, 3])</code> 实现 sidebar + main 布局比例</li>
+        <li>Pipeline 状态使用 <code>st.status()</code> 组件，每步完成后标记 done</li>
+        <li>裁决横幅使用 <code>st.success()</code> / <code>st.error()</code> / <code>st.warning()</code></li>
+        <li>修复卡片使用 <code>st.expander()</code> + 自定义 CSS 实现红/琥珀色左边框</li>
+        <li>热重载按钮触发 <code>rule_engine.load_rules(patch_path)</code>，使用 <code>st.spinner()</code> 展示加载状态</li>
+        <li>审计报告使用 <code>st.download_button()</code> 提供 HTML 文件下载</li>
+        <li>置信度条使用纯 CSS 实现，无需额外图表库</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="max-width: 1400px; margin: 0 auto; padding-top: 16px; border-top: 1px solid var(--c-border); display: flex; justify-content: space-between;">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-green); background: #f0fdf4;"></span> AUTO_PASS</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-red); background: #fef2f2;"></span> NEED_USER_FIX</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-amber); background: #fffbeb;"></span> MANUAL_TRIAGE</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-blue); background: #eff6ff;"></span> Interactive</div>
+    </div>
+    <div class="doc-ref">
+      REF: specs/crosstax-ai-prd.md §F8<br/>
+      REF: design/architecture-overview.md §2.1<br/>
+      OUTPUT: src/app.py (Streamlit)
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrossTax AI — 系统架构总览</title>
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-accent: #0f172a;
+      --c-red: #dc2626;
+      --c-amber: #d97706;
+      --c-green: #16a34a;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--c-bg);
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      padding: 32px;
+    }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 2px solid var(--c-border);
+      padding: 32px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .diagram-header {
+      border-bottom: 1px solid var(--c-border);
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .diagram-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--c-text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .diagram-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .diagram-meta {
+      text-align: right;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      line-height: 1.6;
+    }
+
+    /* === Layer Styles === */
+    .layer {
+      border: 1px solid var(--c-border);
+      margin-bottom: 0;
+      position: relative;
+    }
+
+    .layer + .layer {
+      border-top: none;
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .layer-tag {
+      display: inline-block;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 2px 6px;
+      background: var(--c-accent);
+      color: var(--c-canvas);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .layer-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-text-main);
+    }
+
+    .layer-name-en {
+      font-size: 11px;
+      color: var(--c-text-sub);
+      font-family: var(--font-mono);
+    }
+
+    .layer-body {
+      padding: 20px 16px;
+    }
+
+    /* === Node Styles === */
+    .node-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+
+    .node {
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      padding: 12px 14px;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .node-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .node-desc {
+      font-size: 11px;
+      color: var(--c-text-sub);
+      line-height: 1.5;
+      font-family: var(--font-mono);
+    }
+
+    .node--wide {
+      flex: 2;
+      min-width: 280px;
+    }
+
+    .node--full {
+      flex: 1 1 100%;
+    }
+
+    /* === Badge === */
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      padding: 1px 5px;
+      border: 1px solid var(--c-text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+    }
+
+    .badge--filled {
+      background: var(--c-text-main);
+      color: var(--c-canvas);
+    }
+
+    .badge--red {
+      border-color: var(--c-red);
+      color: var(--c-red);
+    }
+
+    .badge--amber {
+      border-color: var(--c-amber);
+      color: var(--c-amber);
+    }
+
+    .badge--green {
+      border-color: var(--c-green);
+      color: var(--c-green);
+    }
+
+    .badge--p0 {
+      background: var(--c-red);
+      color: white;
+      border-color: var(--c-red);
+    }
+
+    .badge--p1 {
+      background: var(--c-amber);
+      color: white;
+      border-color: var(--c-amber);
+    }
+
+    /* === Flow Connector === */
+    .flow-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .flow-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .flow-line {
+      width: 1px;
+      height: 14px;
+      background: var(--c-border-dark);
+    }
+
+    .flow-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      padding: 2px 8px;
+      border: 1px dashed var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .flow-triangle {
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 6px solid var(--c-border-dark);
+    }
+
+    /* === Pipeline === */
+    .pipeline {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .pipeline-stage {
+      flex: 1;
+      border: 1px solid var(--c-border);
+      padding: 12px;
+      position: relative;
+      background: var(--c-canvas);
+    }
+
+    .pipeline-stage + .pipeline-stage {
+      border-left: none;
+    }
+
+    .pipeline-stage-num {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .pipeline-stage-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .pipeline-stage-items {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      line-height: 1.7;
+    }
+
+    .pipeline-arrow {
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 8px solid var(--c-border-dark);
+    }
+
+    /* === Verdict Branches === */
+    .verdict-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .verdict-card {
+      flex: 1;
+      border: 1px solid var(--c-border);
+      padding: 12px;
+    }
+
+    .verdict-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .verdict-label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .verdict-action {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      line-height: 1.5;
+    }
+
+    .verdict-card--pass { border-left: 3px solid var(--c-green); }
+    .verdict-card--fix { border-left: 3px solid var(--c-red); }
+    .verdict-card--triage { border-left: 3px solid var(--c-amber); }
+
+    /* === External === */
+    .external-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .external-node {
+      border: 1px dashed var(--c-border-dark);
+      padding: 10px 14px;
+      flex: 1;
+    }
+
+    .external-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .external-value {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* === Footer === */
+    .diagram-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--c-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .legend-line {
+      width: 20px;
+      height: 0;
+      border-top: 1px solid var(--c-border-dark);
+    }
+
+    .legend-line--dashed {
+      border-top-style: dashed;
+    }
+
+    .legend-box {
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--c-border);
+    }
+
+    .legend-box--filled {
+      background: var(--c-accent);
+    }
+
+    .doc-ref {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* === Data Flow Annotation === */
+    .data-flow-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-align: center;
+      padding: 4px 0;
+      letter-spacing: 0.3px;
+    }
+
+    .io-spec {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      margin-top: 8px;
+      padding: 6px 8px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      line-height: 1.6;
+    }
+
+    .io-spec strong {
+      color: var(--c-text-main);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram-canvas">
+
+    <!-- Header -->
+    <div class="diagram-header">
+      <div>
+        <h1 class="diagram-title">CrossTax AI — 系统架构总览</h1>
+        <p class="diagram-subtitle">GLOBAL ADAPTIVE COMPLIANCE AUDIT ENGINE · SYSTEM ARCHITECTURE</p>
+      </div>
+      <div class="diagram-meta">
+        REV 1.0 · 2026-10-22<br/>
+        ARCH: MULTI-AGENT PIPELINE<br/>
+        DEPLOY: ALIBABA CLOUD
+      </div>
+    </div>
+
+    <!-- Layer 1: Presentation -->
+    <div class="layer">
+      <div class="layer-header">
+        <span class="layer-tag">L1</span>
+        <span class="layer-name">展现层</span>
+        <span class="layer-name-en">Presentation Layer</span>
+      </div>
+      <div class="layer-body">
+        <div class="node-row">
+          <div class="node">
+            <div class="node-title">Streamlit 演示 UI <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              文件上传 / 样本切换<br/>
+              实时研判看板<br/>
+              修复卡片交互区<br/>
+              审计底稿查阅/下载
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">规则同步模拟区 <span class="badge badge--p1">P1</span></div>
+            <div class="node-desc">
+              一键"加载 OECD 规则补丁"<br/>
+              触发热重载 → 验证秒级生效<br/>
+              竞赛演示核心亮点
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">合规官工作台 <span class="badge badge--p1">P1</span></div>
+            <div class="node-desc">
+              MANUAL_TRIAGE 案件列表<br/>
+              冲突证据链高亮展示<br/>
+              人工覆核操作面板
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Connector -->
+    <div class="flow-connector">
+      <div class="flow-arrow">
+        <div class="flow-line"></div>
+        <div class="flow-label">HTTP / WebSocket</div>
+        <div class="flow-line"></div>
+        <div class="flow-triangle"></div>
+      </div>
+    </div>
+
+    <!-- Layer 2: Application / Agent Orchestration -->
+    <div class="layer">
+      <div class="layer-header">
+        <span class="layer-tag">L2</span>
+        <span class="layer-name">智能体编排层</span>
+        <span class="layer-name-en">Multi-Agent Orchestration Layer</span>
+      </div>
+      <div class="layer-body">
+        <div class="data-flow-label">▼ 五步审核流水线 · 结构化上下文逐级传递 ▼</div>
+
+        <!-- Pipeline -->
+        <div class="pipeline">
+          <div class="pipeline-stage">
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-stage-num">Step 01</div>
+            <div class="pipeline-stage-title">接收材料</div>
+            <div class="pipeline-stage-items">
+              IN: PDF / JPG / PNG / WEBP<br/>
+              → 商户 ID<br/>
+              → 原始文件
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-stage-num">Step 02</div>
+            <div class="pipeline-stage-title">多模态提取</div>
+            <div class="pipeline-stage-items">
+              Vision Parser Agent<br/>
+              → CRSFormData<br/>
+              → 置信度评分
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-stage-num">Step 03</div>
+            <div class="pipeline-stage-title">税规推理校验</div>
+            <div class="pipeline-stage-items">
+              TIN 格式/校验位<br/>
+              Reason A/B/C<br/>
+              → FormIssues[]
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-stage-num">Step 04</div>
+            <div class="pipeline-stage-title">跨源冲突挖掘</div>
+            <div class="pipeline-stage-items">
+              比对 KYC 底表<br/>
+              3 类冲突场景<br/>
+              → IndiciaIssues[]
+            </div>
+          </div>
+          <div class="pipeline-stage">
+            <div class="pipeline-stage-num">Step 05</div>
+            <div class="pipeline-stage-title">决策与闭环</div>
+            <div class="pipeline-stage-items">
+              三态裁决<br/>
+              审计快照固化<br/>
+              → Verdict + Report
+            </div>
+          </div>
+        </div>
+
+        <div class="io-spec">
+          <strong>共享上下文：</strong> CRSFormData + FormIssues[] + IndiciaIssues[] → 逐级传递，每步可追加<br/>
+          <strong>会话绑定：</strong> session_id + rule_version_id + timestamp → 审计不可篡改溯源
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Connector -->
+    <div class="flow-connector">
+      <div class="flow-arrow">
+        <div class="flow-line"></div>
+        <div class="flow-label">内部调用 / Python API</div>
+        <div class="flow-line"></div>
+        <div class="flow-triangle"></div>
+      </div>
+    </div>
+
+    <!-- Layer 3: Engine -->
+    <div class="layer">
+      <div class="layer-header">
+        <span class="layer-tag">L3</span>
+        <span class="layer-name">核心引擎层</span>
+        <span class="layer-name-en">Core Engine Layer</span>
+      </div>
+      <div class="layer-body">
+        <div class="node-row">
+          <div class="node">
+            <div class="node-title">媒体预处理 <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              pdf2image 栅格化 300DPI<br/>
+              EXIF 旋转纠正<br/>
+              等比缩放 ≤2048px<br/>
+              → Base64 图像流
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">TIN 校验引擎 <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              清洗 → 正则匹配 → 算子分发<br/>
+              MOD11_2 / HKID / NRIC<br/>
+              兜底: 4-30位基础校验<br/>
+              → INVALID_TIN / PASS
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">跨源冲突研判 <span class="badge badge--p1">P1</span></div>
+            <div class="node-desc">
+              场景1: 单国申报 vs 境外运营<br/>
+              场景2: 离岸主体税籍隐瞒<br/>
+              场景3: 主体名称跨源冲突<br/>
+              → INDICIA_CONFLICT + 置信度
+            </div>
+          </div>
+        </div>
+
+        <div class="node-row" style="margin-top: 12px;">
+          <div class="node">
+            <div class="node-title">形式完备性校验 <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              has_signature → NO_SIGNATURE<br/>
+              signing_date → INVALID_DATE<br/>
+              Reason A/B/C → MISSING_REASON<br/>
+              → FormIssues[BLOCKER]
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">三态裁决器 <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              BLOCKER → NEED_USER_FIX<br/>
+              WARNING → MANUAL_TRIAGE<br/>
+              NONE → AUTO_PASS
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">审计留痕引擎 <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              会话快照固化<br/>
+              规则版本绑定<br/>
+              Jinja2 → HTML 报告<br/>
+              全链路穿透溯源
+            </div>
+          </div>
+        </div>
+
+        <!-- Verdict Branches -->
+        <div class="verdict-row">
+          <div class="verdict-card verdict-card--pass">
+            <div class="verdict-header">
+              <span class="badge badge--green">AUTO_PASS</span>
+              <span class="verdict-label">自动放行</span>
+            </div>
+            <div class="verdict-action">纳税声明生效 → 激活结算</div>
+          </div>
+          <div class="verdict-card verdict-card--fix">
+            <div class="verdict-header">
+              <span class="badge badge--red">NEED_USER_FIX</span>
+              <span class="verdict-label">退回补正</span>
+            </div>
+            <div class="verdict-action">暂缓开户 → 生成修复卡片</div>
+          </div>
+          <div class="verdict-card verdict-card--triage">
+            <div class="verdict-header">
+              <span class="badge badge--amber">MANUAL_TRIAGE</span>
+              <span class="verdict-label">人工复核</span>
+            </div>
+            <div class="verdict-action">推送合规官 → 增强尽职调查</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Connector -->
+    <div class="flow-connector">
+      <div class="flow-arrow">
+        <div class="flow-line"></div>
+        <div class="flow-label">配置加载 / API 调用</div>
+        <div class="flow-line"></div>
+        <div class="flow-triangle"></div>
+      </div>
+    </div>
+
+    <!-- Layer 4: Infrastructure -->
+    <div class="layer">
+      <div class="layer-header">
+        <span class="layer-tag">L4</span>
+        <span class="layer-name">基础设施层</span>
+        <span class="layer-name-en">Infrastructure Layer</span>
+      </div>
+      <div class="layer-body">
+        <div class="node-row">
+          <div class="node">
+            <div class="node-title">规则配置库 <span class="badge badge--filled">HOT-RELOAD</span></div>
+            <div class="node-desc">
+              rules_v1_base.json (基准)<br/>
+              rules_v2_patch.json (增量)<br/>
+              内存原子替换 ≤3s 生效<br/>
+              rule_version_id 版本绑定
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">Vision API <span class="badge">EXTERNAL</span></div>
+            <div class="node-desc">
+              多模态视觉抽取<br/>
+              超时 15s + 1次重试<br/>
+              降级: 手动输入模式<br/>
+              置信度 < 阈值 → 人工复核
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">Mock 数据源 <span class="badge">MOCK</span></div>
+            <div class="node-desc">
+              mock_merchants.json<br/>
+              5 个典型 CRS 样本<br/>
+              覆盖三态裁决场景<br/>
+              含边界条件 Case
+            </div>
+          </div>
+        </div>
+
+        <div class="external-row">
+          <div class="external-node">
+            <div class="external-label">DEPLOY TARGET</div>
+            <div class="external-value">阿里云 ECS / 容器服务</div>
+          </div>
+          <div class="external-node">
+            <div class="external-label">SECURITY</div>
+            <div class="external-value">HTTPS/TLS · 存储加密 · RBAC</div>
+          </div>
+          <div class="external-node">
+            <div class="external-label">RUNTIME</div>
+            <div class="external-value">Python 3.11+ · Streamlit · Jinja2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="diagram-footer">
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-box"></span> 内部模块
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="border-style: dashed;"></span> 外部依赖
+        </div>
+        <div class="legend-item">
+          <span class="badge badge--p0" style="font-size: 8px;">P0</span> 必须交付
+        </div>
+        <div class="legend-item">
+          <span class="badge badge--p1" style="font-size: 8px;">P1</span> 核心加分
+        </div>
+        <div class="legend-item">
+          <span class="badge badge--green" style="font-size: 8px;">PASS</span>
+          <span class="badge badge--red" style="font-size: 8px;">FIX</span>
+          <span class="badge badge--amber" style="font-size: 8px;">TRIAGE</span>
+          三态裁决
+        </div>
+      </div>
+      <div class="doc-ref">
+        REF: specs/crosstax-ai-prd.md<br/>
+        REF: docs/business-workflow-design.md<br/>
+        REF: docs/crosstax-ai-solution (from ppt).md
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
