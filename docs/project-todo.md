@@ -40,6 +40,8 @@
 - [x] 规则引擎热重载机制设计（JSON 配置 → 内存原子替换，无需重启） → 架构文档 §2.3.2
 - [x] 审计留痕数据模型设计（Session Snapshot 结构、规则版本绑定） → 架构文档 §2.2.1
 - [x] 技术选型确认 —— **已确认：后端 Python + FastAPI，前端 React 18 + TypeScript**（2026-10-22 团队沟通决策）
+- [x] 数据库方案确认 —— **已确认：混合方案（本地 SQLite + 阿里云 PG 16 生产），pgvector 竞赛阶段豁免**（2026-10-23）
+- [x] LLM 平台确认 —— **已确认：阿里云神机百炼（Qwen-VL-Max / Qwen-Max / GLM / DeepSeek + Embedding）**（2026-10-23）
 - [ ] 前后端接口契约定义（OpenAPI 3.0 Schema） → 输出至 `design/openapi.yaml`
 
 ### 2.2 核心模块设计
@@ -73,6 +75,10 @@
 - [ ] 后端工程初始化（`backend/` 目录、FastAPI 应用骨架、依赖管理 `requirements.txt`、代码规范）
 - [ ] 前端工程初始化（`frontend/` 目录、Vite + React 18 + TypeScript、Ant Design 集成、ESLint/Prettier）
 - [ ] Docker Compose 开发环境编排（前后端联调）
+- [ ] 数据库抽象层实现（`backend/core/database.py`，SQLAlchemy 引擎切换 SQLite/PG）
+- [ ] 环境变量配置模块（`backend/core/config.py`，pydantic-settings 管理 APP_ENV / DATABASE_URL 等）
+- [ ] SQLAlchemy ORM 模型定义（`backend/models/`，AuditSession / Merchant 等表结构）
+- [ ] Alembic 数据库迁移初始化（双后端兼容 migration script）
 - [ ] Mock 数据准备：商户底表 `mock_merchants.json`
 - [ ] Mock 数据准备：5 个 CRS 样本表单（PDF / 图片）
 - [ ] 规则配置文件编写：`rules_v1_base.json`（CN / HK / SG 等核心法域）
@@ -128,9 +134,10 @@
 ### 4.1 云基础设施
 
 - [ ] 阿里云资源规划与开通（ECS / 容器服务 / 存储 / 网络）
+- [ ] 阿里云 PG 16 连接验证（ECS 内网直连测试、连接池配置、pgvector 扩展安装）
 - [ ] 应用容器化（Dockerfile 编写）
 - [ ] 部署流水线配置（代码推送 → 构建 → 部署）
-- [ ] 环境变量与配置管理（API Key、规则路径等敏感配置外置）
+- [ ] 环境变量与配置管理（API Key、DATABASE_URL、规则路径等敏感配置外置）
 
 ### 4.2 安全加固
 

@@ -23,9 +23,11 @@ crosstax-ai/
 │   ├── mock-data/          # 商户底表、CRS 样本
 │   └── templates/          # Jinja2 审计报告模板
 ├── backend/                # Python 后端服务 (FastAPI)
+│   ├── core/               # 数据库抽象层 + 配置
 │   ├── api/                # REST 路由 + WebSocket
 │   ├── agents/             # 智能体模块
 │   ├── engine/             # 规则引擎 + 数据模型
+│   ├── models/             # SQLAlchemy ORM 模型
 │   └── main.py             # FastAPI 入口
 ├── frontend/               # React 前端应用
 │   ├── src/
@@ -58,11 +60,20 @@ crosstax-ai/
 | 前端框架 | React 18 + Vite |
 | UI 组件库 | Ant Design 5.x |
 | 实时通信 | WebSocket / SSE |
-| Vision API | 待确认（通义千问VL / GPT-4o） |
+| LLM 平台 | 阿里云神机百炼（Qwen-VL-Max / Qwen-Max / GLM / DeepSeek） |
 | 规则引擎 | JSON 配置 + 内存热重载 |
+| 数据库（本地开发） | SQLite（Python 内置，零配置） |
+| 数据库（生产/测试） | PostgreSQL 16 + pgvector 0.8.0.2（阿里云 RDS，ECS 内网直连） |
+| ORM | SQLAlchemy + Alembic |
 | 部署 | 阿里云 ECS + Docker（多阶段构建） |
 
 ## 快速开始
+
+### 环境要求
+
+- Python 3.11+
+- Node.js 20+
+- Git
 
 ### 后端
 
@@ -76,8 +87,49 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 # 安装依赖
 pip install -r backend/requirements.txt
 
-# 启动 FastAPI 服务（开发模式）
+# 启动 FastAPI 服务（开发模式，默认使用 SQLite）
 uvicorn backend.main:app --reload --port 8000
+```
+
+访问 API 文档：http://localhost:8000/docs
+
+### 数据库配置
+
+本地开发**无需安装任何数据库**，Python 内置 SQLite 自动启用。
+
+```bash
+# 本地开发（默认 SQLite，零配置）
+APP_ENV=development uvicorn backend.main:app --reload
+
+# 切换阿里云 PG（集成测试 / 生产部署）
+APP_ENV=testing \
+DATABASE_URL=postgresql://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax_dev \
+uvicorn backend.main:app --reload
+```
+
+> **注意：** 阿里云 PG 仅支持 ECS 内网连接，本地开发机无法直连。
+> 本地开发请使用默认的 SQLite 模式。
+> PG 连接池限制：每人 ≤ 3 连接，团队总上限 30。
+
+### 环境变量配置
+
+在 `backend/.env` 中填写配置：
+
+```bash
+# 应用环境（development / testing / production）
+APP_ENV=development
+
+# 数据库（development 环境不设置 DATABASE_URL 则自动使用 SQLite）
+# DATABASE_URL=postgresql://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax_dev
+DB_POOL_SIZE=3
+
+# 阿里云神机百炼 API
+DASHSCOPE_API_KEY=sk-xxx
+VISION_API_MODEL=qwen-vl-max
+LLM_API_MODEL=qwen-max
+
+# 安全
+SECRET_KEY=your-secret-key
 ```
 
 ### 前端
@@ -107,7 +159,7 @@ docker compose up --build
 
 | 文档 | 位置 | 说明 |
 |------|------|------|
-| PRD | `specs/crosstax-ai-prd.md` | 产品需求文档 v1.1 |
+| PRD | `specs/crosstax-ai-prd.md` | 产品需求文档 v1.2 |
 | 架构设计 | `design/architecture-overview.md` | 系统架构与 ADR |
 | 架构蓝图 | `design/architecture-overview.html` | 可视化架构图 |
 | React UI 规范 | `design/react-ui-spec.md` | 组件、布局、色彩规范 |

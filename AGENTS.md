@@ -19,9 +19,11 @@ If a spec is ambiguous or missing, ask the team before inventing behavior. Do no
 crosstax-ai/
 ├── backend/          # Python FastAPI service
 │   ├── main.py       # App entry, CORS, lifespan
+│   ├── core/         # Database abstraction (database.py), config (config.py)
 │   ├── api/          # Routes, schemas, websocket
 │   ├── agents/       # Pipeline agents (vision, TIN, indicia, verdict, audit)
 │   ├── engine/       # Rule engine, data models
+│   ├── models/       # SQLAlchemy ORM models (audit_session, merchant, etc.)
 │   └── utils/        # File hash, logger
 ├── frontend/         # React 18 + TypeScript + Vite
 │   └── src/
@@ -51,6 +53,9 @@ crosstax-ai/
 - Error responses: use HTTP status codes + JSON body `{ "code": "...", "message": "..." }`
 - No business logic in route handlers — delegate to agents/engine
 - Environment variables via `pydantic-settings` or `os.environ`, never hardcode secrets
+- Database: all persistence through `backend/core/database.py` — SQLAlchemy ORM only, no raw SQL dialect features
+- Models: one file per table in `backend/models/`, inherit from `Base` in `backend/core/database.py`
+- Migrations: Alembic, generate via `alembic revision --autogenerate`, test on both SQLite and PG
 
 ## Frontend Conventions (React / TypeScript)
 
@@ -68,11 +73,12 @@ crosstax-ai/
 
 - **DO NOT** hardcode CRS rules — all rules come from JSON files in `rules/`
 - **DO NOT** bypass the agent pipeline — all audit flows through `run_audit_pipeline()`
-- **DO NOT** add database dependencies — storage is JSON files / SQLite only (ADR-003)
+- **DO NOT** use PG-specific SQL syntax directly — go through `backend/core/database.py` abstraction (ADR-008: SQLite dev + PG production)
 - **DO NOT** call Vision API directly from routes — go through `VisionParserAgent`
 - **DO NOT** modify files in `specs/`, `design/`, or `docs/` — those are PM/designer-owned
 - **DO NOT** introduce new top-level dependencies without team agreement
 - **DO** keep the 5 demo cases working — any refactor must not break Case A–E
+- **DO** use SQLAlchemy ORM types only — no raw SQL dialect features that break SQLite compatibility
 
 ## Testing
 

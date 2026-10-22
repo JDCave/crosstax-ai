@@ -1,12 +1,13 @@
 # CrossTax AI — 架构设计文档
 
-> **版本：** v1.1 | **日期：** 2026-10-22 | **作者：** PM + Tech Lead  
+> **版本：** v1.2 | **日期：** 2026-10-23 | **作者：** PM + Tech Lead  
 > **关联图表：** [architecture-overview.html](./architecture-overview.html)  
 > **输入来源：** `specs/crosstax-ai-prd.md`、`docs/crosstax-ai-solution (from ppt).md`  
 > **状态：** 草案，待团队评审  
 > **变更记录：**  
 > - v1.0 (2026-10-22): 初始草案  
 > - v1.1 (2026-10-22): 技术选型确认 — 前端由 Streamlit 切换为 React 18 + TypeScript，后端新增 FastAPI API 层，详见 ADR-002
+> - v1.2 (2026-10-23): 数据库方案确认 — 混合方案（本地 SQLite + 阿里云 PG 生产），LLM 平台确认神机百炼，pgvector 竞赛阶段豁免，详见 ADR-008/009/010
 
 ---
 
@@ -31,6 +32,10 @@
 | ADR-004 | 调用第三方 Vision API | 避免自训练模型，快速获得 OCR 能力 | 自部署 OCR 模型 | 竞赛环境无 GPU 资源，API 调用成本可控 |
 | ADR-005 | Mock 数据替代真实对接 | 竞赛无真实商户系统 | 对接真实 KYC/CRM | 无权限、无数据、无时间 |
 | ADR-006 | 阿里云 ECS 部署 | 竞赛指定云平台 | AWS / Azure | 竞赛要求 |
+| ADR-007 | **阿里云神机百炼 LLM 平台** | 竞赛方提供统一 LLM 服务，内含 Qwen/GLM/DeepSeek 等多模型及 Embedding 模型 | 自建 LLM 网关 / 直接调用 OpenAI | 竞赛要求 + 阿里云生态集成 |
+| ADR-008 | **混合数据库方案：本地 SQLite + 阿里云 PG 16 生产** | 本地开发零配置（SQLite 内置），比赛 ECS 内网直连阿里云 PG 16（已获取连接信息，外网不可达） | 全程 PG / 全程 SQLite | 本地无法直连阿里云 PG（仅 ECS 内网），SQLite 零安装零配置 |
+| ADR-009 | **竞赛阶段豁免 pgvector 向量检索** | 跨源冲突研判降级为规则引擎 + 模糊匹配（编辑距离/正则）+ LLM fallback | 生产阶段启用 pgvector 0.8.0.2 语义检索 | 时间紧张，主体名称冲突场景可用规则 + LLM 替代 |
+| ADR-010 | **阿里云 PG 连接池限制：每人 ≤ 3** | 组委会限制：账号连接上限 30，建议连接池 5–10；4 人团队需严格控制 | 按建议 5–10/人 | 4×10=40 超限，4×3=12 留有余量 |
 
 ---
 
@@ -229,10 +234,69 @@ class RuleEngine:
 | 组件 | 技术选型 | 部署方式 | 说明 |
 |------|----------|----------|------|
 | 规则配置库 | JSON 文件 | 本地磁盘 + 内存缓存 | `assets/mock-data/rules/` |
-| Vision API | 待定（通义千问VL / GPT-4o） | 外部 HTTP 调用 | API Key 通过环境变量注入 |
+| Vision API | 阿里云神机百炼（Qwen-VL-Max） | 外部 HTTP 调用 | API Key 通过环境变量注入 |
+| LLM 推理 | 神机百炼（Qwen-Max / GLM / DeepSeek） | 外部 HTTP 调用 | 跨源冲突研判 + 名称模糊匹配 fallback |
+| Embedding | 神机百炼 Embedding 模型 | 外部 HTTP 调用 | 竞赛阶段暂不启用向量检索，预留接口 |
 | Mock 商户数据 | JSON 文件 | 本地磁盘 | `assets/mock-data/mock_merchants.json` |
-| 审计存储 | JSON 文件 / SQLite | 本地磁盘 | 竞赛阶段无需数据库 |
+| 数据库（本地开发） | SQLite | 本地文件 | Python 内置，零配置，`crosstax_dev.db` |
+| 数据库（生产/测试） | PostgreSQL 16 + pgvector 0.8.0.2 | 阿里云 RDS（ECS 内网） | 连接池 ≤ 3/人，总连接上限 30 |
+| 审计存储 | 数据库（SQLite / PG 按环境切换） | 本地文件 / 阿里云 RDS | 通过 `APP_ENV` 环境变量控制 |
 | 运行时 | Python 3.11+ | 阿里云 ECS | 容器化部署 |
+
+#### 2.4.1 数据库抽象层设计
+
+采用 SQLAlchemy ORM 屏蔽 SQLite 与 PG 差异，通过环境变量 `APP_ENV` 切换后端。
+
+```python
+# backend/core/database.py
+import os
+from sqlalchemy import create_engine, event
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+APP_ENV = os.getenv("APP_ENV", "development")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if APP_ENV in ("testing", "production") and DATABASE_URL:
+    # 阿里云 PG 16（ECS 内网直连）
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=int(os.getenv("DB_POOL_SIZE", "3")),
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "0")),
+        pool_timeout=10,
+        pool_recycle=1800,
+        pool_pre_ping=True,
+    )
+else:
+    # 本地 SQLite（零配置，Python 内置）
+    DB_PATH = os.getenv("SQLITE_PATH", "./crosstax_dev.db")
+    engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
+    # SQLite 开启 WAL 模式提升并发读性能
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_conn, _):
+        dbapi_conn.execute("PRAGMA journal_mode=WAL")
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+```
+
+**兼容性约束：**
+- 仅使用 SQLAlchemy 标准类型（String, Integer, Float, Boolean, DateTime, JSON, Text）
+- 避免 PG 特有语法（如 `ILIKE`、`::` 类型转换）
+- JSON 字段 SQLite ≥ 3.38 原生支持，PG 使用 `jsonb`
+- 迁移工具：Alembic（双后端均可生成 migration script）
+
+**环境切换：**
+```bash
+# 本地开发（默认 SQLite）
+APP_ENV=development uvicorn backend.main:app --reload
+
+# 集成测试（切换 PG）
+APP_ENV=testing DATABASE_URL=postgresql://... pytest tests/integration/
+
+# 生产部署（ECS 内网 PG）
+APP_ENV=production DATABASE_URL=postgresql://... uvicorn backend.main:app
+```
 
 ---
 
@@ -363,15 +427,29 @@ CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ### 4.3 环境变量
 
 ```bash
+# 应用环境
+APP_ENV=development                    # development / testing / production
+
 # 后端服务
 BACKEND_HOST=0.0.0.0
 BACKEND_PORT=8000
 CORS_ORIGINS=http://localhost:3000,https://crosstax.example.com
 
-# Vision API
-VISION_API_PROVIDER=dashscope          # dashscope / openai
-VISION_API_KEY=sk-xxx
+# 数据库（混合方案）
+# development 环境：不设置 DATABASE_URL，自动使用 SQLite
+# testing/production 环境：设置 DATABASE_URL 连接阿里云 PG
+DATABASE_URL=postgresql://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax_dev
+DB_POOL_SIZE=3                         # 每人连接池上限（总连接上限 30）
+DB_MAX_OVERFLOW=0                      # 禁止溢出
+
+# Vision API（阿里云神机百炼）
+VISION_API_PROVIDER=dashscope
+DASHSCOPE_API_KEY=sk-xxx
 VISION_API_MODEL=qwen-vl-max
+
+# LLM 推理（神机百炼）
+LLM_API_PROVIDER=dashscope
+LLM_API_MODEL=qwen-max                 # qwen-max / glm-4 / deepseek-v3
 
 # 规则引擎
 RULES_BASE_PATH=./rules/rules_v1_base.json
@@ -404,6 +482,9 @@ crosstax-ai/
 │       └── audit_report.html.j2       # Jinja2 审计报告模板
 ├── backend/                            # Python 后端服务
 │   ├── main.py                         # FastAPI 入口
+│   ├── core/
+│   │   ├── database.py                 # 数据库抽象层（SQLite/PG 切换）
+│   │   └── config.py                   # 环境变量配置（pydantic-settings）
 │   ├── api/
 │   │   ├── routes/                     # REST 路由
 │   │   │   ├── audit.py                # /api/v1/audit
@@ -422,6 +503,9 @@ crosstax-ai/
 │   ├── engine/
 │   │   ├── rule_engine.py              # 规则引擎 + 热重载
 │   │   └── models.py                   # 数据模型 (CRSFormData, AuditIssue, etc.)
+│   ├── models/                         # SQLAlchemy ORM 模型
+│   │   ├── audit_session.py            # 审核会话表
+│   │   └── merchant.py                 # 商户底表
 │   └── utils/
 │       ├── file_hash.py                # 文件哈希计算
 │       └── logger.py                   # 日志
@@ -482,13 +566,15 @@ crosstax-ai/
 
 | # | 事项 | 影响 | 建议决策 | 状态 |
 |---|------|------|----------|------|
-| 1 | Vision API 供应商选型 | 抽取准确率、成本、延迟 | 通义千问VL（阿里云生态） | 待确认 |
-| 2 | 审计存储方案 | 数据量、查询需求 | JSON 文件（竞赛足够） | 待确认 |
+| 1 | Vision API 供应商选型 | 抽取准确率、成本、延迟 | 阿里云神机百炼 Qwen-VL-Max | **已确认** |
+| 2 | 数据库方案 | 开发效率、生产兼容性 | 混合方案：本地 SQLite + 阿里云 PG 16 生产 | **已确认（2026-10-23）** |
 | 3 | ~~是否需要后端 API 层~~ | ~~前后端分离 vs Streamlit 内嵌~~ | ~~暂不需要，Streamlit 直连引擎~~ | **已确认：采用 FastAPI 前后端分离** |
 | 4 | 5 个 Case 的具体数据 | 演示效果、测试覆盖 | 需与合规专家共同设计 | 待确认 |
 | 5 | 阿里云 ECS 规格 | 成本、性能 | 2C4G 起步，按需扩容 | 待确认 |
 | 6 | React UI 组件库选型 | 开发效率、视觉一致性 | Ant Design 5.x（企业级组件丰富） | 待确认 |
 | 7 | 前后端实时通信方案 | 流水线状态推送体验 | WebSocket 优先，SSE 备选 | 待确认 |
+| 8 | pgvector 向量检索 | 名称模糊匹配准确率 | 竞赛阶段暂不启用，规则 + LLM fallback | **已确认：竞赛阶段豁免** |
+| 9 | LLM 推理模型选型 | 冲突研判质量、成本 | 神机百炼 Qwen-Max（主力）/ GLM / DeepSeek | **已确认** |
 
 ---
 
