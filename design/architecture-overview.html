@@ -447,9 +447,13 @@
       <div>
         <h1 class="diagram-title">CrossTax AI — 系统架构总览</h1>
         <p class="diagram-subtitle">GLOBAL ADAPTIVE COMPLIANCE AUDIT ENGINE · SYSTEM ARCHITECTURE</p>
+        <p style="font-size: 10px; font-family: var(--font-mono); color: var(--c-text-sub); margin-top: 6px; line-height: 1.5;">
+          v1.1 (2026-10-22): 前端由 Streamlit 切换为 React 18 + TypeScript；新增 FastAPI 后端 API 层；详见 ADR-002
+        </p>
       </div>
       <div class="diagram-meta">
-        REV 1.0 · 2026-10-22<br/>
+        REV 1.1 · 2026-10-22<br/>
+        STACK: REACT + FASTAPI<br/>
         ARCH: MULTI-AGENT PIPELINE<br/>
         DEPLOY: ALIBABA CLOUD
       </div>
@@ -465,19 +469,29 @@
       <div class="layer-body">
         <div class="node-row">
           <div class="node">
-            <div class="node-title">Streamlit 演示 UI <span class="badge badge--p0">P0</span></div>
+            <div class="node-title">React 演示 SPA <span class="badge badge--p0">P0</span></div>
             <div class="node-desc">
+              React 18 + TypeScript + Vite<br/>
+              Ant Design 5.x 组件库<br/>
               文件上传 / 样本切换<br/>
-              实时研判看板<br/>
-              修复卡片交互区<br/>
-              审计底稿查阅/下载
+              实时研判看板 (WebSocket)
+            </div>
+          </div>
+          <div class="node">
+            <div class="node-title">FastAPI 后端 API <span class="badge badge--p0">P0</span></div>
+            <div class="node-desc">
+              REST 端点 + WebSocket 推送<br/>
+              OpenAPI 3.0 Schema<br/>
+              CORS / 认证 / 限流<br/>
+              静态文件托管 (前端构建产物)
             </div>
           </div>
           <div class="node">
             <div class="node-title">规则同步模拟区 <span class="badge badge--p1">P1</span></div>
             <div class="node-desc">
               一键"加载 OECD 规则补丁"<br/>
-              触发热重载 → 验证秒级生效<br/>
+              POST /api/v1/rules/reload<br/>
+              触发热重载 → ≤3s 生效<br/>
               竞赛演示核心亮点
             </div>
           </div>
@@ -736,7 +750,7 @@
           </div>
           <div class="external-node">
             <div class="external-label">RUNTIME</div>
-            <div class="external-value">Python 3.11+ · Streamlit · Jinja2</div>
+            <div class="external-value">Python 3.11+ · React 18 · FastAPI · TypeScript</div>
           </div>
         </div>
       </div>
@@ -765,9 +779,10 @@
         </div>
       </div>
       <div class="doc-ref">
-        REF: specs/crosstax-ai-prd.md<br/>
-        REF: docs/business-workflow-design.md<br/>
-        REF: docs/crosstax-ai-solution (from ppt).md
+        REF: specs/crosstax-ai-prd.md (v1.1)<br/>
+        REF: design/architecture-overview.md (v1.1)<br/>
+        REF: design/react-ui-spec.md<br/>
+        REF: docs/business-workflow-design.md
       </div>
     </div>
 

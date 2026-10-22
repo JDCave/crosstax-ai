@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrossTax AI — React UI 线框图</title>
+  <style>
+    :root {
+      --c-bg: #f8fafc;
+      --c-canvas: #ffffff;
+      --c-border: #cbd5e1;
+      --c-border-dark: #94a3b8;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      --c-accent: #0f172a;
+      --c-red: #dc2626;
+      --c-amber: #d97706;
+      --c-green: #16a34a;
+      --c-blue: #2563eb;
+      --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', Monaco, Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--c-bg);
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      padding: 32px;
+    }
+
+    .diagram-canvas {
+      background: var(--c-canvas);
+      border: 2px solid var(--c-border);
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto 32px;
+    }
+
+    .diagram-header {
+      border-bottom: 1px solid var(--c-border);
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .diagram-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .diagram-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .diagram-meta {
+      text-align: right;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      line-height: 1.6;
+    }
+
+    /* === Browser Chrome === */
+    .browser-frame {
+      border: 1px solid var(--c-border);
+      margin-bottom: 24px;
+    }
+
+    .browser-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .browser-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--c-border-dark);
+      border-radius: 50%;
+    }
+
+    .browser-url {
+      flex: 1;
+      margin-left: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      padding: 3px 8px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .browser-body {
+      display: flex;
+      min-height: 520px;
+    }
+
+    /* === Ant Design Layout === */
+    .antd-header {
+      height: 64px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .antd-logo {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .antd-logo-icon {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--c-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .antd-header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .antd-layout {
+      display: flex;
+      flex: 1;
+    }
+
+    .antd-sider {
+      width: 260px;
+      border-right: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      padding: 16px;
+      flex-shrink: 0;
+    }
+
+    .antd-content {
+      flex: 1;
+      padding: 24px;
+      background: var(--c-bg);
+      overflow: hidden;
+    }
+
+    /* === Sidebar Components (Ant Design Style) === */
+    .sidebar-section {
+      margin-bottom: 20px;
+    }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .antd-select {
+      width: 100%;
+      padding: 6px 12px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      color: var(--c-text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .antd-select::after {
+      content: '▾';
+      font-size: 10px;
+      color: var(--c-text-sub);
+    }
+
+    .antd-select--active {
+      border-color: var(--c-blue);
+      background: #eff6ff;
+    }
+
+    .antd-upload {
+      border: 2px dashed var(--c-border);
+      padding: 24px 12px;
+      text-align: center;
+      background: var(--c-canvas);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .antd-upload:hover {
+      border-color: var(--c-blue);
+    }
+
+    .upload-icon {
+      font-size: 24px;
+      color: var(--c-blue);
+      margin-bottom: 8px;
+    }
+
+    .upload-text {
+      font-size: 12px;
+      color: var(--c-text-sub);
+      line-height: 1.5;
+    }
+
+    .upload-text strong {
+      color: var(--c-text-main);
+    }
+
+    .antd-btn {
+      width: 100%;
+      padding: 8px 16px;
+      border: 1px solid var(--c-blue);
+      background: var(--c-canvas);
+      color: var(--c-blue);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .antd-btn:hover {
+      background: #eff6ff;
+    }
+
+    .antd-btn--primary {
+      background: var(--c-blue);
+      color: var(--c-canvas);
+    }
+
+    .antd-btn--primary:hover {
+      background: #1d4ed8;
+    }
+
+    .rule-version-card {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      padding: 10px 12px;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+      line-height: 1.7;
+    }
+
+    .rule-version-card strong {
+      color: var(--c-text-main);
+    }
+
+    /* === Main Content === */
+    .content-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .content-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .session-info {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    /* === Pipeline Steps (Ant Design Steps) === */
+    .antd-steps {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--c-canvas);
+      border: 1px solid var(--c-border);
+    }
+
+    .antd-step {
+      flex: 1;
+      padding: 12px 16px;
+      border-right: 1px solid var(--c-border);
+      position: relative;
+    }
+
+    .antd-step:last-child {
+      border-right: none;
+    }
+
+    .antd-step--wait {
+      background: var(--c-canvas);
+    }
+
+    .antd-step--process {
+      background: #eff6ff;
+      border-left: 3px solid var(--c-blue);
+    }
+
+    .antd-step--finish {
+      background: #f0fdf4;
+      border-left: 3px solid var(--c-green);
+    }
+
+    .antd-step-num {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .antd-step-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .antd-step--process .antd-step-title {
+      color: var(--c-blue);
+    }
+
+    .antd-step--finish .antd-step-title {
+      color: var(--c-green);
+    }
+
+    /* === Alert Banner (Ant Design Alert) === */
+    .antd-alert {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid;
+      margin-bottom: 20px;
+      background: var(--c-canvas);
+    }
+
+    .antd-alert--success {
+      border-color: var(--c-green);
+      background: #f0fdf4;
+    }
+
+    .antd-alert--error {
+      border-color: var(--c-red);
+      background: #fef2f2;
+    }
+
+    .antd-alert--warning {
+      border-color: var(--c-amber);
+      background: #fffbeb;
+    }
+
+    .antd-alert-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .antd-alert--success .antd-alert-icon { color: var(--c-green); }
+    .antd-alert--error .antd-alert-icon { color: var(--c-red); }
+    .antd-alert--warning .antd-alert-icon { color: var(--c-amber); }
+
+    .antd-alert-content {
+      flex: 1;
+    }
+
+    .antd-alert-message {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-text-main);
+    }
+
+    .antd-alert-description {
+      font-size: 11px;
+      color: var(--c-text-sub);
+      margin-top: 2px;
+    }
+
+    .antd-alert-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--c-canvas);
+    }
+
+    .antd-alert-badge--success { background: var(--c-green); }
+    .antd-alert-badge--error { background: var(--c-red); }
+    .antd-alert-badge--warning { background: var(--c-amber); }
+
+    /* === Content Grid === */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .antd-card {
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .antd-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .antd-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .antd-card-extra {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .antd-card-body {
+      padding: 16px;
+    }
+
+    /* === Data Table (Ant Design Table) === */
+    .antd-table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+
+    .antd-table th {
+      text-align: left;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--c-border);
+      font-weight: 600;
+      background: var(--c-bg);
+    }
+
+    .antd-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--c-border);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .antd-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .field-name {
+      color: var(--c-text-sub);
+      font-size: 11px;
+    }
+
+    .field-value {
+      color: var(--c-text-main);
+      font-weight: 500;
+    }
+
+    .field-value--error {
+      color: var(--c-red);
+      font-weight: 600;
+    }
+
+    .field-value--warning {
+      color: var(--c-amber);
+      font-weight: 600;
+    }
+
+    .field-value--success {
+      color: var(--c-green);
+      font-weight: 600;
+    }
+
+    .antd-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border: 1px solid;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .antd-tag--green {
+      border-color: var(--c-green);
+      color: var(--c-green);
+      background: #f0fdf4;
+    }
+
+    .antd-tag--orange {
+      border-color: var(--c-amber);
+      color: var(--c-amber);
+      background: #fffbeb;
+    }
+
+    .antd-tag--red {
+      border-color: var(--c-red);
+      color: var(--c-red);
+      background: #fef2f2;
+    }
+
+    .confidence-bar {
+      display: inline-block;
+      width: 48px;
+      height: 6px;
+      background: var(--c-border);
+      position: relative;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    .confidence-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--c-green);
+    }
+
+    .confidence-fill--low {
+      background: var(--c-amber);
+    }
+
+    /* === Collapse (Ant Design Collapse) === */
+    .antd-collapse {
+      border: 1px solid var(--c-border);
+      margin-bottom: 8px;
+    }
+
+    .antd-collapse:last-child {
+      margin-bottom: 0;
+    }
+
+    .antd-collapse-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--c-bg);
+      cursor: pointer;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .antd-collapse-header::before {
+      content: '▸';
+      font-size: 10px;
+      color: var(--c-text-sub);
+    }
+
+    .antd-collapse--open .antd-collapse-header::before {
+      content: '▾';
+    }
+
+    .antd-collapse-title {
+      font-size: 12px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .antd-collapse-body {
+      padding: 12px;
+      background: var(--c-canvas);
+    }
+
+    .remediation-message {
+      font-size: 12px;
+      color: var(--c-text-main);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .antd-alert-inline {
+      padding: 8px 12px;
+      border-left: 3px solid var(--c-blue);
+      background: #eff6ff;
+      font-size: 11px;
+      color: var(--c-text-main);
+      line-height: 1.5;
+    }
+
+    .antd-alert-inline strong {
+      color: var(--c-blue);
+    }
+
+    /* === Conflict Evidence === */
+    .conflict-item {
+      border: 1px solid var(--c-amber);
+      border-left: 3px solid var(--c-amber);
+      padding: 12px;
+      margin-bottom: 8px;
+      background: var(--c-canvas);
+    }
+
+    .conflict-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .conflict-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .conflict-scenario {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-amber);
+      font-weight: 600;
+    }
+
+    .confidence-score {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      margin-left: auto;
+    }
+
+    .antd-progress {
+      display: inline-block;
+      width: 60px;
+      height: 6px;
+      background: var(--c-border);
+      position: relative;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    .antd-progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--c-amber);
+    }
+
+    .conflict-detail {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--c-text-main);
+    }
+
+    .conflict-detail .label {
+      color: var(--c-text-sub);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .conflict-detail .value {
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    .conflict-detail .value--highlight {
+      color: var(--c-amber);
+      font-weight: 600;
+    }
+
+    /* === Descriptions (Ant Design Descriptions) === */
+    .antd-descriptions {
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .antd-descriptions-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .antd-descriptions-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .antd-descriptions-body {
+      padding: 12px 16px;
+    }
+
+    .antd-descriptions-row {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      line-height: 2;
+    }
+
+    .antd-descriptions-key {
+      color: var(--c-text-sub);
+      min-width: 140px;
+    }
+
+    .antd-descriptions-val {
+      color: var(--c-text-main);
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .antd-typography-copyable {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .antd-typography-copyable::after {
+      content: '⧉';
+      font-size: 12px;
+      color: var(--c-blue);
+      cursor: pointer;
+    }
+
+    /* === Button (Ant Design Button) === */
+    .antd-btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--c-blue);
+      background: var(--c-canvas);
+      color: var(--c-blue);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .antd-btn-download:hover {
+      background: #eff6ff;
+    }
+
+    /* === Zone Label === */
+    .zone-label {
+      display: inline-block;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border: 1px dashed var(--c-border);
+      margin-bottom: 10px;
+      background: var(--c-canvas);
+    }
+
+    /* === Hot Reload Demo === */
+    .hot-reload-demo {
+      display: flex;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .hot-reload-before, .hot-reload-after {
+      flex: 1;
+      border: 1px solid var(--c-border);
+      background: var(--c-canvas);
+    }
+
+    .hot-reload-label {
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    .hot-reload-body {
+      padding: 12px 16px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      line-height: 1.8;
+    }
+
+    .hot-reload-arrow {
+      display: flex;
+      align-items: center;
+      font-size: 20px;
+      color: var(--c-border-dark);
+      padding: 0 8px;
+    }
+
+    .highlight-new {
+      background: #fef3c7;
+      padding: 1px 4px;
+      border: 1px solid var(--c-amber);
+    }
+
+    .antd-message {
+      padding: 10px 16px;
+      border: 1px solid var(--c-green);
+      background: #f0fdf4;
+      font-size: 12px;
+      color: var(--c-green);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .antd-message::before {
+      content: '✓';
+      font-weight: 700;
+    }
+
+    /* === WebSocket Indicator === */
+    .ws-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-green);
+      padding: 3px 8px;
+      border: 1px solid var(--c-green);
+      background: #f0fdf4;
+    }
+
+    .ws-indicator::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--c-green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* === Footer === */
+    .diagram-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--c-border);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border: 1px solid;
+    }
+
+    .doc-ref {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* === Interaction Notes === */
+    .interaction-notes {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px dashed var(--c-border);
+      background: var(--c-bg);
+    }
+
+    .interaction-notes-title {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--c-text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .interaction-list {
+      list-style: none;
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--c-text-main);
+    }
+
+    .interaction-list li::before {
+      content: '→ ';
+      color: var(--c-text-sub);
+      font-family: var(--font-mono);
+    }
+
+    .interaction-list code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 1px 5px;
+      background: var(--c-canvas);
+      border: 1px solid var(--c-border);
+      color: var(--c-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 1: NEED_USER_FIX (TIN Error + Missing Signature) -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div class="diagram-header">
+      <div>
+        <h1 class="diagram-title">CrossTax AI — React UI 线框图</h1>
+        <p class="diagram-subtitle">COMPLIANCE AUDIT WORKBENCH · REACT 18 + TYPESCRIPT + ANT DESIGN 5.x · 5 SCREENS</p>
+      </div>
+      <div class="diagram-meta">
+        REV 1.1 · 2026-10-22<br/>
+        STACK: REACT + FASTAPI<br/>
+        RESOLUTION: 1280px+
+      </div>
+    </div>
+
+    <!-- Screen 1: NEED_USER_FIX -->
+    <div style="margin-bottom: 10px;">
+      <span class="zone-label">Screen 1 / 5 — NEED_USER_FIX · Case B: TIN 校验失败 + 签名缺失</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:3000</div>
+      </div>
+
+      <!-- Ant Design Header -->
+      <div class="antd-header">
+        <div class="antd-logo">
+          <div class="antd-logo-icon">C</div>
+          <span>CrossTax AI</span>
+        </div>
+        <div class="antd-header-right">
+          <span>RULE VERSION: 20261001-r1</span>
+          <span class="ws-indicator">WS CONNECTED</span>
+        </div>
+      </div>
+
+      <div class="antd-layout">
+        <!-- Ant Design Sider -->
+        <div class="antd-sider">
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择 · Cases</div>
+            <div class="antd-select antd-select--active">Case B — TIN 错误</div>
+            <div class="antd-select" style="opacity: 0.5;">Case A — 完美表单</div>
+            <div class="antd-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="antd-select" style="opacity: 0.5;">Case D — 离岸冲突</div>
+            <div class="antd-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">文件上传 · Upload</div>
+            <div class="antd-upload">
+              <div class="upload-icon">⇧</div>
+              <div class="upload-text">
+                拖拽 <strong>PDF / JPG / PNG</strong> 至此<br/>
+                或点击选择文件
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本 · Rules</div>
+            <div class="rule-version-card">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <button class="antd-btn">⟳ 加载 OECD 规则补丁</button>
+          </div>
+        </div>
+
+        <!-- Ant Design Content -->
+        <div class="antd-content">
+          <div class="content-header">
+            <span class="content-title">审核结果 — Case B</span>
+            <span class="session-info">SESSION: a3f7c2e1 · 2026-10-22T14:32:07Z</span>
+          </div>
+
+          <!-- Ant Design Steps (Pipeline) -->
+          <div class="antd-steps">
+            <div class="antd-step antd-step--finish">
+              <div class="antd-step-num">01</div>
+              <div class="antd-step-title">接收材料</div>
+            </div>
+            <div class="antd-step antd-step--finish">
+              <div class="antd-step-num">02</div>
+              <div class="antd-step-title">多模态提取</div>
+            </div>
+            <div class="antd-step antd-step--finish">
+              <div class="antd-step-num">03</div>
+              <div class="antd-step-title">税规推理校验</div>
+            </div>
+            <div class="antd-step antd-step--finish">
+              <div class="antd-step-num">04</div>
+              <div class="antd-step-title">跨源冲突研判</div>
+            </div>
+            <div class="antd-step antd-step--finish">
+              <div class="antd-step-num">05</div>
+              <div class="antd-step-title">决策与闭环</div>
+            </div>
+          </div>
+
+          <!-- Ant Design Alert (Verdict) -->
+          <div class="antd-alert antd-alert--error">
+            <span class="antd-alert-icon">❌</span>
+            <div class="antd-alert-content">
+              <div class="antd-alert-message">表单存在阻断级错误，需修正后重新提交</div>
+              <div class="antd-alert-description">检测到 2 个 BLOCKER 级别问题，请根据修复建议修正后重新上传</div>
+            </div>
+            <span class="antd-alert-badge antd-alert-badge--error">NEED_USER_FIX</span>
+          </div>
+
+          <!-- Extracted Data + Issues -->
+          <div class="content-grid">
+            <!-- Left: Extracted Data (Ant Design Table) -->
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">抽取结果 · CRSFormData</span>
+                <span class="antd-card-extra">AVG CONFIDENCE: 0.87</span>
+              </div>
+              <div class="antd-card-body">
+                <table class="antd-table">
+                  <thead>
+                    <tr>
+                      <th>字段</th>
+                      <th>值</th>
+                      <th>置信度</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="field-name">holder_name</td>
+                      <td class="field-value">ACME Trading Ltd</td>
+                      <td><span class="confidence-bar"><span class="confidence-fill" style="width: 95%;"></span></span></td>
+                    </tr>
+                    <tr>
+                      <td class="field-name">jurisdiction_code</td>
+                      <td class="field-value">HK</td>
+                      <td><span class="confidence-bar"><span class="confidence-fill" style="width: 92%;"></span></span></td>
+                    </tr>
+                    <tr>
+                      <td class="field-name">tin</td>
+                      <td class="field-value field-value--error">A123456(8)</td>
+                      <td><span class="confidence-bar"><span class="confidence-fill confidence-fill--low" style="width: 60%;"></span></span></td>
+                    </tr>
+                    <tr>
+                      <td class="field-name">has_signature</td>
+                      <td class="field-value field-value--error">FALSE</td>
+                      <td><span class="confidence-bar"><span class="confidence-fill confidence-fill--low" style="width: 45%;"></span></span></td>
+                    </tr>
+                    <tr>
+                      <td class="field-name">signing_date</td>
+                      <td class="field-value">2026-09-01</td>
+                      <td><span class="confidence-bar"><span class="confidence-fill" style="width: 88%;"></span></span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Remediation Cards (Ant Design Collapse) -->
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">修复建议 · Remediation</span>
+                <span class="antd-tag antd-tag--red">BLOCKER ×2</span>
+              </div>
+              <div class="antd-card-body">
+                <div class="antd-collapse antd-collapse--open">
+                  <div class="antd-collapse-header">
+                    <span class="antd-tag antd-tag--red">INVALID_TIN</span>
+                    <span class="antd-collapse-title">field: tin</span>
+                  </div>
+                  <div class="antd-collapse-body">
+                    <div class="remediation-message">
+                      TIN 校验位不匹配。法域 HK 使用 HKID_WEIGHT 算法，当前末位 (8) 与预期校验值 (7) 不一致。
+                    </div>
+                    <div class="antd-alert-inline">
+                      <strong>💡 修改建议：</strong>请核对您的纳税人识别号，修正后重新上传。
+                    </div>
+                  </div>
+                </div>
+                <div class="antd-collapse antd-collapse--open">
+                  <div class="antd-collapse-header">
+                    <span class="antd-tag antd-tag--red">NO_SIGNATURE</span>
+                    <span class="antd-collapse-title">field: has_signature</span>
+                  </div>
+                  <div class="antd-collapse-body">
+                    <div class="remediation-message">
+                      未检测到表单签名。CRS 自证表单必须在声明人签字处签署。
+                    </div>
+                    <div class="antd-alert-inline">
+                      <strong>💡 修改建议：</strong>请在签名栏签字后重新扫描上传。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit Trail (Ant Design Descriptions) -->
+          <div class="antd-descriptions">
+            <div class="antd-descriptions-header">
+              <span class="antd-descriptions-title">审计底稿 · Audit Trail</span>
+              <button class="antd-btn-download">↓ 下载 HTML 报告</button>
+            </div>
+            <div class="antd-descriptions-body">
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">session_id</span>
+                <span class="antd-descriptions-val antd-typography-copyable">a3f7c2e1-9d4b-4f3a-b8c2-1e5f7a9d3b4c</span>
+              </div>
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">merchant_id</span>
+                <span class="antd-descriptions-val">MER-0042</span>
+              </div>
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">file_hash</span>
+                <span class="antd-descriptions-val antd-typography-copyable">sha256:e3b0c44298fc1c149afbf4c8996fb924...</span>
+              </div>
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">rule_version</span>
+                <span class="antd-descriptions-val">20261001-r1</span>
+              </div>
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">verdict</span>
+                <span class="antd-descriptions-val" style="color: var(--c-red); font-weight: 600;">NEED_USER_FIX</span>
+              </div>
+              <div class="antd-descriptions-row">
+                <span class="antd-descriptions-key">timestamp</span>
+                <span class="antd-descriptions-val">2026-10-22T14:32:07.482Z</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interaction-notes">
+      <div class="interaction-notes-title">交互说明 · Screen 1 (React 实现)</div>
+      <ul class="interaction-list">
+        <li>顶部 Header 固定显示规则版本 + WebSocket 连接状态（实时推送流水线进度）</li>
+        <li>左侧 Sider 使用 Ant Design <code>Select</code> 切换 Case，主区域通过 React Query 自动刷新</li>
+        <li>文件上传使用 <code>react-dropzone</code> + Ant Design <code>Upload</code> 组件</li>
+        <li>Pipeline 状态使用 Ant Design <code>Steps</code> 组件，WebSocket 推送逐步点亮</li>
+        <li>裁决横幅使用 Ant Design <code>Alert</code> 组件，按 verdict 类型切换语义（success/error/warning）</li>
+        <li>修复卡片使用 Ant Design <code>Collapse</code> 组件，字段级提示 + 修改建议</li>
+        <li>审计底稿使用 Ant Design <code>Descriptions</code> 组件，支持一键复制 + 下载</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 2: AUTO_PASS -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 10px;">
+      <span class="zone-label">Screen 2 / 5 — AUTO_PASS · Case A: 完美表单，无任何异常</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:3000</div>
+      </div>
+      <div class="antd-header">
+        <div class="antd-logo">
+          <div class="antd-logo-icon">C</div>
+          <span>CrossTax AI</span>
+        </div>
+        <div class="antd-header-right">
+          <span>RULE VERSION: 20261001-r1</span>
+          <span class="ws-indicator">WS CONNECTED</span>
+        </div>
+      </div>
+      <div class="antd-layout">
+        <div class="antd-sider">
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择</div>
+            <div class="antd-select antd-select--active">Case A — 完美表单</div>
+            <div class="antd-select" style="opacity: 0.5;">Case B — TIN 错误</div>
+            <div class="antd-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="antd-select" style="opacity: 0.5;">Case D — 离岸冲突</div>
+            <div class="antd-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">文件上传</div>
+            <div class="antd-upload">
+              <div class="upload-icon">⇧</div>
+              <div class="upload-text">拖拽 <strong>PDF / JPG / PNG</strong> 至此</div>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本</div>
+            <div class="rule-version-card">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+        </div>
+        <div class="antd-content">
+          <div class="content-header">
+            <span class="content-title">审核结果 — Case A</span>
+            <span class="session-info">SESSION: b8e2d4a7 · 2026-10-22T14:33:12Z</span>
+          </div>
+          <div class="antd-steps">
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">01</div><div class="antd-step-title">接收</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">02</div><div class="antd-step-title">抽取</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">03</div><div class="antd-step-title">校验</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">04</div><div class="antd-step-title">研判</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">05</div><div class="antd-step-title">裁决</div></div>
+          </div>
+          <div class="antd-alert antd-alert--success">
+            <span class="antd-alert-icon">✅</span>
+            <div class="antd-alert-content">
+              <div class="antd-alert-message">审核通过 — 纳税声明自动生效</div>
+              <div class="antd-alert-description">所有校验项通过，无阻断级错误，无税籍指示冲突</div>
+            </div>
+            <span class="antd-alert-badge antd-alert-badge--success">AUTO_PASS</span>
+          </div>
+          <div class="content-grid">
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">抽取结果 · CRSFormData</span>
+                <span class="antd-card-extra">AVG CONFIDENCE: 0.96</span>
+              </div>
+              <div class="antd-card-body">
+                <table class="antd-table">
+                  <thead>
+                    <tr><th>字段</th><th>值</th><th>置信度</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="field-name">holder_name</td><td class="field-value">Global Ventures Corp</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 98%;"></span></span></td></tr>
+                    <tr><td class="field-name">jurisdiction_code</td><td class="field-value">SG</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 97%;"></span></span></td></tr>
+                    <tr><td class="field-name">tin</td><td class="field-value">98765432A</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 95%;"></span></span></td></tr>
+                    <tr><td class="field-name">has_signature</td><td class="field-value field-value--success">TRUE</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 94%;"></span></span></td></tr>
+                    <tr><td class="field-name">signing_date</td><td class="field-value">2026-10-15</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 96%;"></span></span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">校验结果 · Validation</span>
+                <span class="antd-tag antd-tag--green">ALL PASSED</span>
+              </div>
+              <div class="antd-card-body">
+                <table class="antd-table">
+                  <tbody>
+                    <tr><td class="field-name">TIN 格式</td><td class="field-value field-value--success">✓ PASS</td><td class="field-name">SG REGEX + NRIC_WEIGHT</td></tr>
+                    <tr><td class="field-name">签名检测</td><td class="field-value field-value--success">✓ PASS</td><td class="field-name">has_signature = True</td></tr>
+                    <tr><td class="field-name">日期校验</td><td class="field-value field-value--success">✓ PASS</td><td class="field-name">2026-10-15 ≤ today</td></tr>
+                    <tr><td class="field-name">跨源冲突</td><td class="field-value field-value--success">✓ NONE</td><td class="field-name">0 conflicts detected</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="antd-descriptions">
+            <div class="antd-descriptions-header">
+              <span class="antd-descriptions-title">审计底稿</span>
+              <button class="antd-btn-download">↓ 下载 HTML 报告</button>
+            </div>
+            <div class="antd-descriptions-body">
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">session_id</span> <span class="antd-descriptions-val">b8e2d4a7-3c1f-4e8a-9d2b-7f5a1c3e8b4d</span></div>
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">verdict</span> <span class="antd-descriptions-val" style="color: var(--c-green); font-weight: 600;">AUTO_PASS</span></div>
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">action</span> <span class="antd-descriptions-val">纳税声明生效 → 激活结算账户</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 3: MANUAL_TRIAGE -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 10px;">
+      <span class="zone-label">Screen 3 / 5 — MANUAL_TRIAGE · Case D: 离岸主体税籍隐瞒</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:3000</div>
+      </div>
+      <div class="antd-header">
+        <div class="antd-logo">
+          <div class="antd-logo-icon">C</div>
+          <span>CrossTax AI</span>
+        </div>
+        <div class="antd-header-right">
+          <span>RULE VERSION: 20261001-r1</span>
+          <span class="ws-indicator">WS CONNECTED</span>
+        </div>
+      </div>
+      <div class="antd-layout">
+        <div class="antd-sider">
+          <div class="sidebar-section">
+            <div class="sidebar-label">样本选择</div>
+            <div class="antd-select antd-select--active">Case D — 离岸冲突</div>
+            <div class="antd-select" style="opacity: 0.5;">Case A — 完美表单</div>
+            <div class="antd-select" style="opacity: 0.5;">Case B — TIN 错误</div>
+            <div class="antd-select" style="opacity: 0.5;">Case C — 签名缺失</div>
+            <div class="antd-select" style="opacity: 0.5;">Case E — 多法域</div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">规则版本</div>
+            <div class="rule-version-card">
+              <strong>BASE:</strong> rules_v1_base.json<br/>
+              <strong>PATCH:</strong> — 未加载 —<br/>
+              <strong>VERSION:</strong> 20261001-r1
+            </div>
+          </div>
+        </div>
+        <div class="antd-content">
+          <div class="content-header">
+            <span class="content-title">审核结果 — Case D</span>
+            <span class="session-info">SESSION: c5d9f1b2 · 2026-10-22T14:34:51Z</span>
+          </div>
+          <div class="antd-steps">
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">01</div><div class="antd-step-title">接收</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">02</div><div class="antd-step-title">抽取</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">03</div><div class="antd-step-title">校验</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">04</div><div class="antd-step-title">研判</div></div>
+            <div class="antd-step antd-step--finish"><div class="antd-step-num">05</div><div class="antd-step-title">裁决</div></div>
+          </div>
+          <div class="antd-alert antd-alert--warning">
+            <span class="antd-alert-icon">⚠️</span>
+            <div class="antd-alert-content">
+              <div class="antd-alert-message">检测到税籍指示冲突，需合规官人工复核</div>
+              <div class="antd-alert-description">发现 2 个 WARNING 级别冲突，请查看证据链后决策</div>
+            </div>
+            <span class="antd-alert-badge antd-alert-badge--warning">MANUAL_TRIAGE</span>
+          </div>
+          <div class="content-grid">
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">抽取结果 · CRSFormData</span>
+                <span class="antd-card-extra">AVG CONFIDENCE: 0.91</span>
+              </div>
+              <div class="antd-card-body">
+                <table class="antd-table">
+                  <tbody>
+                    <tr><td class="field-name">holder_name</td><td class="field-value">Pacific Holdings Ltd</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 94%;"></span></span></td></tr>
+                    <tr><td class="field-name">jurisdiction_code</td><td class="field-value field-value--warning">CN</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 90%;"></span></span></td></tr>
+                    <tr><td class="field-name">tin</td><td class="field-value">91310000MA1FL8XX2J</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 93%;"></span></span></td></tr>
+                    <tr><td class="field-name">has_signature</td><td class="field-value field-value--success">TRUE</td><td><span class="confidence-bar"><span class="confidence-fill" style="width: 91%;"></span></span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="antd-card">
+              <div class="antd-card-header">
+                <span class="antd-card-title">冲突证据链 · Indicia Conf</span>
+                <span class="antd-tag antd-tag--orange">WARNING ×2</span>
+              </div>
+              <div class="antd-card-body">
+                <div class="conflict-item">
+                  <div class="conflict-header">
+                    <span class="conflict-scenario">场景 2 · 离岸主体税籍隐瞒</span>
+                    <span class="confidence-score">
+                      confidence: 0.92
+                      <span class="antd-progress"><span class="antd-progress-fill" style="width: 92%;"></span></span>
+                    </span>
+                  </div>
+                  <div class="conflict-detail">
+                    <div><span class="label">incorporation_jurisdiction:</span> <span class="value value--highlight">HK (离岸金融中心)</span></div>
+                    <div><span class="label">declared_jurisdiction:</span> <span class="value">CN</span></div>
+                    <div style="margin-top: 6px; font-size: 11px; color: var(--c-text-sub);">注册于 HK，但 CRS 申报 CN 税籍，存在隐瞒离岸税务居民身份的指示</div>
+                  </div>
+                </div>
+                <div class="conflict-item">
+                  <div class="conflict-header">
+                    <span class="conflict-scenario">场景 1 · 单国申报 vs 境外运营</span>
+                    <span class="confidence-score">
+                      confidence: 0.85
+                      <span class="antd-progress"><span class="antd-progress-fill" style="width: 85%;"></span></span>
+                    </span>
+                  </div>
+                  <div class="conflict-detail">
+                    <div><span class="label">primary_operating_country:</span> <span class="value value--highlight">GB</span></div>
+                    <div><span class="label">declared_jurisdiction:</span> <span class="value">CN</span></div>
+                    <div style="margin-top: 6px; font-size: 11px; color: var(--c-text-sub);">申报中国税籍，但核心运营仓储位于英国</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="antd-descriptions">
+            <div class="antd-descriptions-header">
+              <span class="antd-descriptions-title">审计底稿</span>
+              <button class="antd-btn-download">↓ 下载 HTML 报告</button>
+            </div>
+            <div class="antd-descriptions-body">
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">verdict</span> <span class="antd-descriptions-val" style="color: var(--c-amber); font-weight: 600;">MANUAL_TRIAGE</span></div>
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">action</span> <span class="antd-descriptions-val">推送合规官审查工作台 → 增强型尽职调查</span></div>
+              <div class="antd-descriptions-row"><span class="antd-descriptions-key">conflicts</span> <span class="antd-descriptions-val">2 items (scenario 1 + scenario 2)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 4: HOT RELOAD DEMO -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 10px;">
+      <span class="zone-label">Screen 4 / 5 — 规则热重载演示 · 一键加载 OECD 规则补丁</span>
+    </div>
+
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-dot"></div>
+        <div class="browser-url">localhost:3000</div>
+      </div>
+      <div class="antd-header">
+        <div class="antd-logo">
+          <div class="antd-logo-icon">C</div>
+          <span>CrossTax AI</span>
+        </div>
+        <div class="antd-header-right">
+          <span>RULE VERSION: 20261001-r1</span>
+          <span class="ws-indicator">WS CONNECTED</span>
+        </div>
+      </div>
+      <div class="antd-layout" style="flex-direction: column; padding: 24px; background: var(--c-bg);">
+
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">规则热重载演示</div>
+          <div style="font-size: 12px; color: var(--c-text-sub); font-family: var(--font-mono);">点击按钮 → POST /api/v1/rules/reload → 原子替换内存规则字典 → ≤3s 生效 → 无需重启服务</div>
+        </div>
+
+        <div class="antd-message">
+          规则补丁加载成功，版本已更新至 20261022-r2，新增法域 JP, KR, AU 已生效
+        </div>
+
+        <div class="hot-reload-demo">
+          <div class="hot-reload-before">
+            <div class="hot-reload-label">BEFORE · rules_v1_base.json</div>
+            <div class="hot-reload-body">
+              <div><strong>version:</strong> 20261001-r1</div>
+              <div><strong>jurisdictions:</strong> CN, HK, SG</div>
+              <div><strong>TIN algorithms:</strong></div>
+              <div>  CN: MOD11_2</div>
+              <div>  HK: HKID_WEIGHT</div>
+              <div>  SG: NRIC_WEIGHT</div>
+              <div><strong>offshore_list:</strong> [HK, SG, KY, BVI]</div>
+            </div>
+          </div>
+          <div class="hot-reload-arrow">→</div>
+          <div class="hot-reload-after" style="border-color: var(--c-green);">
+            <div class="hot-reload-label" style="background: #f0fdf4; color: var(--c-green);">AFTER · rules_v2_patch.json <span style="color: var(--c-green);">✓ LOADED</span></div>
+            <div class="hot-reload-body">
+              <div><strong>version:</strong> <span class="highlight-new">20261022-r2</span></div>
+              <div><strong>jurisdictions:</strong> CN, HK, SG, <span class="highlight-new">JP, KR, AU</span></div>
+              <div><strong>TIN algorithms:</strong></div>
+              <div>  CN: MOD11_2</div>
+              <div>  HK: HKID_WEIGHT</div>
+              <div>  SG: NRIC_WEIGHT</div>
+              <div>  <span class="highlight-new">JP: REGEX_ONLY (13-digit)</span></div>
+              <div>  <span class="highlight-new">KR: MOD11_2 variant</span></div>
+              <div>  <span class="highlight-new">AU: REGEX_ONLY (8-digit TFN)</span></div>
+              <div><strong>offshore_list:</strong> [HK, SG, KY, BVI, <span class="highlight-new">MO, PW</span>]</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding: 16px; border: 1px solid var(--c-border); background: var(--c-canvas);">
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--c-text-sub); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">RELOAD STATUS</div>
+          <div style="display: flex; justify-content: center; gap: 32px; font-size: 12px;">
+            <span><strong>耗时:</strong> <span style="color: var(--c-green); font-family: var(--font-mono);">1.2s</span></span>
+            <span><strong>新增法域:</strong> <span style="font-family: var(--font-mono);">JP, KR, AU</span></span>
+            <span><strong>规则版本:</strong> <span style="font-family: var(--font-mono);">20261001-r1 → 20261022-r2</span></span>
+            <span><strong>服务状态:</strong> <span style="color: var(--c-green); font-family: var(--font-mono);">RUNNING (无重启)</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCREEN 5: LAYOUT ANNOTATIONS -->
+  <!-- ============================================ -->
+  <div class="diagram-canvas">
+    <div style="margin-bottom: 20px;">
+      <span class="zone-label">Screen 5 / 5 — 布局标注与组件规范 (React + Ant Design)</span>
+    </div>
+
+    <div class="content-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+      <!-- Layout Spec -->
+      <div class="antd-card">
+        <div class="antd-card-header">
+          <span class="antd-card-title">布局规范 · Layout Specification</span>
+        </div>
+        <div class="antd-card-body" style="font-size: 12px; line-height: 2.1; font-family: var(--font-mono);">
+          <div><strong>整体布局:</strong> Ant Design Layout (Header + Sider + Content)</div>
+          <div><strong>Header 高度:</strong> 64px (固定)</div>
+          <div><strong>Sider 宽度:</strong> 260px (可折叠至 80px)</div>
+          <div><strong>Content 内边距:</strong> 24px</div>
+          <div><strong>最小分辨率:</strong> 1280 × 720</div>
+          <div><strong>Grid 系统:</strong> Ant Design Row + Col (span=12)</div>
+          <div><strong>间距规范:</strong> 16px (组件间) / 24px (区块间)</div>
+        </div>
+      </div>
+
+      <!-- Component Spec -->
+      <div class="antd-card">
+        <div class="antd-card-header">
+          <span class="antd-card-title">组件清单 · Component Inventory</span>
+        </div>
+        <div class="antd-card-body" style="font-size: 12px; line-height: 1.9;">
+          <table class="antd-table">
+            <thead>
+              <tr><th>组件</th><th>Ant Design</th><th>用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>样本选择器</td><td style="color: var(--c-text-sub);">Select</td><td>切换 5 个预置 Case</td></tr>
+              <tr><td>文件上传</td><td style="color: var(--c-text-sub);">Upload + dropzone</td><td>PDF / 图片上传</td></tr>
+              <tr><td>Pipeline 状态</td><td style="color: var(--c-text-sub);">Steps + WebSocket</td><td>5 步执行进度</td></tr>
+              <tr><td>裁决横幅</td><td style="color: var(--c-text-sub);">Alert</td><td>三态裁决结果</td></tr>
+              <tr><td>数据表格</td><td style="color: var(--c-text-sub);">Table</td><td>CRSFormData 展示</td></tr>
+              <tr><td>修复卡片</td><td style="color: var(--c-text-sub);">Collapse</td><td>BLOCKER 整改建议</td></tr>
+              <tr><td>冲突证据</td><td style="color: var(--c-text-sub);">Collapse + Progress</td><td>WARNING 冲突详情</td></tr>
+              <tr><td>规则热重载</td><td style="color: var(--c-text-sub);">Button + message</td><td>触发 load_rules()</td></tr>
+              <tr><td>报告下载</td><td style="color: var(--c-text-sub);">Button</td><td>HTML 审计报告</td></tr>
+              <tr><td>审计底稿</td><td style="color: var(--c-text-sub);">Descriptions</td><td>会话快照详情</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Color Spec -->
+      <div class="antd-card">
+        <div class="antd-card-header">
+          <span class="antd-card-title">色彩规范 · Color Specification</span>
+        </div>
+        <div class="antd-card-body">
+          <table class="antd-table">
+            <thead>
+              <tr><th>语义</th><th>色值</th><th>Ant Design Token</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-green); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> PASS</td>
+                <td style="font-family: var(--font-mono); font-size:11px;">#16a34a</td>
+                <td style="font-size: 11px;">colorSuccess</td>
+              </tr>
+              <tr>
+                <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-red); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> FIX</td>
+                <td style="font-family: var(--font-mono); font-size:11px;">#dc2626</td>
+                <td style="font-size: 11px;">colorError</td>
+              </tr>
+              <tr>
+                <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-amber); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> TRIAGE</td>
+                <td style="font-family: var(--font-mono); font-size:11px;">#d97706</td>
+                <td style="font-size: 11px;">colorWarning</td>
+              </tr>
+              <tr>
+                <td><span style="display: inline-block; width: 12px; height: 12px; background: var(--c-blue); border: 1px solid var(--c-border); vertical-align: middle; margin-right: 6px;"></span> INFO</td>
+                <td style="font-family: var(--font-mono); font-size:11px;">#2563eb</td>
+                <td style="font-size: 11px;">colorInfo</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="antd-card">
+        <div class="antd-card-header">
+          <span class="antd-card-title">字体规范 · Typography</span>
+        </div>
+        <div class="antd-card-body" style="font-size: 12px; line-height: 2.1; font-family: var(--font-mono);">
+          <div><strong>UI 字体:</strong> system-ui, -apple-system, 'Segoe UI' (Ant Design 默认)</div>
+          <div><strong>数据字体:</strong> 'SF Mono', Monaco, Consolas</div>
+          <div><strong>H1 标题:</strong> 20px / 600 weight</div>
+          <div><strong>H2 标题:</strong> 16px / 600 weight</div>
+          <div><strong>正文:</strong> 14px / 400 weight</div>
+          <div><strong>Small:</strong> 12px / 400 weight</div>
+          <div><strong>标签:</strong> 11px / uppercase / letter-spacing</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interaction-notes" style="margin-top: 20px;">
+      <div class="interaction-notes-title">React 实现说明 · Implementation Notes</div>
+      <ul class="interaction-list">
+        <li>整体布局使用 Ant Design <code>Layout</code> 组件：<code>Layout.Header</code> + <code>Layout.Sider</code> + <code>Layout.Content</code></li>
+        <li>Pipeline 状态使用 <code>Steps</code> 组件，通过 WebSocket Hook 实时更新每一步状态（wait/process/finish）</li>
+        <li>裁决横幅使用 <code>Alert</code> 组件，<code>type</code> 属性按 verdict 类型切换（success/error/warning）</li>
+        <li>修复卡片使用 <code>Collapse</code> 组件，默认展开 BLOCKER 级别问题，内嵌 <code>Alert</code> 展示修改建议</li>
+        <li>冲突证据链使用 <code>Collapse</code> + <code>Progress</code> 组件，展示冲突场景 + 置信度百分比</li>
+        <li>热重载按钮触发 <code>POST /api/v1/rules/reload</code>，成功后使用 <code>message.success()</code> 全局提示</li>
+        <li>审计底稿使用 <code>Descriptions</code> 组件，关键字段支持 <code>Typography.Text copyable</code> 一键复制</li>
+        <li>数据请求使用 <code>TanStack Query</code>（React Query），自动缓存 + 重试 + 乐观更新</li>
+        <li>状态管理使用 <code>Zustand</code>，轻量无模板代码，全局状态仅保留当前 session + 规则版本</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="max-width: 1400px; margin: 0 auto; padding-top: 16px; border-top: 1px solid var(--c-border); display: flex; justify-content: space-between;">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-green); background: #f0fdf4;"></span> AUTO_PASS</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-red); background: #fef2f2;"></span> NEED_USER_FIX</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-amber); background: #fffbeb;"></span> MANUAL_TRIAGE</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-color: var(--c-blue); background: #eff6ff;"></span> WebSocket</div>
+    </div>
+    <div class="doc-ref">
+      REF: specs/crosstax-ai-prd.md §F8<br/>
+      REF: design/architecture-overview.md §2.1<br/>
+      REF: design/react-ui-spec.md<br/>
+      OUTPUT: frontend/src/ (React + TypeScript)
+    </div>
+  </div>
+
+</body>
+</html>

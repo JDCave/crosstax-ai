@@ -1,9 +1,12 @@
 # CrossTax AI — 架构设计文档
 
-> **版本：** v1.0 | **日期：** 2026-10-22 | **作者：** PM + Tech Lead  
+> **版本：** v1.1 | **日期：** 2026-10-22 | **作者：** PM + Tech Lead  
 > **关联图表：** [architecture-overview.html](./architecture-overview.html)  
 > **输入来源：** `specs/crosstax-ai-prd.md`、`docs/crosstax-ai-solution (from ppt).md`  
-> **状态：** 草案，待团队评审
+> **状态：** 草案，待团队评审  
+> **变更记录：**  
+> - v1.0 (2026-10-22): 初始草案  
+> - v1.1 (2026-10-22): 技术选型确认 — 前端由 Streamlit 切换为 React 18 + TypeScript，后端新增 FastAPI API 层，详见 ADR-002
 
 ---
 
@@ -23,7 +26,7 @@
 | ADR | 决策 | 理由 | 替代方案 | 否决原因 |
 |-----|------|------|----------|----------|
 | ADR-001 | Python 作为主语言 | 团队技术栈统一，LLM/OCR 生态成熟 | Java / Go | 竞赛周期短，AI 集成效率优先 |
-| ADR-002 | Streamlit 作为 UI 框架 | 快速原型，Python 原生，竞赛演示足够 | React + FastAPI | 4 人团队无前端专职，Streamlit 开发效率最高 |
+| ADR-002 | ~~Streamlit 作为 UI 框架~~ → **React + FastAPI 前后端分离** | React 生态成熟、交互体验更佳、可展示团队全栈能力；FastAPI 天然适配 Python AI 生态 | ~~React + FastAPI~~ / Streamlit | Streamlit 定制性有限，无法实现复杂交互与组件化；竞赛评审对工程化能力有加分 |
 | ADR-003 | JSON 文件存储规则 | 热重载简单，原子替换即可，无需数据库 | 数据库存储规则 | 竞赛场景无需持久化查询，文件足够 |
 | ADR-004 | 调用第三方 Vision API | 避免自训练模型，快速获得 OCR 能力 | 自部署 OCR 模型 | 竞赛环境无 GPU 资源，API 调用成本可控 |
 | ADR-005 | Mock 数据替代真实对接 | 竞赛无真实商户系统 | 对接真实 KYC/CRM | 无权限、无数据、无时间 |
@@ -35,18 +38,36 @@
 
 ### 2.1 L1 — 展现层 (Presentation)
 
+前端采用 **React 18 + TypeScript** 单页应用，通过 REST API 与后端 FastAPI 服务通信。
+
 | 组件 | 技术 | 职责 |
 |------|------|------|
-| Streamlit 主界面 | Streamlit 1.x | 文件上传、样本切换、结果展示 |
-| 实时研判看板 | Streamlit st.status / spinner | Agent 执行阶段可视化 |
-| 修复卡片区 | Streamlit st.expander | BLOCKER 场景的通俗整改建议 |
-| 规则同步模拟 | Streamlit st.button | 触发热重载，展示规则版本变化 |
-| 审计底稿区 | Streamlit st.download_button | HTML 报告预览与下载 |
+| 主界面框架 | React 18 + TypeScript + Vite | SPA 路由、布局、状态管理 |
+| 文件上传与样本切换 | react-dropzone + Ant Design Upload | 本地上传 / 切换 5 个预置 Case |
+| 实时研判看板 | Ant Design Steps + 自定义 Pipeline 动画 | Agent 执行阶段可视化 |
+| 修复卡片区 | Ant Design Collapse / Card | BLOCKER 场景的通俗整改建议 |
+| 规则同步模拟 | Ant Design Button + WebSocket / SSE | 触发热重载，展示规则版本变化 |
+| 审计底稿区 | 内嵌 iframe + 下载按钮 | HTML 报告预览与下载 |
+| HTTP 客户端 | Axios / fetch | 调用后端 FastAPI REST 接口 |
+
+**后端 API 层（FastAPI）：**
+
+| 端点 | 方法 | 职责 |
+|------|------|------|
+| `/api/v1/audit` | POST | 提交文件，触发审核流水线 |
+| `/api/v1/audit/{session_id}` | GET | 查询审核会话状态与结果 |
+| `/api/v1/rules` | GET | 获取当前规则版本摘要 |
+| `/api/v1/rules/reload` | POST | 触发规则热重载 |
+| `/api/v1/cases` | GET | 获取预置 Case 列表 |
+| `/api/v1/cases/{case_id}` | GET | 加载预置 Case 样本 |
+| `/api/v1/audit/{session_id}/report` | GET | 下载 HTML 审计报告 |
+| `/ws/audit/{session_id}` | WebSocket | 实时推送 Agent 执行阶段状态 |
 
 **设计约束：**
 - 所有 UI 组件必须响应式适配 1280px+ 屏幕
 - 审核结果必须在 30 秒内完整渲染
 - 修复卡片必须按字段级粒度展示错误与修改建议
+- 前后端通过 OpenAPI Schema 自动生成交互契约
 
 ### 2.2 L2 — 智能体编排层 (Orchestration)
 
@@ -298,31 +319,55 @@ class RuleEngine:
 | ECS 实例 | 2C4G（竞赛足够） | 应用运行 |
 | 系统盘 | 40GB SSD | 操作系统 + 应用 |
 | 数据盘 | 20GB | Mock 数据 + 审计存储 |
-| 安全组 | 开放 80/443/8501 | HTTP/HTTPS/Streamlit |
+| 安全组 | 开放 80/443/8000 | HTTP/HTTPS/FastAPI |
 | 域名 | 可选 | 演示用 |
 
 ### 4.2 容器化方案
 
+采用多阶段构建，前端编译产物由 FastAPI 静态托管，实现单容器部署。
+
 ```dockerfile
+# Stage 1: 构建 React 前端
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Python 后端 + 静态前端
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY requirements.txt .
+
+# 安装 Python 依赖
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ ./src/
+# 复制后端代码
+COPY backend/ ./backend/
+
+# 复制前端构建产物到静态目录
+COPY --from=frontend-builder /app/frontend/dist ./static/
+
+# 复制规则与 Mock 数据
 COPY assets/ ./assets/
 COPY rules/ ./rules/
 
-EXPOSE 8501
-HEALTHCHECK CMD curl -f http://localhost:8501/_stcore/health || exit 1
+EXPOSE 8000
+HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["streamlit", "run", "src/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ### 4.3 环境变量
 
 ```bash
+# 后端服务
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
+CORS_ORIGINS=http://localhost:3000,https://crosstax.example.com
+
 # Vision API
 VISION_API_PROVIDER=dashscope          # dashscope / openai
 VISION_API_KEY=sk-xxx
@@ -334,6 +379,9 @@ RULES_PATCH_PATH=./rules/rules_v2_patch.json
 
 # 审计存储
 AUDIT_STORAGE_PATH=./data/audit/
+
+# 前端 (构建时注入)
+VITE_API_BASE_URL=http://localhost:8000/api/v1
 
 # 安全
 SECRET_KEY=xxx
@@ -354,42 +402,77 @@ crosstax-ai/
 │   │       └── rules_v2_patch.json    # 增量补丁
 │   └── templates/
 │       └── audit_report.html.j2       # Jinja2 审计报告模板
-├── design/
-│   ├── architecture-overview.html     # 架构蓝图
-│   └── architecture-overview.md       # 本文档
-├── docs/
-│   ├── README.md                      # 文档索引
-│   ├── business-workflow-design.md    # 业务流程架构
-│   ├── crosstax-ai-solution (from ppt).md  # 方案原始需求
-│   └── project-todo.md                # 项目 TODO
-├── specs/
-│   └── crosstax-ai-prd.md             # PRD
-├── src/
-│   ├── app.py                         # Streamlit 主入口
+├── backend/                            # Python 后端服务
+│   ├── main.py                         # FastAPI 入口
+│   ├── api/
+│   │   ├── routes/                     # REST 路由
+│   │   │   ├── audit.py                # /api/v1/audit
+│   │   │   ├── rules.py                # /api/v1/rules
+│   │   │   └── cases.py                # /api/v1/cases
+│   │   ├── schemas/                    # Pydantic 请求/响应模型
+│   │   └── websocket.py                # WebSocket 实时推送
 │   ├── agents/
-│   │   ├── media_preprocessor.py      # 媒体预处理
-│   │   ├── vision_parser.py           # Vision Agent
-│   │   ├── form_checker.py            # 形式完备性校验
-│   │   ├── tin_validator.py           # TIN 校验引擎
-│   │   ├── indicia_reasoner.py        # 跨源冲突研判
-│   │   ├── verdict_resolver.py        # 三态裁决器
-│   │   └── audit_trail.py             # 审计留痕
+│   │   ├── media_preprocessor.py       # 媒体预处理
+│   │   ├── vision_parser.py            # Vision Agent
+│   │   ├── form_checker.py             # 形式完备性校验
+│   │   ├── tin_validator.py            # TIN 校验引擎
+│   │   ├── indicia_reasoner.py         # 跨源冲突研判
+│   │   ├── verdict_resolver.py         # 三态裁决器
+│   │   └── audit_trail.py              # 审计留痕
 │   ├── engine/
-│   │   ├── rule_engine.py             # 规则引擎 + 热重载
-│   │   └── models.py                  # 数据模型 (CRSFormData, AuditIssue, etc.)
-│   ├── ui/
-│   │   ├── components/                # Streamlit UI 组件
-│   │   └── pages/                     # 多页面（如需要）
+│   │   ├── rule_engine.py              # 规则引擎 + 热重载
+│   │   └── models.py                   # 数据模型 (CRSFormData, AuditIssue, etc.)
 │   └── utils/
-│       ├── file_hash.py               # 文件哈希计算
-│       └── logger.py                  # 日志
+│       ├── file_hash.py                # 文件哈希计算
+│       └── logger.py                   # 日志
+├── frontend/                           # React 前端应用
+│   ├── public/
+│   ├── src/
+│   │   ├── main.tsx                    # React 入口
+│   │   ├── App.tsx                     # 根组件
+│   │   ├── api/                        # API 客户端封装
+│   │   ├── components/
+│   │   │   ├── PipelineStatus/         # 流水线状态组件
+│   │   │   ├── VerdictBanner/          # 裁决横幅
+│   │   │   ├── RemediationCard/        # 修复卡片
+│   │   │   ├── ConflictEvidence/       # 冲突证据链
+│   │   │   ├── AuditTrail/             # 审计底稿
+│   │   │   └── RuleReload/             # 规则热重载
+│   │   ├── pages/
+│   │   │   ├── AuditPage.tsx           # 主审核页
+│   │   │   └── CasesPage.tsx           # 样本切换页
+│   │   ├── hooks/                      # 自定义 Hooks
+│   │   ├── types/                      # TypeScript 类型定义
+│   │   └── styles/                     # 样式文件
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── design/
+│   ├── architecture-overview.html      # 架构蓝图
+│   ├── architecture-overview.md        # 本文档
+│   ├── react-ui-spec.md                # React UI 设计规范
+│   └── openapi.yaml                    # 前后端接口契约
+├── docs/
+│   ├── README.md                       # 文档索引
+│   ├── business-workflow-design.md     # 业务流程架构
+│   ├── crosstax-ai-solution (from ppt).md  # 方案原始需求
+│   └── project-todo.md                 # 项目 TODO
+├── specs/
+│   └── crosstax-ai-prd.md              # PRD
 ├── tests/
-│   ├── test_tin_validator.py
-│   ├── test_verdict_resolver.py
-│   ├── test_indicia_reasoner.py
-│   └── test_e2e_pipeline.py
+│   ├── backend/                        # 后端测试
+│   │   ├── test_tin_validator.py
+│   │   ├── test_verdict_resolver.py
+│   │   ├── test_indicia_reasoner.py
+│   │   ├── test_api_routes.py
+│   │   └── test_e2e_pipeline.py
+│   └── frontend/                       # 前端测试
+│       ├── components/
+│       └── pages/
 ├── Dockerfile
-├── requirements.txt
+├── docker-compose.yml                  # 开发环境编排
+├── backend/requirements.txt
+├── frontend/package.json
 └── README.md
 ```
 
@@ -401,9 +484,11 @@ crosstax-ai/
 |---|------|------|----------|------|
 | 1 | Vision API 供应商选型 | 抽取准确率、成本、延迟 | 通义千问VL（阿里云生态） | 待确认 |
 | 2 | 审计存储方案 | 数据量、查询需求 | JSON 文件（竞赛足够） | 待确认 |
-| 3 | 是否需要后端 API 层 | 前后端分离 vs Streamlit 内嵌 | 暂不需要，Streamlit 直连引擎 | 待确认 |
+| 3 | ~~是否需要后端 API 层~~ | ~~前后端分离 vs Streamlit 内嵌~~ | ~~暂不需要，Streamlit 直连引擎~~ | **已确认：采用 FastAPI 前后端分离** |
 | 4 | 5 个 Case 的具体数据 | 演示效果、测试覆盖 | 需与合规专家共同设计 | 待确认 |
 | 5 | 阿里云 ECS 规格 | 成本、性能 | 2C4G 起步，按需扩容 | 待确认 |
+| 6 | React UI 组件库选型 | 开发效率、视觉一致性 | Ant Design 5.x（企业级组件丰富） | 待确认 |
+| 7 | 前后端实时通信方案 | 流水线状态推送体验 | WebSocket 优先，SSE 备选 | 待确认 |
 
 ---
 

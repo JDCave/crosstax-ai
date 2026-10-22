@@ -1,8 +1,11 @@
 # CrossTax AI — 产品需求文档 (PRD)
 
-> **版本：** v1.0 | **日期：** 2026-10-22 | **作者：** PM  
+> **版本：** v1.1 | **日期：** 2026-10-22 | **作者：** PM  
 > **输入来源：** `docs/crosstax-ai-solution (from ppt).md`、`docs/business-workflow-design.md`  
-> **状态：** 草案，待团队评审
+> **状态：** 草案，待团队评审  
+> **变更记录：**  
+> - v1.0 (2026-10-22): 初始草案，整合两份输入文档  
+> - v1.1 (2026-10-22): 技术选型确认 — 前端由 Streamlit 切换为 React 18 + TypeScript，后端新增 FastAPI API 层
 
 ---
 
@@ -62,7 +65,7 @@
 
 | 级别 | 目标 |
 |------|------|
-| **P0 必须达成** | 五步审核流水线端到端跑通、三态裁决、审计留痕、Streamlit 演示界面 |
+| **P0 必须达成** | 五步审核流水线端到端跑通、三态裁决、审计留痕、React 演示界面 |
 | **P1 核心加分** | 规则热重载演示、跨源冲突研判、补正修复卡片 |
 | **P2 锦上添花** | 审计报告 PDF 导出、多法域规则扩展（超出 CN/HK/SG） |
 
@@ -82,7 +85,7 @@
 | 三态裁决器 | AUTO_PASS / NEED_USER_FIX / MANUAL_TRIAGE 分流 |
 | 审计留痕引擎 | 会话快照、规则版本绑定、全链路溯源 |
 | 审计报告生成 | Jinja2 模板渲染 HTML 报告 |
-| Streamlit 演示 UI | 文件上传、实时看板、修复卡片、规则同步模拟 |
+| React 演示 SPA | 文件上传、实时看板、修复卡片、规则同步模拟 |
 | Mock 数据集 | 5 个典型 Case + 商户底表 + 规则配置 |
 
 ### 3.2 排除范围 (Out of Scope)
@@ -92,7 +95,7 @@
 | 真实商户系统对接（KYC/CRM API） | 竞赛环境无真实数据源，使用 Mock 替代 |
 | 生产级 RBAC 与多租户隔离 | 竞赛 Demo 不涉及多租户场景 |
 | 爬虫自动获取 OECD 最新规则 | 方案明确"零爬虫"，规则由配置文件模拟 |
-| 移动端适配 | 演示界面为 Streamlit Web，不涉及移动端 |
+| 移动端适配 | 演示界面为 React SPA，首期仅桌面端 |
 | 多语言支持 | 首期仅支持中文界面 + 英文表单字段 |
 
 ### 3.3 用户故事
@@ -119,7 +122,8 @@
 | 三态裁决器 | P0 | 上述所有校验模块 |
 | 审计留痕引擎 | P0 | 裁决器 |
 | 审计报告生成（HTML） | P1 | 审计引擎 |
-| Streamlit 演示 UI | P0 | 后端 API |
+| React 演示 SPA | P0 | FastAPI 后端 |
+| FastAPI 后端 API 层 | P0 | 核心引擎模块 |
 | Mock 数据集（5 Case + 商户底表） | P0 | — |
 
 ---
@@ -218,13 +222,28 @@ flowchart TD
 | 报告格式 | Jinja2 模板渲染 HTML（P1 扩展 PDF） |
 | 溯源能力 | 支持从报告穿透至原始文件 + 规则版本 + Agent 结论 |
 
-#### F8: Streamlit 演示 UI
+#### F8: React 演示 SPA + FastAPI 后端
+
+**后端 API 层（FastAPI）：**
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/v1/audit` | POST | 提交文件，触发审核流水线 |
+| `/api/v1/audit/{session_id}` | GET | 查询审核会话状态与结果 |
+| `/api/v1/rules` | GET | 获取当前规则版本摘要 |
+| `/api/v1/rules/reload` | POST | 触发规则热重载 |
+| `/api/v1/cases` | GET | 获取预置 Case 列表 |
+| `/api/v1/cases/{case_id}` | GET | 加载预置 Case 样本 |
+| `/api/v1/audit/{session_id}/report` | GET | 下载 HTML 审计报告 |
+| `/ws/audit/{session_id}` | WebSocket | 实时推送 Agent 执行阶段状态 |
+
+**前端 SPA（React 18 + TypeScript）：**
 
 | 区域 | 功能 |
 |------|------|
 | 样本选择与文件预览 | 本地上传 / 切换 5 个预置 Case，原件与抽取结果并列 |
 | 规则同步模拟区 | 一键"加载最新 OECD 规则补丁"，验证热重载 |
-| 实时研判看板 | Agent 执行阶段状态 + 最终裁决徽章 |
+| 实时研判看板 | Agent 执行阶段状态 + 最终裁决徽章（WebSocket 实时推送） |
 | 修复卡片区 | BLOCKER 场景的通俗整改建议 |
 | 审计底稿区 | 一键下载/预览 HTML 报告 |
 
@@ -331,7 +350,8 @@ flowchart TD
 | 三态裁决 | 5 个 Case 分别命中 AUTO_PASS / NEED_USER_FIX / MANUAL_TRIAGE |
 | 修复卡片 | BLOCKER 场景生成通俗整改建议，字段级提示 |
 | 审计报告 | HTML 报告可下载，含会话快照全字段 |
-| 演示 UI | 5 个区域功能完整，交互流畅 |
+| 演示 SPA | React 5 个区域功能完整，交互流畅，WebSocket 实时状态推送正常 |
+| FastAPI 后端 | OpenAPI Schema 完整，所有端点可正常调用 |
 
 ### 7.2 验收场景
 
@@ -410,3 +430,4 @@ flowchart TD
 | 版本 | 日期 | 修订人 | 修订内容 |
 |------|------|--------|----------|
 | v1.0 | 2026-10-22 | PM | 初始草案，整合两份输入文档 |
+| v1.1 | 2026-10-22 | PM | 技术选型确认：前端 React + 后端 FastAPI 前后端分离 |

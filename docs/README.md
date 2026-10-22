@@ -14,6 +14,7 @@
 
 - `docs/` — 提案、会议纪要、项目计划、参考资料
 - `specs/` — 需求规格（PRD、用户故事、验收标准）
-- `design/` — 设计文档（架构图、技术选型、UI 原型）
-- `src/` — 代码实现
+- `design/` — 设计文档（架构图、技术选型、React UI 规范、OpenAPI 契约）
+- `backend/` — Python 后端代码（FastAPI + 智能体模块）
+- `frontend/` — React 前端代码（TypeScript + Ant Design）
 - `assets/` — Mock 数据与规则配置
