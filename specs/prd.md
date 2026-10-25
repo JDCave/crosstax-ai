@@ -1,7 +1,7 @@
 # CrossTax AI — 产品需求文档 (PRD)
 
 > **版本：** v1.1 | **日期：** 2026-10-22 | **作者：** PM  
-> **输入来源：** `docs/crosstax-ai-solution (from ppt).md`、`docs/business-workflow-design.md`  
+> **输入来源：** `docs/proposal/crosstax-ai-solution (from ppt).md`、`docs/proposal/business-workflow-design.md`  
 > **状态：** 草案，待团队评审  
 > **变更记录：**  
 > - v1.0 (2026-10-22): 初始草案，整合两份输入文档  
@@ -421,9 +421,9 @@ flowchart TD
 
 ### B. 参考文档
 
-- [方案原始需求（PPT 摘要）](../docs/crosstax-ai-solution%20(from%20ppt).md)
-- [业务流程架构](../docs/business-workflow-design.md)
-- [项目 TODO 清单](../docs/project-todo.md)
+- [方案原始需求（PPT 摘要）](../docs/proposal/crosstax-ai-solution%20(from%20ppt).md)
+- [业务流程架构](../docs/proposal/business-workflow-design.md)
+- [项目路线图](../ROADMAP.md)
 
 ### C. 文档修订历史
 

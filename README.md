@@ -36,17 +36,20 @@ crosstax-ai/
 │   │   ├── api/            # API 客户端
 │   │   └── hooks/          # 自定义 Hooks
 │   └── vite.config.ts
-├── design/                 # 设计文档
-│   ├── architecture-overview.html   # 系统架构蓝图
-│   ├── architecture-overview.md     # 架构设计文档
-│   ├── react-ui-spec.md             # React UI 设计规范
-│   └── openapi.yaml                 # 前后端接口契约
-├── docs/                   # 支撑材料
-│   ├── business-workflow-design.md  # 业务流程架构
-│   ├── crosstax-ai-solution (from ppt).md  # 方案原始需求
-│   └── project-todo.md              # 项目 TODO
-├── specs/                  # 需求规格
-│   └── crosstax-ai-prd.md          # PRD v1.1
+├── design/                 # 设计文档 (HOW)
+│   ├── architecture.md              # 架构设计文档
+│   ├── ui-spec.md                   # UI 设计规范
+│   ├── diagrams/                    # 说明性图表
+│   │   └── architecture-overview.html
+│   └── prototypes/                  # 可交互原型
+│       └── react-ui-wireframe.html
+├── docs/                   # 背景材料 (WHY)
+│   └── proposal/                    # 原始提案归档
+├── ROADMAP.md              # 项目路线图 / 任务清单
+├── specs/                  # 需求规格 (WHAT)
+│   ├── prd.md                       # PRD
+│   ├── data-spec.md                 # 数据模型规格
+│   └── adr/                         # 架构决策记录
 └── tests/                  # 后端 + 前端测试
 ```
 
@@ -159,15 +162,16 @@ docker compose up --build
 
 | 文档 | 位置 | 说明 |
 |------|------|------|
-| PRD | `specs/crosstax-ai-prd.md` | 产品需求文档 v1.2 |
-| 架构设计 | `design/architecture-overview.md` | 系统架构与 ADR |
-| 架构蓝图 | `design/architecture-overview.html` | 可视化架构图 |
-| React UI 规范 | `design/react-ui-spec.md` | 组件、布局、色彩规范 |
-| 前后端接口契约 | `design/openapi.yaml` | OpenAPI 3.0 Schema |
-| 业务流程 | `docs/business-workflow-design.md` | 业务专家流程设计 |
-| 方案原始需求 | `docs/crosstax-ai-solution (from ppt).md` | PPT 摘要 |
-| Agent 编码规范 | `AGENTS.md` | AI 辅助编码约定 — 所有成员必须遵循 |
-| 项目 TODO | `docs/project-todo.md` | 四阶段任务清单 |
+| PRD | `specs/prd.md` | 产品需求文档 |
+| 数据模型规格 | `specs/data-spec.md` | 前后端共享数据契约 |
+| 架构决策记录 | `specs/adr/` | 10 个 ADR（技术选型、数据库、LLM 等） |
+| 架构设计 | `design/architecture.md` | 分层架构、Agent 接口、部署方案 |
+| 架构蓝图 | `design/diagrams/architecture-overview.html` | 可视化架构图 |
+| UI 规范 | `design/ui-spec.md` | 组件、布局、色彩规范 |
+| UI 原型 | `design/prototypes/react-ui-wireframe.html` | 可交互线框原型 |
+| Agent 编码规范 | `AGENTS.md` | AI 辅助编码约定 |
+| 项目路线图 | `ROADMAP.md` | 四阶段任务清单 |
+| 原始提案 | `docs/proposal/` | 方案原始需求 + 业务流程设计 |
 
 ## 团队
 

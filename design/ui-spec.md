@@ -1,7 +1,7 @@
 # CrossTax AI — React UI 设计规范
 
 > **版本：** v1.0 | **日期：** 2026-10-22 | **作者：** PM + Designer
-> **输入来源：** `specs/crosstax-ai-prd.md` §F8
+> **输入来源：** `specs/prd.md` §F8
 > **状态：** 草案，待团队评审
 > **技术栈：** React 18 + TypeScript + Vite + Ant Design 5.x
 
@@ -498,8 +498,8 @@ frontend/src/
 
 ## 9. 参考文档
 
-- [PRD §F8](../specs/crosstax-ai-prd.md) — React 演示 SPA + FastAPI 后端功能定义
-- [架构设计 §2.1](./architecture-overview.md) — 展现层 + API 层设计
+- [PRD §F8](../specs/prd.md) — React 演示 SPA + FastAPI 后端功能定义
+- [架构设计](./architecture.md) — 展现层 + API 层设计
 - [OpenAPI 契约](./openapi.yaml) — 前后端接口规范
 - [Ant Design 文档](https://ant.design/) — 组件 API 参考
 - [React 文档](https://react.dev/) — 框架参考

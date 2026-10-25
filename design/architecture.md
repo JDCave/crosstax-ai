@@ -2,7 +2,7 @@
 
 > **版本：** v1.2 | **日期：** 2026-10-23 | **作者：** PM + Tech Lead  
 > **关联图表：** [architecture-overview.html](./architecture-overview.html)  
-> **输入来源：** `specs/crosstax-ai-prd.md`、`docs/crosstax-ai-solution (from ppt).md`  
+> **输入来源：** `specs/prd.md`、`docs/proposal/crosstax-ai-solution (from ppt).md`  
 > **状态：** 草案，待团队评审  
 > **变更记录：**  
 > - v1.0 (2026-10-22): 初始草案  
@@ -24,18 +24,20 @@
 
 ### 1.2 架构决策记录 (ADR)
 
-| ADR | 决策 | 理由 | 替代方案 | 否决原因 |
-|-----|------|------|----------|----------|
-| ADR-001 | Python 作为主语言 | 团队技术栈统一，LLM/OCR 生态成熟 | Java / Go | 竞赛周期短，AI 集成效率优先 |
-| ADR-002 | ~~Streamlit 作为 UI 框架~~ → **React + FastAPI 前后端分离** | React 生态成熟、交互体验更佳、可展示团队全栈能力；FastAPI 天然适配 Python AI 生态 | ~~React + FastAPI~~ / Streamlit | Streamlit 定制性有限，无法实现复杂交互与组件化；竞赛评审对工程化能力有加分 |
-| ADR-003 | JSON 文件存储规则 | 热重载简单，原子替换即可，无需数据库 | 数据库存储规则 | 竞赛场景无需持久化查询，文件足够 |
-| ADR-004 | 调用第三方 Vision API | 避免自训练模型，快速获得 OCR 能力 | 自部署 OCR 模型 | 竞赛环境无 GPU 资源，API 调用成本可控 |
-| ADR-005 | Mock 数据替代真实对接 | 竞赛无真实商户系统 | 对接真实 KYC/CRM | 无权限、无数据、无时间 |
-| ADR-006 | 阿里云 ECS 部署 | 竞赛指定云平台 | AWS / Azure | 竞赛要求 |
-| ADR-007 | **阿里云神机百炼 LLM 平台** | 竞赛方提供统一 LLM 服务，内含 Qwen/GLM/DeepSeek 等多模型及 Embedding 模型 | 自建 LLM 网关 / 直接调用 OpenAI | 竞赛要求 + 阿里云生态集成 |
-| ADR-008 | **混合数据库方案：本地 SQLite + 阿里云 PG 16 生产** | 本地开发零配置（SQLite 内置），比赛 ECS 内网直连阿里云 PG 16（已获取连接信息，外网不可达） | 全程 PG / 全程 SQLite | 本地无法直连阿里云 PG（仅 ECS 内网），SQLite 零安装零配置 |
-| ADR-009 | **竞赛阶段豁免 pgvector 向量检索** | 跨源冲突研判降级为规则引擎 + 模糊匹配（编辑距离/正则）+ LLM fallback | 生产阶段启用 pgvector 0.8.0.2 语义检索 | 时间紧张，主体名称冲突场景可用规则 + LLM 替代 |
-| ADR-010 | **阿里云 PG 连接池限制：每人 ≤ 3** | 组委会限制：账号连接上限 30，建议连接池 5–10；4 人团队需严格控制 | 按建议 5–10/人 | 4×10=40 超限，4×3=12 留有余量 |
+> 详细决策记录已迁移至 [`specs/adr/`](../specs/adr/) 目录，每个决策独立一个文件。
+
+| ADR | 决策 | 文件 | 状态 |
+|-----|------|------|------|
+| ADR-001 | Python 作为主语言 | [`001-python-main-language.md`](../specs/adr/001-python-main-language.md) | 已采纳 |
+| ADR-002 | React + FastAPI 前后端分离 | [`002-react-fastapi-split.md`](../specs/adr/002-react-fastapi-split.md) | 已采纳 |
+| ADR-003 | JSON 文件存储规则 | [`003-json-rule-storage.md`](../specs/adr/003-json-rule-storage.md) | 已采纳 |
+| ADR-004 | 调用第三方 Vision API | [`004-vision-api.md`](../specs/adr/004-vision-api.md) | 已采纳 |
+| ADR-005 | Mock 数据替代真实对接 | [`005-mock-data.md`](../specs/adr/005-mock-data.md) | 已采纳 |
+| ADR-006 | 阿里云 ECS 部署 | [`006-alibaba-ecs.md`](../specs/adr/006-alibaba-ecs.md) | 已采纳 |
+| ADR-007 | 阿里云神机百炼 LLM 平台 | [`007-shenji-bailian-llm.md`](../specs/adr/007-shenji-bailian-llm.md) | 已采纳 |
+| ADR-008 | 混合数据库方案（SQLite + PG） | [`008-hybrid-database.md`](../specs/adr/008-hybrid-database.md) | 已采纳 |
+| ADR-009 | 竞赛阶段豁免 pgvector | [`009-pgvector-exemption.md`](../specs/adr/009-pgvector-exemption.md) | 已采纳 |
+| ADR-010 | PG 连接池限制（每人 ≤ 3） | [`010-pg-connection-limit.md`](../specs/adr/010-pg-connection-limit.md) | 已采纳 |
 
 ---
 
@@ -474,13 +476,10 @@ crosstax-ai/
 ├── assets/
 │   ├── mock-data/
 │   │   ├── mock_merchants.json        # Mock 商户底表
-│   │   ├── samples/                   # 5 个 CRS 样本文件
-│   │   └── rules/
-│   │       ├── rules_v1_base.json     # 基准规则
-│   │       └── rules_v2_patch.json    # 增量补丁
+│   │   └── samples/                   # 5 个 CRS 样本文件
 │   └── templates/
 │       └── audit_report.html.j2       # Jinja2 审计报告模板
-├── backend/                            # Python 后端服务
+├── backend/                            # Python 后端服务 (uv-managed)
 │   ├── main.py                         # FastAPI 入口
 │   ├── core/
 │   │   ├── database.py                 # 数据库抽象层（SQLite/PG 切换）
@@ -509,7 +508,7 @@ crosstax-ai/
 │   └── utils/
 │       ├── file_hash.py                # 文件哈希计算
 │       └── logger.py                   # 日志
-├── frontend/                           # React 前端应用
+├── frontend/                           # React 前端应用 (npm-managed)
 │   ├── public/
 │   ├── src/
 │   │   ├── main.tsx                    # React 入口
@@ -531,18 +530,24 @@ crosstax-ai/
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── vite.config.ts
+├── rules/                              # CRS 规则配置（后端消费）
+│   ├── rules_v1_base.json              # 基准规则
+│   └── rules_v2_patch.json             # 增量补丁（热重载演示）
 ├── design/
-│   ├── architecture-overview.html      # 架构蓝图
-│   ├── architecture-overview.md        # 本文档
-│   ├── react-ui-spec.md                # React UI 设计规范
-│   └── openapi.yaml                    # 前后端接口契约
+│   ├── architecture.md                 # 本文档
+│   ├── ui-spec.md                      # UI 设计规范
+│   ├── diagrams/                       # 说明性图表
+│   │   └── architecture-overview.html  # 架构蓝图
+│   └── prototypes/                     # 可交互原型
+│       └── react-ui-wireframe.html
 ├── docs/
 │   ├── README.md                       # 文档索引
-│   ├── business-workflow-design.md     # 业务流程架构
-│   ├── crosstax-ai-solution (from ppt).md  # 方案原始需求
-│   └── project-todo.md                 # 项目 TODO
+│   ├── proposal/                       # 原始提案归档
+│   └── roadmap.md                      # 项目路线图
 ├── specs/
-│   └── crosstax-ai-prd.md              # PRD
+│   ├── prd.md                          # PRD
+│   ├── data-spec.md                    # 数据模型规格
+│   └── adr/                            # 架构决策记录（10 个独立文件）
 ├── tests/
 │   ├── backend/                        # 后端测试
 │   │   ├── test_tin_validator.py
@@ -553,10 +558,13 @@ crosstax-ai/
 │   └── frontend/                       # 前端测试
 │       ├── components/
 │       └── pages/
-├── Dockerfile
+├── alembic/                            # 数据库迁移
+├── pyproject.toml                      # Python 项目配置 + uv 依赖管理
+├── uv.lock                             # uv 依赖锁文件
+├── Dockerfile                          # 多阶段构建（前端编译 → 后端托管）
 ├── docker-compose.yml                  # 开发环境编排
-├── backend/requirements.txt
-├── frontend/package.json
+├── .env.example                        # 环境变量模板
+├── AGENTS.md                           # AI 编码助手规范
 └── README.md
 ```
 
@@ -580,7 +588,9 @@ crosstax-ai/
 
 ## 7. 参考文档
 
-- [PRD](../specs/crosstax-ai-prd.md) — 完整需求规格
-- [架构蓝图](./architecture-overview.html) — 可视化架构图
-- [业务流程](../docs/business-workflow-design.md) — 业务专家流程设计
-- [方案原始需求](../docs/crosstax-ai-solution%20(from%20ppt).md) — PPT 摘要
+- [PRD](../specs/prd.md) — 完整需求规格
+- [数据模型规格](../specs/data-spec.md) — 前后端共享数据契约
+- [架构决策记录](../specs/adr/) — 10 个 ADR
+- [架构蓝图](./diagrams/architecture-overview.html) — 可视化架构图
+- [业务流程](../docs/proposal/business-workflow-design.md) — 业务专家流程设计
+- [方案原始需求](../docs/proposal/crosstax-ai-solution%20(from%20ppt).md) — PPT 摘要
