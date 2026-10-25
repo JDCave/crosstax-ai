@@ -1,9 +1,0 @@
-# This file keeps this directory in git.
-# Agent modules will be added here:
-# - media_preprocessor.py
-# - vision_parser.py
-# - form_checker.py
-# - tin_validator.py
-# - indicia_reasoner.py
-# - verdict_resolver.py
-# - audit_trail.py
