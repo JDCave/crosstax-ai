@@ -1,3 +1,7 @@
+# ============================================
+# CrossTax AI - Git Ignore
+# ============================================
+
 # Python
 __pycache__/
 *.py[cod]
@@ -15,6 +19,12 @@ venv/
 ENV/
 env/
 
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
 # IDE
 .vscode/
 .idea/
@@ -27,7 +37,7 @@ env/
 Thumbs.db
 desktop.ini
 
-# Environment variables
+# Environment variables (keep .env.example, ignore actual .env)
 .env
 .env.local
 .env.*.local
@@ -36,22 +46,12 @@ desktop.ini
 *.log
 logs/
 
-# Data & outputs (keep structure, ignore generated content)
+# Data & outputs (generated at runtime)
 data/
 outputs/
 *.db
 *.sqlite
-
-# Backend (Python / FastAPI)
-backend/.env
-backend/.venv/
-backend/__pycache__/
-
-# Frontend (React / Vite)
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
+*.sqlite3
 
 # Docker
 docker-compose.override.yml
@@ -60,3 +60,16 @@ docker-compose.override.yml
 *.tmp
 *.bak
 *.cache
+
+# Testing / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# uv
+uv.lock
+
+# Config (generated from .env.example)
+config.json

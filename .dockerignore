@@ -1,0 +1,56 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docs & specs (not needed in image)
+docs/
+specs/
+design/
+assets/
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dev config
+.ruff_cache/
+.mypy_cache/
+.pre-commit-config.yaml
+Makefile
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Git
+.gitignore
+.gitattributes
+
+# Misc
+*.md
+*.log
+*.tmp
+*.bak
