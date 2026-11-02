@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable
 from types import MappingProxyType
 
+from backend.engine.checksums import au_abn, jp_corporate, nl_mod11, no_orgnr, pl_nip, pl_pesel
 from backend.engine.contracts import AuditIssue, TINCheck
 from backend.engine.rule_loader import RuleSnapshot
 
@@ -43,6 +44,12 @@ def nric_weight(value: str) -> bool:
 OPERATORS: MappingProxyType[str, Callable[[str], bool]] = MappingProxyType(
     {
         "MOD11_2": mod11_2,
+        "NL_MOD11": nl_mod11,
+        "PL_NIP": pl_nip,
+        "PL_PESEL": pl_pesel,
+        "AU_ABN": au_abn,
+        "NO_ORGNR": no_orgnr,
+        "JP_CORPORATE": jp_corporate,
         "HKID_WEIGHT": hkid_weight,
         "NRIC_WEIGHT": nric_weight,
         "REGEX_ONLY": lambda value: True,
@@ -110,6 +117,7 @@ class TINValidatorEngine:
             verification_level="FORMAT_ONLY" if rule.algorithm == "REGEX_ONLY" else "CHECKSUM",
             rule_id=rule.rule_id,
             source_url=rule.source_url,
+            algorithm_source_url=rule.algorithm_source_url,
         )
 
     @staticmethod

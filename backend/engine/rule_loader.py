@@ -15,7 +15,18 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.repositories.rules import RuleRepository
 
-Algorithm = Literal["MOD11_2", "HKID_WEIGHT", "NRIC_WEIGHT", "REGEX_ONLY"]
+Algorithm = Literal[
+    "MOD11_2",
+    "HKID_WEIGHT",
+    "NRIC_WEIGHT",
+    "REGEX_ONLY",
+    "NL_MOD11",
+    "PL_NIP",
+    "PL_PESEL",
+    "AU_ABN",
+    "NO_ORGNR",
+    "JP_CORPORATE",
+]
 
 
 class JurisdictionRule(BaseModel):
@@ -33,6 +44,7 @@ class TypedRule(JurisdictionRule):
     source_url: str = Field(pattern=r"^https://")
     source_section: str = Field(min_length=1)
     verification_level: Literal["FORMAT_ONLY", "CHECKSUM"]
+    algorithm_source_url: str | None = Field(default=None, pattern=r"^https://")
     reviewed_on: str | None = None
     limitations: str | None = None
 
@@ -50,6 +62,7 @@ class CompiledRule:
     rule_id: str | None = None
     verification_level: str = "FORMAT_ONLY"
     source_url: str | None = None
+    algorithm_source_url: str | None = None
 
 
 @dataclass(frozen=True)

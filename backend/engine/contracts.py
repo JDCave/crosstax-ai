@@ -49,6 +49,7 @@ class TINCheck(BaseModel):
     verification_level: Literal["FORMAT_ONLY", "CHECKSUM", "NONE"]
     rule_id: str | None = None
     source_url: str | None = None
+    algorithm_source_url: str | None = None
 
 
 class ValidationResult(BaseModel):
