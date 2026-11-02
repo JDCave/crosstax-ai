@@ -5,22 +5,9 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from types import MappingProxyType
-from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
-
+from backend.engine.contracts import AuditIssue
 from backend.engine.rule_loader import RuleSnapshot
-
-
-class AuditIssue(BaseModel):
-    """Shared output contract defined in specs/data-spec.md."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    code: str
-    severity: Literal["BLOCKER", "WARNING"]
-    field: str | None = None
-    message: str
-    confidence: float = Field(ge=0, le=1)
 
 
 def mod11_2(value: str) -> bool:
