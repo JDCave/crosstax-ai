@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend import __version__
-from backend.api.routes import health
+from backend.api.routes import health, rule_engine
 from backend.core.config import Settings, get_settings
 from backend.core.logging.config import setup_logging
 from backend.core.logging.middleware import RequestIdMiddleware
@@ -62,6 +62,7 @@ def _register_middleware(app: FastAPI, settings: Settings) -> None:
 
 def _register_routers(app: FastAPI) -> None:
     app.include_router(health.router, tags=["health"])
+    app.include_router(rule_engine.router)
 
 
 app = create_app()

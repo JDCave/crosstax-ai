@@ -4,7 +4,7 @@
 
 输入为上游提供的结构化 CRSFormData 和跨源问题列表；输出为规则版本、问题列表和三态裁决。
 实现规则注册、验证、数据库版本发布、内存快照、TIN 算子、表单完备性和裁决。
-不负责上传、OCR、PDF/HTML 正文提取、AI 字段抽取、跨源 AI 推理、前端、HTTP 路由、审核会话持久化。
+不负责上传、OCR、PDF/HTML 正文提取、AI 字段抽取、跨源 AI 推理和前端；目前另提供规则校验 HTTP API 与引擎执行信封归档，不替代主 AuditSession。
 此前的资料导入器独立保留，不在审核执行时调用，不是本引擎启动依赖。
 
 ## 2. 模块职责
@@ -142,7 +142,7 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 ## 10. 验证与限制
 
-常规测试为 120 项通过、3 项 PostgreSQL 用例按环境跳过；启用隔离 PostgreSQL 测试后共 123 项通过：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+常规测试为 127 项通过、3 项 PostgreSQL 用例按环境跳过；启用隔离 PostgreSQL 测试后共 130 项通过：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
@@ -219,7 +219,7 @@ result = await validation_engine.validate(form, policy, upstream_issues)
 # replayed = await validation_engine.replay(form, original, upstream_issues)
 ```
 
-本轮不新增数据库表、不修改 HTTP 路由、不修改活动规则版本。
+历史复现阶段没有修改活动规则版本；后续已通过独立 API 和追加归档表提供接入。
 新增策略与追踪字段要求主后端完整保存 JSON；双方联调前不要假定已有持久化自动包含这些字段。
 
 
@@ -256,7 +256,7 @@ service = AuditValidationService(validation_engine)
 # replayed = await service.replay_stored(session_id)
 ```
 
-未新增 HTTP 路由，当前骨架没有完整业务流水线，不能声称完成真实上传/API/前端端到端联调。
+已新增结构化规则校验 HTTP 路由，但当前骨架没有完整文件审核业务流水线，不能声称完成真实上传/前端端到端联调。
 服务的持久化、幂等、历史重放、发布变更后重试已通过真实 PostgreSQL 测试。
 
 ## 历史不可变性与信任边界
@@ -300,3 +300,13 @@ PostgreSQL 测试创建随机 crosstax_test_ 前缀 schema，先创建原六表�
 本轮不扩国家数量、不新增 AI 提取。官方规则仍是 22 法域 66 个选择器，验证深度见覆盖清单。
 发布回归检验代码行为和用例覆盖，不自动证明税法完整性、官方来源真实性或新法规已经适用。
 仍需队友接入真实 API 并提供认证身份、主会话对账和部署构建归档；当前没有这些实现，未擅自发明接口。
+
+
+## HTTP 服务接入
+
+已在现有应用注册 /api/v1/rule-engine 路由，详细契约见 backend/api/RULE_ENGINE_API.md。
+POST validations 通过 RuleAPIService → AuditValidationService → ValidationEngine 执行，无路由业务规则。
+GET 查询仅返回已存结果，POST replay 校验历史一致性，规则 current/coverage 提供发现接口。
+独立 APIRoute 为本前缀提供 1 MiB 流式请求限制及脱敏输入错误，不改变已有健康检查及异常处理。
+规则发布不通过本 HTTP 接口开放；没有新增认证体系，调用授权与会话命名空间由主后端负责。
+当前已验证 HTTP 契约及真实数据库服务层，队友仍需将 HTTP 调用放入其现有审核流水线。
