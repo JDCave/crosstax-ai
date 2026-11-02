@@ -35,6 +35,7 @@ async def main() -> None:
     activate.add_argument("version")
     activate.add_argument("--revision", type=int, required=True)
     commands.add_parser("current")
+    commands.add_parser("coverage", help="List active jurisdiction/type rules and official sources")
     validate = commands.add_parser("validate", help="Validate structured CRS JSON")
     validate.add_argument("file", type=Path)
     validate.add_argument("--today", required=True, help="Business date YYYY-MM-DD")
@@ -52,7 +53,26 @@ async def main() -> None:
             print("ACTIVATED")
         else:
             loader = RuleLoader(async_session_factory)
-            if args.command == "current":
+            if args.command == "coverage":
+                loaded = await loader.refresh()
+                print(
+                    json.dumps(
+                        [
+                            {
+                                "jurisdiction_code": key[0],
+                                "holder_type": key[1],
+                                "tin_type": key[2],
+                                "rule_id": rule.rule_id,
+                                "verification_level": rule.verification_level,
+                                "source_url": rule.source_url,
+                            }
+                            for key, rule in loaded.variants.items()
+                        ],
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            elif args.command == "current":
                 snapshot = await loader.refresh()
                 print(json.dumps({"version_id": snapshot.version_id, "revision": snapshot.revision}))
             else:

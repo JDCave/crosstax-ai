@@ -6,7 +6,7 @@ import re
 from collections.abc import Callable
 from types import MappingProxyType
 
-from backend.engine.contracts import AuditIssue
+from backend.engine.contracts import AuditIssue, TINCheck
 from backend.engine.rule_loader import RuleSnapshot
 
 
@@ -80,6 +80,16 @@ class TINValidatorEngine:
                     )
                 ]
 
+        if rule is None and snapshot.variants:
+            return [
+                AuditIssue(
+                    code="UNSUPPORTED_JURISDICTION",
+                    severity="WARNING",
+                    field="jurisdiction_code",
+                    message="当前规则未覆盖该法域。需要人工复核",
+                    confidence=1.0,
+                )
+            ]
         if rule is None:
             return [] if 4 <= len(value) <= 30 else self._invalid("未配置法域的 TIN 长度必须为 4-30 位")
         if rule.pattern.fullmatch(value) is None:
@@ -87,6 +97,20 @@ class TINValidatorEngine:
         if not OPERATORS[rule.algorithm](value):
             return self._invalid("TIN 校验位或标识类型不符合当前规则。请核对后重新提交")
         return []
+
+    def trace(
+        self, tin: str | None, code: str, snapshot: RuleSnapshot, holder_type: str | None, tin_type: str | None
+    ) -> TINCheck:
+        rule = snapshot.variants.get((code, holder_type or "", tin_type or "")) or snapshot.rules.get(code)
+        issues = self.validate(tin, code, snapshot, holder_type, tin_type)
+        if rule is None:
+            return TINCheck(status="NOT_COVERED", verification_level="NONE")
+        return TINCheck(
+            status="FAILED" if issues else "PASSED",
+            verification_level="FORMAT_ONLY" if rule.algorithm == "REGEX_ONLY" else "CHECKSUM",
+            rule_id=rule.rule_id,
+            source_url=rule.source_url,
+        )
 
     @staticmethod
     def _invalid(message: str) -> list[AuditIssue]:

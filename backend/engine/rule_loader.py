@@ -33,6 +33,8 @@ class TypedRule(JurisdictionRule):
     source_url: str = Field(pattern=r"^https://")
     source_section: str = Field(min_length=1)
     verification_level: Literal["FORMAT_ONLY", "CHECKSUM"]
+    reviewed_on: str | None = None
+    limitations: str | None = None
 
 
 class TypedRuleset(BaseModel):
@@ -45,6 +47,9 @@ class TypedRuleset(BaseModel):
 class CompiledRule:
     algorithm: Algorithm
     pattern: re.Pattern[str]
+    rule_id: str | None = None
+    verification_level: str = "FORMAT_ONLY"
+    source_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,7 +80,9 @@ def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -
                     raise ValueError("Duplicate rule selector or rule ID")
                 if (entry.algorithm == "REGEX_ONLY") != (entry.verification_level == "FORMAT_ONLY"):
                     raise ValueError("Verification level contradicts algorithm")
-                variants[key] = CompiledRule(entry.algorithm, re.compile(entry.regex))
+                variants[key] = CompiledRule(
+                    entry.algorithm, re.compile(entry.regex), entry.rule_id, entry.verification_level, entry.source_url
+                )
                 ids.add(entry.rule_id)
         return RuleSnapshot(version_id, revision, MappingProxyType({}), MappingProxyType(variants))
     parsed = TypeAdapter(dict[str, JurisdictionRule]).validate_python(rules)

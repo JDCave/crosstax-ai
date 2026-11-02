@@ -43,10 +43,19 @@ class ValidationPolicy(BaseModel):
     earliest_signing_date: date | None = None
 
 
+class TINCheck(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    status: Literal["PASSED", "FAILED", "NOT_COVERED", "NOT_APPLICABLE"]
+    verification_level: Literal["FORMAT_ONLY", "CHECKSUM", "NONE"]
+    rule_id: str | None = None
+    source_url: str | None = None
+
+
 class ValidationResult(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     rule_version_id: str
     rule_revision: int
+    tin_check: TINCheck | None = None
     form_issues: tuple[AuditIssue, ...]
     indicia_issues: tuple[AuditIssue, ...]
     verdict: Literal["AUTO_PASS", "NEED_USER_FIX", "MANUAL_TRIAGE"]

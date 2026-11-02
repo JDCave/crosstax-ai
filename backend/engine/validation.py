@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 from backend.engine.completeness import check_completeness
-from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy, ValidationResult
+from backend.engine.contracts import AuditIssue, CRSFormData, TINCheck, ValidationPolicy, ValidationResult
 from backend.engine.rule_loader import RuleLoader, RuleSnapshot
 from backend.engine.tin_validator import TINValidatorEngine
 from backend.engine.verdict import resolve_verdict
@@ -32,10 +32,16 @@ class ValidationEngine:
             form_issues.extend(
                 self.tin_validator.validate(form.tin, form.jurisdiction_code, snapshot, form.holder_type, form.tin_type)
             )
+        tin_check = (
+            TINCheck(status="NOT_APPLICABLE", verification_level="NONE")
+            if form.has_no_tin
+            else self.tin_validator.trace(form.tin, form.jurisdiction_code, snapshot, form.holder_type, form.tin_type)
+        )
         all_issues = [*form_issues, *indicia_issues]
         return ValidationResult(
             rule_version_id=snapshot.version_id,
             rule_revision=snapshot.revision,
+            tin_check=tin_check,
             form_issues=tuple(form_issues),
             indicia_issues=tuple(indicia_issues),
             verdict=resolve_verdict(all_issues),

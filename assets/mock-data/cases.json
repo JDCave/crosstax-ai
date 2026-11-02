@@ -101,6 +101,6 @@
     },
     "indicia_issues": [],
     "expected_verdict": "NEED_USER_FIX",
-    "expected_before_reload": "AUTO_PASS"
+    "expected_before_reload": "MANUAL_TRIAGE"
   }
 ]
