@@ -56,10 +56,18 @@ class TINCheck(BaseModel):
     reason_code: str | None = None
 
 
+class ExecutionContext(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    engine_build_id: str
+    input_fingerprint: str
+    policy: ValidationPolicy
+
+
 class ValidationResult(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     rule_version_id: str
     rule_revision: int
+    execution: ExecutionContext | None = None
     tin_check: TINCheck | None = None
     form_issues: tuple[AuditIssue, ...]
     indicia_issues: tuple[AuditIssue, ...]

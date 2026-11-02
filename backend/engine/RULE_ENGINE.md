@@ -63,7 +63,7 @@ approve 仅处理 CANDIDATE；activate 只允许 APPROVED，并再次校验规�
 相同 revision 出现不同 version_id 视为数据异常。
 
 数据库不可达、无活动版本、哈希不匹配、非法规则均抛出系统错误，不输出 AUTO_PASS。
-加载失败保留旧快照供诊断或显式调用 current()；validate 默认不偷偷使用旧版本继续审核。
+加载失败保留旧快照供诊断或显式调用 current()；validate 默认不偷偷使用旧版本继续审核。当前仍每次完整加载校验；轻量 revision 缓存优化留待版本不可变性保障完善后实施。
 不在抓取或 AI 调用期间持有数据库连接。
 
 ## 6. 执行顺序
@@ -77,12 +77,12 @@ approve 仅处理 CANDIDATE；activate 只允许 APPROVED，并再次校验规�
 7. 上游流水线负责将结果和输入持久化到 AuditSession。
 
 Reason A/C 要求提供代码；B 还要求去除两端空白后解释长度至少 5。
-当前不推定 A/C 的额外法域适用条件，也不自行判定 has_no_tin 与已有 tin 同时出现的业务语义。
+A/C 的额外法域适用条件尚未实现，因此所有无 TIN 豁免声明均要求人工复核；TIN 与无 TIN 声明矛盾会返回 BLOCKER。
 缺签和日期错误可同时返回，不在首个问题处中止。
 
 ## 7. TIN 算子
 
-先限制原始输入最长 256 字符，移除空白、连字符和圆括号，再转大写。
+先限制 TIN 原始输入最长 256 字符，移除空白、连字符和圆括号，再转大写。
 配置法域执行 fullmatch，然后计算校验位；旧版 schema=1 未知法域仅检查清洗后长度 4-30；schema=2 返回未覆盖 WARNING。
 上述长度上限为执行保护，不代表每个法域 TIN 的业务长度。
 原始表单不被修改，错误信息不回显敏感号码。
@@ -142,7 +142,7 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 ## 10. 验证与限制
 
-现有测试总计 92 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+现有测试总计 105 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
@@ -191,3 +191,33 @@ checks_performed 记录实际执行的规则选择、清洗、格式和校验位
 reason_code 区分输入缺失、格式失败、校验位失败、未覆盖、历史长度兜底和豁免待复核。
 无 TIN 的 NOT_APPLICABLE 仅表示未运行号码校验；豁免适用性仍未执行，并在裁决问题中体现。
 追踪不回显 TIN 明文，仍返回来源和规则 ID。
+
+
+## 历史审核复现
+
+输出增加 execution：engine_build_id、input_fingerprint、policy。
+engine_build_id 对当前部署的 engine/*.py 源文件内容、Python/Pydantic/SQLAlchemy 版本计算哈希并在进程内缓存；
+不依赖本地 Git 是否存在，不把文档提交误判成执行逻辑变更。部署文件必须不可变，升级时重启进程并保留旧构建。
+input_fingerprint 对验证后的表单、完整策略（业务日期、最早签署日期、覆盖策略）、有序上游问题计算规范化 JSON SHA-256。
+哈希用于完整性核对，不是加密或数字签名，不能单独抵抗具有数据库写权限的攻击。
+
+主后端需保存原始结构化输入、上游问题及完整 ValidationResult；只保存裁决和规则版本不足以重放。
+结果不附带敏感表单明文，表单仍由主后端按既有持久化与访问控制处理。
+replay(form, original_result, upstream_issues) 使用历史 rule_version_id 和当时的 policy/revision，
+不会调用当前活动规则，也不会替换进程内活动快照。
+引擎构建不一致、输入/上游问题不一致、历史规则缺失、规则哈希错误或重放结果不一致都会明确失败。
+旧结果缺少 execution 也明确拒绝自动重放；不补造历史元数据。
+升级算子后必须在原构建环境重放旧审核，不能用新算法冒充原审核逻辑。
+规则版本及历史构建均须保留；当前未自动归档构建镜像，需部署负责人配合。
+
+```python
+# 当前流程
+result = await validation_engine.validate(form, policy, upstream_issues)
+# 主后端保存 form、upstream_issues、result.model_dump(mode="json")。
+# 历史重放，先通过模型加载保存的 JSON。
+# original = ValidationResult.model_validate(saved_result)
+# replayed = await validation_engine.replay(form, original, upstream_issues)
+```
+
+本轮不新增数据库表、不修改 HTTP 路由、不修改活动规则版本。
+新增策略与追踪字段要求主后端完整保存 JSON；双方联调前不要假定已有持久化自动包含这些字段。

@@ -3,10 +3,19 @@
 from collections.abc import Sequence
 
 from backend.engine.completeness import check_completeness
-from backend.engine.contracts import AuditIssue, CRSFormData, TINCheck, ValidationPolicy, ValidationResult
-from backend.engine.rule_loader import RuleLoader, RuleSnapshot
+from backend.engine.contracts import (
+    AuditIssue,
+    CRSFormData,
+    ExecutionContext,
+    TINCheck,
+    ValidationPolicy,
+    ValidationResult,
+)
+from backend.engine.reproducibility import engine_build_id, input_fingerprint
+from backend.engine.rule_loader import RuleLoader, RuleSnapshot, compile_snapshot
 from backend.engine.tin_validator import TINValidatorEngine
 from backend.engine.verdict import resolve_verdict
+from backend.models import RuleVersion
 
 
 class ValidationEngine:
@@ -80,8 +89,36 @@ class ValidationEngine:
         return ValidationResult(
             rule_version_id=snapshot.version_id,
             rule_revision=snapshot.revision,
+            execution=ExecutionContext(
+                engine_build_id=engine_build_id(),
+                input_fingerprint=input_fingerprint(form, policy, indicia_issues),
+                policy=policy,
+            ),
             tin_check=tin_check,
             form_issues=tuple(form_issues),
             indicia_issues=tuple(indicia_issues),
             verdict=resolve_verdict(all_issues),
         )
+
+    async def replay(
+        self, form: CRSFormData, original: ValidationResult, indicia_issues: Sequence[AuditIssue] = ()
+    ) -> ValidationResult:
+        """Replay the historical version, never the currently active rules."""
+        context = original.execution
+        if context is None:
+            raise ValueError("Historical result has no execution context")
+        if context.engine_build_id != engine_build_id():
+            raise ValueError("Engine build differs; use the archived original build")
+        if input_fingerprint(form, context.policy, indicia_issues) != context.input_fingerprint:
+            raise ValueError("Replay input, policy or upstream issues differ")
+        async with self.loader.sessions() as session:
+            version = await session.get(RuleVersion, original.rule_version_id)
+            if version is None:
+                raise ValueError("Historical rule version is unavailable")
+            if version.schema_version != version.rules.get("schema_version", 1):
+                raise ValueError("Historical rule schema differs")
+            snapshot = compile_snapshot(version.version_id, original.rule_revision, version.rules)
+        replayed = self.validate_snapshot(form, context.policy, snapshot, indicia_issues)
+        if replayed != original:
+            raise ValueError("Replayed result differs from stored result")
+        return replayed
