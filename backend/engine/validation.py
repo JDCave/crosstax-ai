@@ -29,7 +29,9 @@ class ValidationEngine:
     ) -> ValidationResult:
         form_issues = check_completeness(form, policy)
         if not form.has_no_tin:
-            form_issues.extend(self.tin_validator.validate(form.tin, form.jurisdiction_code, snapshot))
+            form_issues.extend(
+                self.tin_validator.validate(form.tin, form.jurisdiction_code, snapshot, form.holder_type, form.tin_type)
+            )
         all_issues = [*form_issues, *indicia_issues]
         return ValidationResult(
             rule_version_id=snapshot.version_id,

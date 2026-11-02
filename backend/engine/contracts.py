@@ -25,6 +25,8 @@ class CRSFormData(BaseModel):
     holder_dob: str
     residence_address: str = Field(min_length=1)
     jurisdiction_code: str = Field(pattern=r"^[A-Z]{2}$")
+    holder_type: Literal["INDIVIDUAL", "ENTITY"] | None = None
+    tin_type: str | None = None
     tin: str | None = None
     has_no_tin: bool
     tin_reason_code: Literal["A", "B", "C"] | None = None

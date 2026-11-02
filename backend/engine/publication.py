@@ -17,6 +17,7 @@ class RulePublisher:
             repository = RuleRepository(session)
             version = await repository.create_candidate(rules, document_ids, {"origin": "structured_rule_input"})
             compile_snapshot(version.version_id, 0, version.rules)
+            version.schema_version = 2 if rules.get("schema_version") == 2 else 1
             return version.version_id
 
     async def approve(self, version_id: str, report: dict[str, object]) -> None:

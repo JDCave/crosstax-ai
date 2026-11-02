@@ -53,12 +53,33 @@ OPERATORS: MappingProxyType[str, Callable[[str], bool]] = MappingProxyType(
 class TINValidatorEngine:
     """No database access, network calls or country-specific rules in execution."""
 
-    def validate(self, tin: str | None, jurisdiction_code: str, snapshot: RuleSnapshot) -> list[AuditIssue]:
+    def validate(
+        self,
+        tin: str | None,
+        jurisdiction_code: str,
+        snapshot: RuleSnapshot,
+        holder_type: str | None = None,
+        tin_type: str | None = None,
+    ) -> list[AuditIssue]:
         # Guard before regex processing. The input contract expects short identifiers.
         if tin is None or len(tin) > 256:
             return self._invalid("TIN 缺失或长度超出允许范围")
         value = re.sub(r"[\s()\-]", "", tin).upper()
-        rule = snapshot.rules.get(jurisdiction_code.strip().upper())
+        code = jurisdiction_code.strip().upper()
+        rule = snapshot.rules.get(code)
+        if snapshot.variants and code in {key[0] for key in snapshot.variants}:
+            rule = snapshot.variants.get((code, holder_type or "", tin_type or ""))
+            if rule is None:
+                return [
+                    AuditIssue(
+                        code="UNSUPPORTED_TIN_TYPE",
+                        severity="WARNING",
+                        field="tin_type",
+                        message="请补充受支持的主体和 TIN 标识类型以便复核",
+                        confidence=1.0,
+                    )
+                ]
+
         if rule is None:
             return [] if 4 <= len(value) <= 30 else self._invalid("未配置法域的 TIN 长度必须为 4-30 位")
         if rule.pattern.fullmatch(value) is None:
