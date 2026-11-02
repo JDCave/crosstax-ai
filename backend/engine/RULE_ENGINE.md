@@ -221,3 +221,14 @@ result = await validation_engine.validate(form, policy, upstream_issues)
 
 本轮不新增数据库表、不修改 HTTP 路由、不修改活动规则版本。
 新增策略与追踪字段要求主后端完整保存 JSON；双方联调前不要假定已有持久化自动包含这些字段。
+
+
+## 逐规则回归与发布门禁
+
+engine/data/rule_regressions.json 为打包随引擎交付的回归矩阵，不依赖仓库 assets 目录。
+全球增强目录 66 个选择器均有正例、非法字符、空值和超长边界，共 264 条固定用例。
+approve 实际运行门禁后才改变状态，调用方 report 中的 passed=true 不作为通过依据。
+activate 也重新运行门禁，以防引擎升级导致历史版本行为变化。
+自定义或旧 schema=1 规则必须在审批报告 regression_cases 中提供匹配每个选择器的正反例；
+无覆盖或结果不符即拒绝。固定样例是回归依据，不证明官方规则本身绝对完整。
+CLI 的 approve --report 输入仍保留，由调用方提供审阅说明及可选的自定义用例。

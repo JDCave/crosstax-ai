@@ -23,13 +23,13 @@ async def test_historical_replay_after_publication_and_tamper_rejection():
             session.add(RuleEngineState(id=1))
         publisher = RulePublisher(sessions)
         first = await publisher.register({"CN": {"regex": "[0-9]{17}[0-9X]", "algorithm": "MOD11_2"}}, [])
-        await publisher.approve(first, {"passed": True})
+        await publisher.approve(first, report("CN", "11010519491231002X"))
         await publisher.activate(first, 0)
         engine = ValidationEngine(RuleLoader(sessions))
         form = CRSFormData.model_validate(BASE)
         original = await engine.validate(form, POLICY)
         second = await publisher.register({"CN": {"regex": "[0-9]{18}", "algorithm": "REGEX_ONLY"}}, [])
-        await publisher.approve(second, {"passed": True})
+        await publisher.approve(second, report("CN", "1" * 18))
         await publisher.activate(second, 1)
         assert (await engine.validate(form, POLICY)).verdict == "NEED_USER_FIX"
         assert await engine.replay(form, original) == original
@@ -46,3 +46,12 @@ async def test_historical_replay_after_publication_and_tamper_rejection():
             await engine.replay(form, wrong_result)
     finally:
         await database.dispose()
+
+
+def report(code, value):
+    return {
+        "regression_cases": [
+            {"case_id": "positive", "jurisdiction_code": code, "tin": value, "valid": True},
+            {"case_id": "negative", "jurisdiction_code": code, "tin": "!", "valid": False},
+        ]
+    }

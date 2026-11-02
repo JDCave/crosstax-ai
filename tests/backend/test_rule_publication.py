@@ -26,10 +26,10 @@ async def test_publication_transactions():
         first = await publisher.register({"HK": {"regex": "[0-9]{8}", "algorithm": "REGEX_ONLY"}}, [])
         with pytest.raises(ConflictException):
             await publisher.activate(first, 0)
-        await publisher.approve(first, {"reviewed": True})
+        await publisher.approve(first, report("HK", "12345678"))
         await publisher.activate(first, 0)
         second = await publisher.register({"HK": {"regex": "[0-9]{9}", "algorithm": "REGEX_ONLY"}}, [])
-        await publisher.approve(second, {"reviewed": True})
+        await publisher.approve(second, report("HK", "123456789"))
         await publisher.activate(second, 1)
         await publisher.activate(first, 2)
         snapshot = await RuleLoader(sessions).refresh()
@@ -37,3 +37,12 @@ async def test_publication_transactions():
         assert snapshot.revision == 3
     finally:
         await engine.dispose()
+
+
+def report(code, value):
+    return {
+        "regression_cases": [
+            {"case_id": "positive", "jurisdiction_code": code, "tin": value, "valid": True},
+            {"case_id": "negative", "jurisdiction_code": code, "tin": "!", "valid": False},
+        ]
+    }
