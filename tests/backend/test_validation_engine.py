@@ -110,4 +110,6 @@ async def test_five_paths_and_hot_reload(test_engine):
 
         async with sessions.begin() as session:
             await session.execute(delete(RuleEngineState))
-            await session.execute(delete(RuleVersion))
+            # Test-only cleanup through Core; supported application writes use guarded ORM sessions.
+            connection = await session.connection()
+            await connection.execute(delete(RuleVersion))

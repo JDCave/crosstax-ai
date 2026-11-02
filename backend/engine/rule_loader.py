@@ -13,6 +13,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from backend.engine.rule_safety import check_pattern
 from backend.repositories.rules import RuleRepository
 
 Algorithm = Literal[
@@ -78,10 +79,14 @@ class RuleSnapshot:
 def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -> RuleSnapshot:
     """Validate the complete snapshot before replacing anything in memory."""
     canonical = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    if len(canonical.encode("utf-8")) > 1_048_576:
+        raise ValueError("Rule bundle exceeds 1 MiB")
     if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != version_id:
         raise ValueError("Rule content does not match version hash")
     if rules.get("schema_version") == 2:
         typed = TypedRuleset.model_validate(rules)
+        if sum(len(entries) for entries in typed.jurisdictions.values()) > 1000:
+            raise ValueError("Rule bundle exceeds 1000 variants")
         variants: dict[tuple[str, str, str], CompiledRule] = {}
         ids: set[str] = set()
         if not typed.jurisdictions:
@@ -95,6 +100,7 @@ def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -
                     raise ValueError("Duplicate rule selector or rule ID")
                 if (entry.algorithm == "REGEX_ONLY") != (entry.verification_level == "FORMAT_ONLY"):
                     raise ValueError("Verification level contradicts algorithm")
+                check_pattern(entry.regex)
                 variants[key] = CompiledRule(
                     entry.algorithm,
                     re.compile(entry.regex),
@@ -112,6 +118,7 @@ def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -
     for code, rule in parsed.items():
         if re.fullmatch(r"[A-Z]{2}", code) is None:
             raise ValueError("Jurisdiction must be an uppercase two-letter code")
+        check_pattern(rule.regex)
         compiled[code] = CompiledRule(rule.algorithm, re.compile(rule.regex))
     return RuleSnapshot(version_id, revision, MappingProxyType(compiled))
 
@@ -138,6 +145,19 @@ class RuleLoader:
                 raise ValueError("Active rules must be approved with schema_version 1 or 2")
             if version.schema_version != version.rules.get("schema_version", 1):
                 raise ValueError("Stored schema version differs from rule content")
+            # Still verify database content on every read; reuse compiled objects only after hash verification.
+            canonical = json.dumps(
+                version.rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+            )
+            if hashlib.sha256(canonical.encode("utf-8")).hexdigest() != version.version_id:
+                raise ValueError("Rule content does not match version hash")
+            with self._lock:
+                if self._snapshot is not None and self._snapshot.version_id == version.version_id:
+                    if revision > self._snapshot.revision:
+                        from dataclasses import replace
+
+                        self._snapshot = replace(self._snapshot, revision=revision)
+                    return self._snapshot
             candidate = compile_snapshot(version.version_id, revision, version.rules)
         with self._lock:
             # A slower concurrent refresh must not undo a newer publication.

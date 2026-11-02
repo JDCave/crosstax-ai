@@ -16,6 +16,8 @@ from backend.infrastructure.database import async_session_factory, engine
 
 
 def read_object(path: Path) -> dict[str, object]:
+    if path.stat().st_size > 1_048_576:
+        raise ValueError("JSON input exceeds 1 MiB")
     value: object = json.loads(path.read_text())
     if not isinstance(value, dict):
         raise ValueError("Expected a JSON object")
@@ -34,6 +36,8 @@ async def main() -> None:
     activate = commands.add_parser("activate", help="Activate approved version or roll back")
     activate.add_argument("version")
     activate.add_argument("--revision", type=int, required=True)
+    activate.add_argument("--actor", default="local")
+    activate.add_argument("--reason", default="manual activation")
     commands.add_parser("current")
     commands.add_parser("coverage", help="List active jurisdiction/type rules and official sources")
     validate = commands.add_parser("validate", help="Validate structured CRS JSON")
@@ -49,7 +53,7 @@ async def main() -> None:
             await publisher.approve(args.version, read_object(args.report))
             print("APPROVED")
         elif args.command == "activate":
-            await publisher.activate(args.version, args.revision)
+            await publisher.activate(args.version, args.revision, actor=args.actor, reason=args.reason)
             print("ACTIVATED")
         else:
             loader = RuleLoader(async_session_factory)

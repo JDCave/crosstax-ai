@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
+from backend.engine.reproducibility import canonical_hash
 from backend.engine.rule_loader import RuleSnapshot
 from backend.engine.tin_validator import TINValidatorEngine
 
@@ -25,7 +26,11 @@ def run_regressions(snapshot: RuleSnapshot, supplied: object = None) -> dict[str
         if supplied is not None
         else json.loads((Path(__file__).parent / "corpus/rule_regressions.json").read_text())
     )
+    if not isinstance(raw, list) or len(raw) > 5000:
+        raise ValueError("Regression suite must have at most 5000 cases")
     cases = TypeAdapter(list[RegressionCase]).validate_python(raw)
+    if len({case.case_id for case in cases}) != len(cases):
+        raise ValueError("Regression case IDs must be unique")
     selectors = set(snapshot.variants) or {(code, "", "") for code in snapshot.rules}
     seen: dict[tuple[str, str, str], set[bool]] = {}
     failures: list[str] = []
@@ -46,4 +51,9 @@ def run_regressions(snapshot: RuleSnapshot, supplied: object = None) -> dict[str
     missing = ["/".join(key) for key in selectors if seen.get(key) != {True, False}]
     if failures or missing:
         raise ValueError(f"Regression gate rejected: failed={failures}; missing_positive_or_negative={missing}")
-    return {"passed": True, "executed_cases": count, "covered_selectors": len(selectors)}
+    return {
+        "passed": True,
+        "executed_cases": count,
+        "covered_selectors": len(selectors),
+        "suite_hash": canonical_hash([case.model_dump() for case in cases]),
+    }

@@ -72,7 +72,7 @@ DDL 已包含主外键、状态检查、时间检查和活动状态单行约束�
 应用层负责 JSON 结构、哈希正确性、批准后内容不可修改、合法状态转换，以及只允许批准版本激活。
 当前活动指针只保存最新发布状态；若后续要求逐次发布操作审计，应新增发布事件表。
 
-当前已添加六张表的 ORM 模型和 `backend/repositories/rules.py` 数据访问层，并验证本地 PostgreSQL 连通性。数据库表由已有 SQL 创建，本次不会自动重建表或创建 schema。Alembic 迁移尚未生成。
+当前已添加六张表的 ORM 模型和 `backend/repositories/rules.py` 数据访问层，并验证本地 PostgreSQL 连通性。数据库表由已有 SQL 创建，本次不会自动重建表或创建 schema。新增两张历史/归档表已有 Alembic 扩展迁移 `20261103_rule_history`，本地已应用。
 后续新增模型应放在 backend/models/，继承现有 Base；迁移通过 Alembic 生成并在 SQLite 和 PostgreSQL 验证。
 
 
@@ -98,3 +98,13 @@ async def read_active_rules():
 规则结构和测试报告的业务验证由后续引擎服务完成；Repository 不判断报告能否支持批准。
 相同内容的重复写入受唯一约束保护；并发采集发生唯一冲突时调用方回滚并重试，首期建议单同步任务运行。
 SQLite 测试通过 schema_translate_map 将 crosstax 映射到默认 schema，生产 PostgreSQL 保持显式 schema。
+
+
+## 追加表与迁移
+
+`rule_publications`：激活历史，主键 revision，外键指向目标和前一规则版本。
+`rule_audit_records`：引擎执行信封，主键 session_id，保存输入、上游问题和完整结果，支持幂等与重放。
+先执行原 `validation_engine.sql` 初始化六表，再执行 `uv run alembic upgrade head` 创建追加两表。
+已有六表的数据库只运行迁移，不重新执行原建表 SQL。
+迁移前的发布不补造事件；新表不改变原主审核会话模型。
+应用层不可变保护见 immutability.py；数据库管理员和 Core 直连不受 ORM 保护。

@@ -48,7 +48,7 @@ schema_version=1 保留法域键 → regex/algorithm 的旧契约。schema_versi
 结构检查不等于税法正确性、国家代码有效性、正则复杂度审核或算法适用性确认。
 批准由调用方确认，report 作为审核记录保存；不会仅凭模型置信度或 report 内容自动批准。
 
-数据库使用 devdb/crosstax，六张表关系见 ../infrastructure/db/README.md。
+数据库使用 devdb/crosstax，原六张规则表及两张追加记录表见 ../infrastructure/db/README.md。
 register 在短事务中保存完整候选并验证，失败回滚，不留下无效候选。
 approve 仅处理 CANDIDATE；activate 只允许 APPROVED，并再次校验规则内容。
 激活使用 expected_revision 乐观锁；冲突抛出 ConflictException，调用方重新读取后决定重试。
@@ -63,7 +63,7 @@ approve 仅处理 CANDIDATE；activate 只允许 APPROVED，并再次校验规�
 相同 revision 出现不同 version_id 视为数据异常。
 
 数据库不可达、无活动版本、哈希不匹配、非法规则均抛出系统错误，不输出 AUTO_PASS。
-加载失败保留旧快照供诊断或显式调用 current()；validate 默认不偷偷使用旧版本继续审核。当前仍每次完整加载校验；轻量 revision 缓存优化留待版本不可变性保障完善后实施。
+加载失败保留旧快照供诊断或显式调用 current()；validate 默认不偷偷使用旧版本继续审核。当前每次查询仍验证状态、schema 和内容哈希；相同版本复用编译快照，避免重复解析和正则编译，不因缓存跳过内容完整性检查。
 不在抓取或 AI 调用期间持有数据库连接。
 
 ## 6. 执行顺序
@@ -142,7 +142,7 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 ## 10. 验证与限制
 
-现有测试总计 105 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+常规测试为 120 项通过、3 项 PostgreSQL 用例按环境跳过；启用隔离 PostgreSQL 测试后共 123 项通过：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
@@ -232,3 +232,71 @@ activate 也重新运行门禁，以防引擎升级导致历史版本行为变�
 自定义或旧 schema=1 规则必须在审批报告 regression_cases 中提供匹配每个选择器的正反例；
 无覆盖或结果不符即拒绝。固定样例是回归依据，不证明官方规则本身绝对完整。
 CLI 的 approve --report 输入仍保留，由调用方提供审阅说明及可选的自定义用例。
+
+
+## 发布历史、归档与队友接入服务
+
+新增 rule_publications，记录每次成功激活的 revision、目标和前一版本、actor、reason、时间。
+历史事件与活动指针更新处于同一事务；并发 CAS 失败不写入事件，回滚也是一条新事件。
+actor 是调用方提供的标识，不是身份认证证明；应由主后端从认证上下文提供。
+迁移前发生的三次本地发布未伪造补录，历史表从迁移后首次激活开始记录。
+
+新增 rule_audit_records，以主后端 session_id 为幂等键保存输入、上游问题、完整结果与输入指纹。
+AuditValidationService.validate_and_store 返回前完成短事务存储；存储失败不会返回成功结果。
+相同 session_id 和输入重试返回原提交结果，即使当前规则已更新；同 ID 不同输入返回 ConflictException。
+并发重复请求通过主键和冲突后查询统一到一条结果，不覆盖历史。
+服务拥有独立事务，和主后端 AuditSession 的事务不是跨表原子事务；主后端需按 session_id 重试或对账。
+本表是引擎执行信封，不替代队友的主审核表、权限与留存政策。
+
+```python
+from backend.engine.audit_service import AuditValidationService
+service = AuditValidationService(validation_engine)
+# 在队友现有 run_audit_pipeline() 内调用：
+# result = await service.validate_and_store(session_id, form, policy, upstream_issues)
+# replayed = await service.replay_stored(session_id)
+```
+
+未新增 HTTP 路由，当前骨架没有完整业务流水线，不能声称完成真实上传/API/前端端到端联调。
+服务的持久化、幂等、历史重放、发布变更后重试已通过真实 PostgreSQL 测试。
+
+## 历史不可变性与信任边界
+
+支持的 SQLAlchemy Session 写入路径禁止修改/删除审核与发布历史，禁止修改已审批规则。
+ORM bulk update/delete 同样受保护，仅候选审批状态转换使用内部标识放行。
+底层 Core 连接、原生数据库连接、数据库管理员不在此应用层保护范围，不能宣称数据库级不可篡改。
+未新增数据库触发器或变更数据库账号权限，避免破坏 SQLite 兼容和队友连接行为。
+普通 User/BaseRepository CRUD 回归测试通过，保护仅针对规则引擎历史模型。
+并发注册同内容规则遇到唯一冲突时重新开启事务读取已有版本，不产生重复版本。
+
+## 执行保护与加载复用
+
+规则包最大 1 MiB、最多 1000 个 typed variants；正则最多 512 字符、分组深度最多 12。
+采用保守语法检查，拒绝回溯引用、未知分组、重复的含分支/重复子组、无上限计数区间及过多模糊分支。
+有限重复上限 64，分支和可变重复采用有限歧义预算；单个无界字符重复受 256 字符输入限制。
+该检查器是受限标识正则的防护，不是任意正则的数学时间上界证明或独立进程沙箱。
+新格式需满足受限语法；不要为加载任意第三方表达式而关闭保护。
+发布套件最多 5000 个用例且 case_id 唯一；CLI JSON 文件最大 1 MiB。
+
+validate 日志仅输出版本、revision、裁决、问题数和耗时；规则加载失败仅记录异常类型。
+不写入 TIN、主体名称或完整表单；主后端仍需避免在错误日志回显 Pydantic 原始输入。
+相同版本复用编译对象，但每次数据库读取依然验证哈希，内容被篡改不会被缓存掩盖。
+
+## 数据库迁移与集成测试
+
+alembic/versions/20261103_rule_history.py 为通过 autogenerate 生成的扩展迁移，只新增两表，
+前提是原六张表已经按 setup SQL 创建。原始 User 模型和业务表不在这次迁移中改变。
+迁移已在本地 devdb 应用，使用 func.now() 保持 SQLite/PostgreSQL 默认时间表达式兼容。
+新环境先执行原 schema SQL，再运行 uv run alembic upgrade head。
+
+测试参数 CROSSTAX_TEST_DATABASE_URL 指向允许创建临时 schema 的 PostgreSQL 测试数据库。
+PostgreSQL 测试创建随机 crosstax_test_ 前缀 schema，先创建原六表，再执行实际 Alembic upgrade，
+最后清理且仅清理该测试 schema。测试不重置 crosstax，不覆盖当前规则或业务数据。
+覆盖真实并发发布、并发重复注册、错误审批报告、历史修改拒绝、审核归档和重放。
+无测试 URL 时仅跳过三个 PostgreSQL 参数化用例；SQLite 路径仍执行同一迁移和生命周期。
+回归矩阵随 wheel 打包，已验证离线构建包含全部 264 条用例。
+
+## 交付边界
+
+本轮不扩国家数量、不新增 AI 提取。官方规则仍是 22 法域 66 个选择器，验证深度见覆盖清单。
+发布回归检验代码行为和用例覆盖，不自动证明税法完整性、官方来源真实性或新法规已经适用。
+仍需队友接入真实 API 并提供认证身份、主会话对账和部署构建归档；当前没有这些实现，未擅自发明接口。

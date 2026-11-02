@@ -11,6 +11,7 @@ from uuid import uuid4
 from sqlalchemy import CursorResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.infrastructure.db import immutability  # noqa: F401 -- register ORM history guards
 from backend.infrastructure.exceptions import ConflictException, NotFoundException
 from backend.models import RuleDocument, RuleEngineState, RuleSource, RuleSyncRun, RuleVersion, RuleVersionDocument
 
@@ -95,6 +96,7 @@ class RuleRepository:
     async def review_candidate(self, version_id: str, approved: bool, report: dict[str, object]) -> None:
         result = await self.session.execute(
             update(RuleVersion)
+            .execution_options(rule_candidate_review=True)
             .where(RuleVersion.version_id == version_id, RuleVersion.status == "CANDIDATE")
             .values(
                 status="APPROVED" if approved else "REJECTED",

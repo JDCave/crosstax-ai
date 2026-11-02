@@ -1,6 +1,8 @@
 """Public rule engine entry; called by the existing audit pipeline."""
 
+import logging
 from collections.abc import Sequence
+from time import perf_counter
 
 from backend.engine.completeness import check_completeness
 from backend.engine.contracts import (
@@ -17,6 +19,8 @@ from backend.engine.tin_validator import TINValidatorEngine
 from backend.engine.verdict import resolve_verdict
 from backend.models import RuleVersion
 
+logger = logging.getLogger(__name__)
+
 
 class ValidationEngine:
     def __init__(self, loader: RuleLoader) -> None:
@@ -26,7 +30,11 @@ class ValidationEngine:
     async def validate(
         self, form: CRSFormData, policy: ValidationPolicy, indicia_issues: Sequence[AuditIssue] = ()
     ) -> ValidationResult:
-        snapshot = await self.loader.refresh()
+        try:
+            snapshot = await self.loader.refresh()
+        except Exception as exc:
+            logger.warning("rule_load_failed", extra={"error_type": type(exc).__name__})
+            raise
         return self.validate_snapshot(form, policy, snapshot, indicia_issues)
 
     def validate_snapshot(
@@ -36,6 +44,7 @@ class ValidationEngine:
         snapshot: RuleSnapshot,
         indicia_issues: Sequence[AuditIssue] = (),
     ) -> ValidationResult:
+        started = perf_counter()
         form_issues = check_completeness(form, policy)
         covered = form.jurisdiction_code in snapshot.rules or any(
             key[0] == form.jurisdiction_code for key in snapshot.variants
@@ -86,7 +95,7 @@ class ValidationEngine:
             )
             form_issues.extend(tin_issues)
         all_issues = [*form_issues, *indicia_issues]
-        return ValidationResult(
+        result = ValidationResult(
             rule_version_id=snapshot.version_id,
             rule_revision=snapshot.revision,
             execution=ExecutionContext(
@@ -99,6 +108,17 @@ class ValidationEngine:
             indicia_issues=tuple(indicia_issues),
             verdict=resolve_verdict(all_issues),
         )
+        logger.info(
+            "rule_validation_completed",
+            extra={
+                "rule_version_id": snapshot.version_id,
+                "rule_revision": snapshot.revision,
+                "verdict": result.verdict,
+                "issue_count": len(all_issues),
+                "duration_ms": round((perf_counter() - started) * 1000, 3),
+            },
+        )
+        return result
 
     async def replay(
         self, form: CRSFormData, original: ValidationResult, indicia_issues: Sequence[AuditIssue] = ()
