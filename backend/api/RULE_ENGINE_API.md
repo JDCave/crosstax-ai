@@ -112,3 +112,154 @@ async def call_rule_engine(payload: dict) -> dict:
 HTTP 测试使用真实引擎和隔离数据库，覆盖 Case A-E、查询/重试/重放、覆盖信息、
 冲突/缺失/无效输入、错误脱敏、请求大小限制和系统失败。
 另有真实 PostgreSQL 的底层归档/迁移/并发测试；没有要求队友改动其业务路由。
+
+## 字段契约
+
+顶层必填 `session_id`、`form_data`、`policy`；`indicia_issues` 默认空数组。
+顶层和 form_data 不接受未知字段。布尔字段必须使用 JSON true/false，不能传字符串。
+
+| form_data 字段 | 类型 | 要求 |
+| --- | --- | --- |
+| holder_name | string | 必填，1-300 字符；纯空白产生业务阻断 |
+| holder_dob | string | 必填，最长 32 字符；日期无效产生业务阻断 |
+| residence_address | string | 必填，1-2000 字符；纯空白产生业务阻断 |
+| jurisdiction_code | string | 必填，两位大写法域代码；未覆盖产生人工复核 |
+| holder_type | INDIVIDUAL / ENTITY / null | 模型可省略；当前 typed 规则需明确提供以选择规则 |
+| tin_type | string / null | 最长 100 字符；按 coverage 中的值提供，不自动猜测 |
+| tin | string / null | 不转数值，保留前导零；号码检查限制原文最长 256 字符 |
+| has_no_tin | boolean | 必填；与已填 TIN 矛盾时产生业务阻断 |
+| tin_reason_code | A / B / C / null | 无 TIN 时必填；有 TIN 时不应再填 |
+| tin_reason_explanation | string / null | 最长 4000 字符；Reason B 去除两端空白后至少 5 字符 |
+| has_signature | boolean | 必填；false 产生 NO_SIGNATURE |
+| signing_date | string / null | 最长 32 字符；需有效 YYYY-MM-DD，不晚于 policy.today |
+
+无 TIN 声明目前只检查完整性，未证明法域豁免适用，因此返回 EXEMPTION_REVIEW_REQUIRED 并进入复核。
+结构错误返回 HTTP 422；通过结构验证后发现业务问题返回 HTTP 200 + NEED_USER_FIX/MANUAL_TRIAGE。
+
+| policy 字段 | 类型 | 默认/含义 |
+| --- | --- | --- |
+| today | YYYY-MM-DD | 必填，由主后端确定的业务日期 |
+| earliest_signing_date | YYYY-MM-DD / null | 默认 null；团队确认后可提供最早允许签署日期 |
+| strict_coverage | boolean | 默认 true；false 仅保留旧 schema v1 的历史长度兜底，不关闭 v2 未覆盖复核 |
+
+每条 indicia_issues 包含 code、severity（BLOCKER/WARNING）、message、confidence（0-1），field 可为 null。
+问题顺序属于已存执行输入的一部分；重试时保持内容及顺序一致。
+
+## 结果字段
+
+| result 字段 | 含义 |
+| --- | --- |
+| rule_version_id | 实际执行规则内容的 SHA-256 版本 |
+| rule_revision | 发布修订号，回滚也递增 |
+| verdict | AUTO_PASS / NEED_USER_FIX / MANUAL_TRIAGE |
+| form_issues | 完备性、TIN、未覆盖及豁免待复核问题数组 |
+| indicia_issues | 上游提供的跨源问题数组 |
+| tin_check | 实际检查深度、来源及失败原因 |
+| execution | 引擎构建指纹、输入指纹、完整策略；主后端应原样保存 |
+
+`tin_check.status`：PASSED、FAILED、NOT_COVERED、NOT_APPLICABLE。
+`verification_level`：NONE、FORMAT_ONLY、CHECKSUM；表示本次实际执行深度。
+`checks_performed` / `checks_not_performed` 明确哪些检查运行或没有运行。
+NOT_APPLICABLE 只说明本次未执行号码校验，不代表豁免已成立。
+`rule_id`、`source_url`、`algorithm_source_url` 在未命中规则时可为 null。
+指纹用于一致性核对，不是加密、签名或权限凭证。
+
+## 其他端点的响应
+
+`GET /rules/current`：
+
+```json
+{
+  "rule_version_id": "<规则内容 SHA-256>",
+  "revision": 3,
+  "rule_count": 66
+}
+```
+
+数字仅为当前基线示例，不应硬编码到调用方。
+
+`GET /rules/coverage`：
+
+```json
+{
+  "rule_version_id": "<规则内容 SHA-256>",
+  "revision": 3,
+  "rules": [
+    {
+      "jurisdiction_code": "CN",
+      "holder_type": "INDIVIDUAL",
+      "tin_type": "CN_ID",
+      "rule_id": "CN_CN_ID_INDIVIDUAL",
+      "verification_level": "CHECKSUM",
+      "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+      "algorithm_source_url": null
+    }
+  ]
+}
+```
+
+上例仅展示一个条目。coverage 的 verification_level 表示规则配置能力，单次结果 tin_check 表示实际执行深度；格式先失败时不会声称已经执行校验位。
+
+查询和重放返回与 POST validations 相同的 `session_id + result` 信封。
+重放无需请求体；只支持原构建、历史规则和存档输入一致时执行，否则 409。
+
+## curl 联调
+
+将前面的请求 JSON 保存为 `request.json`：
+
+```bash
+curl -X POST http://localhost:8000/api/v1/rule-engine/validations \
+  -H 'Content-Type: application/json' --data-binary @request.json
+curl http://localhost:8000/api/v1/rule-engine/validations/merchant-demo-001
+curl -X POST http://localhost:8000/api/v1/rule-engine/validations/merchant-demo-001/replay
+curl http://localhost:8000/api/v1/rule-engine/rules/current
+curl http://localhost:8000/api/v1/rule-engine/rules/coverage
+```
+
+完整机器可读字段、必填项、枚举与响应模型见 [OpenAPI 快照](openapi.json)。
+
+
+## 校验成功响应示例
+
+下例展示完整信封结构，哈希为占位符，具体规则版本、修订号和指纹以运行结果为准。
+
+```json
+{
+  "session_id": "merchant-demo-001",
+  "result": {
+    "rule_version_id": "<规则内容 SHA-256>",
+    "rule_revision": 3,
+    "execution": {
+      "engine_build_id": "<引擎构建指纹>",
+      "input_fingerprint": "<表单、策略与上游问题的指纹>",
+      "policy": {
+        "today": "2026-11-03",
+        "earliest_signing_date": null,
+        "strict_coverage": true
+      }
+    },
+    "tin_check": {
+      "status": "PASSED",
+      "verification_level": "CHECKSUM",
+      "rule_id": "CN_CN_ID_INDIVIDUAL",
+      "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+      "algorithm_source_url": null,
+      "checks_performed": [
+        "rule_selection",
+        "normalization",
+        "format",
+        "checksum"
+      ],
+      "checks_not_performed": [
+        "issuance",
+        "ownership",
+        "tax_residency"
+      ],
+      "reason_code": "CHECKS_PASSED"
+    },
+    "form_issues": [],
+    "indicia_issues": [],
+    "verdict": "AUTO_PASS"
+  }
+}
+```

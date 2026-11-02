@@ -180,3 +180,8 @@ AI Campaign 2026 竞赛团队（4 人）
 ## 许可证
 
 Private — 竞赛项目
+
+
+## API 接口文档
+
+规则引擎接口、请求/响应字段和联调示例见 [API 文档](backend/api/README.md)，可导入的契约见 [OpenAPI JSON](backend/api/openapi.json)。运行服务后访问 `/docs`。
