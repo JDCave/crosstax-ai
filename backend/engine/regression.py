@@ -23,7 +23,7 @@ def run_regressions(snapshot: RuleSnapshot, supplied: object = None) -> dict[str
     raw = (
         supplied
         if supplied is not None
-        else json.loads((Path(__file__).parent / "data/rule_regressions.json").read_text())
+        else json.loads((Path(__file__).parent / "corpus/rule_regressions.json").read_text())
     )
     cases = TypeAdapter(list[RegressionCase]).validate_python(raw)
     selectors = set(snapshot.variants) or {(code, "", "") for code in snapshot.rules}
