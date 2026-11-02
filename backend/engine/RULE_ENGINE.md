@@ -4,7 +4,7 @@
 
 输入为上游提供的结构化 CRSFormData 和跨源问题列表；输出为规则版本、问题列表和三态裁决。
 实现规则注册、验证、数据库版本发布、内存快照、TIN 算子、表单完备性和裁决。
-不负责上传、OCR、PDF/HTML 正文提取、AI 字段抽取、跨源 AI 推理和前端；目前另提供规则校验 HTTP API 与引擎执行信封归档，不替代主 AuditSession。
+不负责上传、OCR、PDF/HTML 正文提取、AI 字段抽取、跨源 AI 推理和前端；目前另提供规则校验 HTTP API；Python 内部归档服务为可选能力，HTTP 不调用它，不替代主 AuditSession。
 此前的资料导入器独立保留，不在审核执行时调用，不是本引擎启动依赖。
 
 ## 2. 模块职责
@@ -234,7 +234,7 @@ activate 也重新运行门禁，以防引擎升级导致历史版本行为变�
 CLI 的 approve --report 输入仍保留，由调用方提供审阅说明及可选的自定义用例。
 
 
-## 发布历史、归档与队友接入服务
+## 发布历史与可选内部归档服务
 
 新增 rule_publications，记录每次成功激活的 revision、目标和前一版本、actor、reason、时间。
 历史事件与活动指针更新处于同一事务；并发 CAS 失败不写入事件，回滚也是一条新事件。
@@ -302,11 +302,15 @@ PostgreSQL 测试创建随机 crosstax_test_ 前缀 schema，先创建原六表�
 仍需队友接入真实 API 并提供认证身份、主会话对账和部署构建归档；当前没有这些实现，未擅自发明接口。
 
 
-## HTTP 服务接入
+## HTTP 服务接入（单接口）
 
-已在现有应用注册 /api/v1/rule-engine 路由，详细契约见 backend/api/RULE_ENGINE_API.md。
-POST validations 通过 RuleAPIService → AuditValidationService → ValidationEngine 执行，无路由业务规则。
-GET 查询仅返回已存结果，POST replay 校验历史一致性，规则 current/coverage 提供发现接口。
-独立 APIRoute 为本前缀提供 1 MiB 流式请求限制及脱敏输入错误，不改变已有健康检查及异常处理。
-规则发布不通过本 HTTP 接口开放；没有新增认证体系，调用授权与会话命名空间由主后端负责。
-当前已验证 HTTP 契约及真实数据库服务层，队友仍需将 HTTP 调用放入其现有审核流水线。
+仅公开 POST /api/v1/rule-engine/validate，详细契约见 backend/api/RULE_ENGINE_API.md。
+输入为 form_data、policy 与可选 indicia_issues，无 session_id。
+RuleAPIService 直接调用 ValidationEngine.validate，返回扁平 verdict、issues、rule_version_id、rule_revision、checks、execution。
+本接口不调用 AuditValidationService，不写规则审核归档表，也不建立或查询会话。
+队友在自己的 run_audit_pipeline() 中调用一次并保存自己的请求和响应即可。
+原有 validations、结果查询、重放、current/coverage HTTP 路由已移除，不保留隐藏调用步骤。
+内部发布 CLI、覆盖查询 CLI、Python 归档/重放服务保留，属于可选内部能力。
+保持 1 MiB 请求限制、脱敏错误和现有健康检查；未新增认证体系。
+每次请求读取当前活动规则，重复调用可能因规则更新而变化，不提供会话幂等或固定历史结果语义。
+HTTP 响应是精简适配契约，不等同于内部 ValidationResult；不要直接将其传入内部 replay 方法。

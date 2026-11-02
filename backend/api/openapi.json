@@ -58,13 +58,13 @@
         }
       }
     },
-    "/api/v1/rule-engine/validations": {
+    "/api/v1/rule-engine/validate": {
       "post": {
         "tags": [
           "rule-engine"
         ],
-        "summary": "Validate",
-        "operationId": "validate_api_v1_rule_engine_validations_post",
+        "summary": "Validate structured CRS data and return results synchronously",
+        "operationId": "validate_api_v1_rule_engine_validate_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -86,26 +86,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "413": {
             "description": "Request Entity Too Large",
             "content": {
@@ -126,306 +106,8 @@
               }
             }
           },
-          "503": {
-            "description": "Service Unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/rule-engine/validations/{session_id}": {
-      "get": {
-        "tags": [
-          "rule-engine"
-        ],
-        "summary": "Result",
-        "operationId": "result_api_v1_rule_engine_validations__session_id__get",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Request Entity Too Large"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        }
-      }
-    },
-    "/api/v1/rule-engine/validations/{session_id}/replay": {
-      "post": {
-        "tags": [
-          "rule-engine"
-        ],
-        "summary": "Replay",
-        "operationId": "replay_api_v1_rule_engine_validations__session_id__replay_post",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "413": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Request Entity Too Large"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        }
-      }
-    },
-    "/api/v1/rule-engine/rules/current": {
-      "get": {
-        "tags": [
-          "rule-engine"
-        ],
-        "summary": "Current",
-        "operationId": "current_api_v1_rule_engine_rules_current_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleVersionResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Request Entity Too Large",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service Unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/rule-engine/rules/coverage": {
-      "get": {
-        "tags": [
-          "rule-engine"
-        ],
-        "summary": "Coverage",
-        "operationId": "coverage_api_v1_rule_engine_rules_coverage_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoverageResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Request Entity Too Large",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
               "application/json": {
                 "schema": {
@@ -620,110 +302,6 @@
         "title": "CRSFormData",
         "description": "Dates remain strings so invalid signing dates become business issues."
       },
-      "CoverageEntry": {
-        "properties": {
-          "jurisdiction_code": {
-            "type": "string",
-            "title": "Jurisdiction Code"
-          },
-          "holder_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Holder Type"
-          },
-          "tin_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tin Type"
-          },
-          "rule_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rule Id"
-          },
-          "verification_level": {
-            "type": "string",
-            "title": "Verification Level"
-          },
-          "source_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Url"
-          },
-          "algorithm_source_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Algorithm Source Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "jurisdiction_code",
-          "holder_type",
-          "tin_type",
-          "rule_id",
-          "verification_level",
-          "source_url",
-          "algorithm_source_url"
-        ],
-        "title": "CoverageEntry"
-      },
-      "CoverageResponse": {
-        "properties": {
-          "rule_version_id": {
-            "type": "string",
-            "title": "Rule Version Id"
-          },
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          },
-          "rules": {
-            "items": {
-              "$ref": "#/components/schemas/CoverageEntry"
-            },
-            "type": "array",
-            "title": "Rules"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rule_version_id",
-          "revision",
-          "rules"
-        ],
-        "title": "CoverageResponse"
-      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -764,29 +342,6 @@
           "policy"
         ],
         "title": "ExecutionContext"
-      },
-      "RuleVersionResponse": {
-        "properties": {
-          "rule_version_id": {
-            "type": "string",
-            "title": "Rule Version Id"
-          },
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          },
-          "rule_count": {
-            "type": "integer",
-            "title": "Rule Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rule_version_id",
-          "revision",
-          "rule_count"
-        ],
-        "title": "RuleVersionResponse"
       },
       "TINCheck": {
         "properties": {
@@ -913,11 +468,6 @@
       },
       "ValidationRequest": {
         "properties": {
-          "session_id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$",
-            "title": "Session Id"
-          },
           "form_data": {
             "$ref": "#/components/schemas/CRSFormData"
           },
@@ -936,7 +486,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "session_id",
           "form_data",
           "policy"
         ],
@@ -944,23 +493,22 @@
       },
       "ValidationResponse": {
         "properties": {
-          "session_id": {
+          "verdict": {
             "type": "string",
-            "title": "Session Id"
+            "enum": [
+              "AUTO_PASS",
+              "NEED_USER_FIX",
+              "MANUAL_TRIAGE"
+            ],
+            "title": "Verdict"
           },
-          "result": {
-            "$ref": "#/components/schemas/ValidationResult"
-          }
-        },
-        "type": "object",
-        "required": [
-          "session_id",
-          "result"
-        ],
-        "title": "ValidationResponse"
-      },
-      "ValidationResult": {
-        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/AuditIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
           "rule_version_id": {
             "type": "string",
             "title": "Rule Version Id"
@@ -968,6 +516,16 @@
           "rule_revision": {
             "type": "integer",
             "title": "Rule Revision"
+          },
+          "checks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TINCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "execution": {
             "anyOf": [
@@ -978,51 +536,18 @@
                 "type": "null"
               }
             ]
-          },
-          "tin_check": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TINCheck"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "form_issues": {
-            "items": {
-              "$ref": "#/components/schemas/AuditIssue"
-            },
-            "type": "array",
-            "title": "Form Issues"
-          },
-          "indicia_issues": {
-            "items": {
-              "$ref": "#/components/schemas/AuditIssue"
-            },
-            "type": "array",
-            "title": "Indicia Issues"
-          },
-          "verdict": {
-            "type": "string",
-            "enum": [
-              "AUTO_PASS",
-              "NEED_USER_FIX",
-              "MANUAL_TRIAGE"
-            ],
-            "title": "Verdict"
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
+          "verdict",
+          "issues",
           "rule_version_id",
           "rule_revision",
-          "form_issues",
-          "indicia_issues",
-          "verdict"
+          "checks",
+          "execution"
         ],
-        "title": "ValidationResult"
+        "title": "ValidationResponse"
       }
     }
   }

@@ -3,19 +3,13 @@
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import SQLAlchemyError
 
-from backend.api.schemas.rule_engine import (
-    CoverageResponse,
-    ErrorResponse,
-    RuleVersionResponse,
-    ValidationRequest,
-    ValidationResponse,
-)
+from backend.api.schemas.rule_engine import ErrorResponse, ValidationRequest, ValidationResponse
 from backend.infrastructure.exceptions import AppException
 from backend.services.rule_api import RuleAPIService, get_rule_api_service
 
@@ -58,33 +52,15 @@ router = APIRouter(
     prefix="/api/v1/rule-engine",
     tags=["rule-engine"],
     route_class=RuleAPIRoute,
-    responses={status: {"model": ErrorResponse} for status in (404, 409, 413, 422, 503)},
+    responses={status: {"model": ErrorResponse} for status in (413, 422, 500, 503)},
 )
 Service = Annotated[RuleAPIService, Depends(get_rule_api_service)]
-SessionID = Annotated[str, Path(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$")]
 
 
-@router.post("/validations", response_model=ValidationResponse)
+@router.post(
+    "/validate",
+    response_model=ValidationResponse,
+    summary="Validate structured CRS data and return results synchronously",
+)
 async def validate(payload: ValidationRequest, service: Service) -> ValidationResponse:
-    result = await service.validate(payload.session_id, payload.form_data, payload.policy, payload.indicia_issues)
-    return ValidationResponse(session_id=payload.session_id, result=result)
-
-
-@router.get("/validations/{session_id}", response_model=ValidationResponse)
-async def result(session_id: SessionID, service: Service) -> ValidationResponse:
-    return ValidationResponse(session_id=session_id, result=await service.result(session_id))
-
-
-@router.post("/validations/{session_id}/replay", response_model=ValidationResponse)
-async def replay(session_id: SessionID, service: Service) -> ValidationResponse:
-    return ValidationResponse(session_id=session_id, result=await service.replay(session_id))
-
-
-@router.get("/rules/current", response_model=RuleVersionResponse)
-async def current(service: Service) -> RuleVersionResponse:
-    return await service.current()
-
-
-@router.get("/rules/coverage", response_model=CoverageResponse)
-async def coverage(service: Service) -> CoverageResponse:
-    return await service.coverage()
+    return await service.validate(payload.form_data, payload.policy, payload.indicia_issues)

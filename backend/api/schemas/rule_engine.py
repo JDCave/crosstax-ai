@@ -1,13 +1,14 @@
-"""Stable JSON contract for the rule engine's internal service API."""
+"""One synchronous validation request and one flat result."""
+
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy, ValidationResult
+from backend.engine.contracts import AuditIssue, CRSFormData, ExecutionContext, TINCheck, ValidationPolicy
 
 
 class ValidationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    session_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$")
     form_data: CRSFormData
     policy: ValidationPolicy
     indicia_issues: list[AuditIssue] = Field(default_factory=list, max_length=100)
@@ -20,30 +21,12 @@ class ValidationRequest(BaseModel):
 
 
 class ValidationResponse(BaseModel):
-    session_id: str
-    result: ValidationResult
-
-
-class CoverageEntry(BaseModel):
-    jurisdiction_code: str
-    holder_type: str | None
-    tin_type: str | None
-    rule_id: str | None
-    verification_level: str
-    source_url: str | None
-    algorithm_source_url: str | None
-
-
-class CoverageResponse(BaseModel):
+    verdict: Literal["AUTO_PASS", "NEED_USER_FIX", "MANUAL_TRIAGE"]
+    issues: list[AuditIssue]
     rule_version_id: str
-    revision: int
-    rules: list[CoverageEntry]
-
-
-class RuleVersionResponse(BaseModel):
-    rule_version_id: str
-    revision: int
-    rule_count: int
+    rule_revision: int
+    checks: TINCheck | None
+    execution: ExecutionContext | None
 
 
 class ErrorResponse(BaseModel):

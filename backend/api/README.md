@@ -1,8 +1,10 @@
 # API 接口文档
 
-- [规则引擎 HTTP API](RULE_ENGINE_API.md)：请求字段、响应、错误码、幂等及调用示例。
-- [OpenAPI JSON 快照](openapi.json)：由当前 FastAPI 应用生成，可导入支持 OpenAPI 的接口工具。
-- 服务运行后 `/docs` 提供交互式文档，`/openapi.json` 提供实时契约。
+队友只调用 **POST /api/v1/rule-engine/validate**：传入数据，同步返回校验结果。
+无需 session_id、结果查询、规则查询或重放 API，接口不强制保存审核数据。
 
-现有健康接口为 `GET /health` 与 `GET /ready`；规则引擎接口统一位于 `/api/v1/rule-engine`。
-OpenAPI 快照不包含本地数据库凭据或服务器地址。接口变更后需重新从 `create_app().openapi()` 导出。
+- [接口字段、响应与调用示例](RULE_ENGINE_API.md)
+- [OpenAPI JSON 快照](openapi.json)
+- 运行服务后访问 `/docs` 和 `/openapi.json`
+
+现有健康接口 `/health`、`/ready` 保留。规则维护和历史重放仍是内部 Python/CLI 能力。
