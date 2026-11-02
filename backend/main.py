@@ -40,6 +40,8 @@ def create_app() -> FastAPI:
         version=__version__,
         description="CRS exemption determination AI system",
         lifespan=lifespan,
+        redoc_url=None,
+        swagger_ui_oauth2_redirect_url=None,
     )
 
     _register_middleware(app, settings)
@@ -61,7 +63,7 @@ def _register_middleware(app: FastAPI, settings: Settings) -> None:
 
 
 def _register_routers(app: FastAPI) -> None:
-    app.include_router(health.router, tags=["health"])
+    app.include_router(health.router, tags=["health"], include_in_schema=False)
     app.include_router(rule_engine.router)
 
 

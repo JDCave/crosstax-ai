@@ -7,4 +7,4 @@
 - [OpenAPI JSON 快照](openapi.json)
 - 运行服务后访问 `/docs` 和 `/openapi.json`
 
-现有健康接口 `/health`、`/ready` 保留。规则维护和历史重放仍是内部 Python/CLI 能力。
+接口文档只展示一个校验接口；`/health`、`/ready` 仅作为内部探针保留，不出现在 OpenAPI 中。重复的 `/redoc` 文档入口和未使用的 OAuth2 回调入口已关闭。规则维护和历史重放仍是内部 Python/CLI 能力。

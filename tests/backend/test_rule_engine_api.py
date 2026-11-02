@@ -107,7 +107,10 @@ async def test_unavailable_and_replay_mismatch_are_not_passes(api_client):
 def test_openapi_exposes_only_one_rule_engine_endpoint():
     paths = create_app().openapi()["paths"]
     assert [path for path in paths if path.startswith(PREFIX)] == [PREFIX + "/validate"]
-    assert "/health" in paths and "/ready" in paths
+    assert set(paths) == {PREFIX + "/validate"}
+    app = create_app()
+    assert app.redoc_url is None
+    assert app.swagger_ui_oauth2_redirect_url is None
 
 
 async def test_missing_active_rules_returns_503(api_client):

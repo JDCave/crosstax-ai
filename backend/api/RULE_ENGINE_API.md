@@ -22,7 +22,7 @@ uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
 本机 Base URL 为 `http://localhost:8000`；远程调用替换为服务机器可达地址。
 `/docs` 为交互文档，`/openapi.json` 为实时契约，[openapi.json](openapi.json) 为仓库快照。
-已有 `/health` 和 `/ready` 保留。当前为内部服务接口，无新增认证机制。
+文档只展示本校验接口。健康探针保留供部署使用，但从 OpenAPI 隐藏；重复的 `/redoc` 和未使用的 OAuth2 文档回调入口已关闭。当前为内部服务接口，无新增认证机制。
 
 ## 请求示例
 

@@ -314,3 +314,8 @@ RuleAPIService 直接调用 ValidationEngine.validate，返回扁平 verdict、i
 保持 1 MiB 请求限制、脱敏错误和现有健康检查；未新增认证体系。
 每次请求读取当前活动规则，重复调用可能因规则更新而变化，不提供会话幂等或固定历史结果语义。
 HTTP 响应是精简适配契约，不等同于内部 ValidationResult；不要直接将其传入内部 replay 方法。
+
+
+### 对外文档收敛
+
+OpenAPI 和 Swagger 仅展示 POST /api/v1/rule-engine/validate。健康与就绪探针保持原地址和行为，但不列入契约。关闭重复的 /redoc 文档入口和未使用的 Swagger OAuth2 回调；/docs 与 /openapi.json 保留。隐藏文档不等同于网络访问控制。
