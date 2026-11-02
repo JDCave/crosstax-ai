@@ -62,3 +62,24 @@ def jp_corporate(value: str) -> bool:
     # Positions are counted from the right; odd weights 1, even weights 2.
     total = sum(int(d) * (1 if i % 2 == 0 else 2) for i, d in enumerate(reversed(value[1:])))
     return int(value[0]) == 9 - total % 9
+
+
+def ca_sin(value: str) -> bool:
+    """Service Canada MOD-10 procedure for the nine-digit SIN."""
+    if not _digits(value, 9):
+        return False
+    total = 0
+    for index, digit in enumerate(value):
+        number = int(digit) * (2 if index % 2 else 1)
+        total += number // 10 + number % 10
+    return total % 10 == 0
+
+
+def es_nif_nie(value: str) -> bool:
+    """Interior Ministry formula for DNI and X/Y/Z-series NIE only."""
+    if re.fullmatch(r"(?:[0-9]{8}|[XYZ][0-9]{7})[A-Z]", value) is None:
+        return False
+    body = value[:-1]
+    if body[0] in "XYZ":
+        body = str("XYZ".index(body[0])) + body[1:]
+    return value[-1] == "TRWAGMYFPDXBNJZSQVHLCKE"[int(body) % 23]

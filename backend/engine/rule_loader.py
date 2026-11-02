@@ -26,6 +26,8 @@ Algorithm = Literal[
     "AU_ABN",
     "NO_ORGNR",
     "JP_CORPORATE",
+    "CA_SIN",
+    "ES_NIF_NIE",
 ]
 
 
@@ -94,7 +96,12 @@ def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -
                 if (entry.algorithm == "REGEX_ONLY") != (entry.verification_level == "FORMAT_ONLY"):
                     raise ValueError("Verification level contradicts algorithm")
                 variants[key] = CompiledRule(
-                    entry.algorithm, re.compile(entry.regex), entry.rule_id, entry.verification_level, entry.source_url
+                    entry.algorithm,
+                    re.compile(entry.regex),
+                    entry.rule_id,
+                    entry.verification_level,
+                    entry.source_url,
+                    entry.algorithm_source_url,
                 )
                 ids.add(entry.rule_id)
         return RuleSnapshot(version_id, revision, MappingProxyType({}), MappingProxyType(variants))

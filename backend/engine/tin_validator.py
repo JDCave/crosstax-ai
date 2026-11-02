@@ -6,7 +6,7 @@ import re
 from collections.abc import Callable
 from types import MappingProxyType
 
-from backend.engine.checksums import au_abn, jp_corporate, nl_mod11, no_orgnr, pl_nip, pl_pesel
+from backend.engine.checksums import au_abn, ca_sin, es_nif_nie, jp_corporate, nl_mod11, no_orgnr, pl_nip, pl_pesel
 from backend.engine.contracts import AuditIssue, TINCheck
 from backend.engine.rule_loader import RuleSnapshot
 
@@ -50,6 +50,8 @@ OPERATORS: MappingProxyType[str, Callable[[str], bool]] = MappingProxyType(
         "AU_ABN": au_abn,
         "NO_ORGNR": no_orgnr,
         "JP_CORPORATE": jp_corporate,
+        "CA_SIN": ca_sin,
+        "ES_NIF_NIE": es_nif_nie,
         "HKID_WEIGHT": hkid_weight,
         "NRIC_WEIGHT": nric_weight,
         "REGEX_ONLY": lambda value: True,

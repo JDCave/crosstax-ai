@@ -2,12 +2,15 @@
 
 import pytest
 
-from backend.engine.checksums import au_abn, jp_corporate, nl_mod11, no_orgnr, pl_nip, pl_pesel
+from backend.engine.checksums import au_abn, ca_sin, es_nif_nie, jp_corporate, nl_mod11, no_orgnr, pl_nip, pl_pesel
 
 
 @pytest.mark.parametrize(
     ("operator", "valid", "invalid"),
     [
+        (ca_sin, "998986731", "998986732"),
+        (es_nif_nie, "12345678Z", "12345678A"),
+        (es_nif_nie, "X1234567L", "X1234567A"),
         (au_abn, "51824753556", "51824753557"),  # ABR published worked example
         (jp_corporate, "8700110005901", "9700110005901"),  # NTA worked example
         (pl_pesel, "02070803628", "02070803629"),  # OECD Poland worked example

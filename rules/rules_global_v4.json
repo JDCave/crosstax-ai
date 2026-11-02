@@ -1,0 +1,853 @@
+{
+  "schema_version": 2,
+  "jurisdictions": {
+    "CN": [
+      {
+        "rule_id": "CN_CN_ID_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "CN_ID",
+        "regex": "[0-9]{17}[0-9X]",
+        "algorithm": "MOD11_2",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "CN_CN_LEGACY_TIN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_LEGACY_TIN",
+        "regex": "[0-9]{15}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "CN_CN_ENTITY_TIN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_ENTITY_TIN",
+        "regex": "[0-9]{8}[0-9A-Z]{10}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      }
+    ],
+    "HK": [
+      {
+        "rule_id": "HK_HKID_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "HKID",
+        "regex": "[A-Z]{1,2}[0-9]{6}[0-9A]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "HK_HK_BR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "HK_BR",
+        "regex": "[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      }
+    ],
+    "SG": [
+      {
+        "rule_id": "SG_SG_NRIC_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SG_NRIC",
+        "regex": "[ST][0-9]{7}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "SG_SG_FIN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SG_FIN",
+        "regex": "[FGM][0-9]{7}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "SG_SG_UEN_ROB_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_ROB",
+        "regex": "[0-9]{8}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "SG_SG_UEN_ROC_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_ROC",
+        "regex": "[0-9]{9}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      },
+      {
+        "rule_id": "SG_SG_UEN_OTHER_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_OTHER",
+        "regex": "[ST][0-9]{2}[A-Z]{2}[0-9]{4}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Structural checks only unless CHECKSUM is explicitly stated; no existence verification."
+      }
+    ],
+    "US": [
+      {
+        "rule_id": "US_US_EIN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "US_EIN",
+        "regex": "[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/united-states-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "US_US_EIN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "US_EIN",
+        "regex": "[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/united-states-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "US_US_SSN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "US_SSN",
+        "regex": "(?!000|666|9[0-9]{2})[0-9]{3}(?!00)[0-9]{2}(?!0000)[0-9]{4}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://secure.ssa.gov/apps10/poms.nsf/lnx/0110201035",
+        "source_section": "Invalid SSNs: area, group, serial restrictions",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Rejects prohibited area/group/serial ranges. No assignment or exceptional invalidated-number lookup."
+      },
+      {
+        "rule_id": "US_US_ITIN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "US_ITIN",
+        "regex": "9[0-9]{2}(?:5[0-9]|6[0-5]|7[0-9]|8[0-8]|9[0-24-9])[0-9]{4}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.irs.gov/irm/part21/irm_21-002-004r",
+        "source_section": "ITIN fourth/fifth digit ranges",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks digit ranges; does not check renewal/expiry, issuance or account state."
+      }
+    ],
+    "AU": [
+      {
+        "rule_id": "AU_AU_TFN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "AU_TFN",
+        "regex": "[0-9]{8,9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/australia-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "AU_AU_ABN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "AU_ABN",
+        "regex": "[0-9]{11}",
+        "algorithm": "AU_ABN",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/australia-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://abr.business.gov.au/Help/AbnFormat"
+      },
+      {
+        "rule_id": "AU_AU_TFN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "AU_TFN",
+        "regex": "[0-9]{8,9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/australia-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "AU_AU_ABN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "AU_ABN",
+        "regex": "[0-9]{11}",
+        "algorithm": "AU_ABN",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/australia-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://abr.business.gov.au/Help/AbnFormat"
+      }
+    ],
+    "NZ": [
+      {
+        "rule_id": "NZ_NZ_IRD_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "NZ_IRD",
+        "regex": "[0-9]{8,9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/new-zealand-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "NZ_NZ_IRD_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "NZ_IRD",
+        "regex": "[0-9]{8,9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/new-zealand-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "NL": [
+      {
+        "rule_id": "NL_NL_TIN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "NL_TIN",
+        "regex": "[0-9]{9}",
+        "algorithm": "NL_MOD11",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/netherlands-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/netherlands-tin.pdf"
+      },
+      {
+        "rule_id": "NL_NL_TIN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "NL_TIN",
+        "regex": "[0-9]{9}",
+        "algorithm": "NL_MOD11",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/netherlands-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/netherlands-tin.pdf"
+      }
+    ],
+    "IE": [
+      {
+        "rule_id": "IE_IE_TRN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "IE_TRN",
+        "regex": "[0-9]{7}[A-Z]{1,2}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/ireland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "IE_IE_TRN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "IE_TRN",
+        "regex": "[0-9]{7}[A-Z]{1,2}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/ireland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "IE_IE_CHY_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "IE_CHY",
+        "regex": "CHY[0-9]{1,5}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/ireland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "ZA": [
+      {
+        "rule_id": "ZA_ZA_INCOME_TAX_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "ZA_INCOME_TAX",
+        "regex": "[01239][0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/south-africa-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "ZA_ZA_INCOME_TAX_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "ZA_INCOME_TAX",
+        "regex": "[01239][0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/south-africa-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "PL": [
+      {
+        "rule_id": "PL_PL_NIP_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "PL_NIP",
+        "regex": "[0-9]{10}",
+        "algorithm": "PL_NIP",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf"
+      },
+      {
+        "rule_id": "PL_PL_NIP_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "PL_NIP",
+        "regex": "[0-9]{10}",
+        "algorithm": "PL_NIP",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf"
+      },
+      {
+        "rule_id": "PL_PL_PESEL_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "PL_PESEL",
+        "regex": "[0-9]{11}",
+        "algorithm": "PL_PESEL",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup. Also validates encoded calendar date and century/month mapping; does not compare holder DOB.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/poland-tin.pdf"
+      }
+    ],
+    "GB": [
+      {
+        "rule_id": "GB_GB_UTR_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "GB_UTR",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.gov.uk/find-utr-number",
+        "source_section": "Find your UTR number",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "GB_GB_UTR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "GB_UTR",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.gov.uk/find-utr-number",
+        "source_section": "Find your UTR number",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "GB_GB_NINO_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "GB_NINO",
+        "regex": "(?!BG|GB|KN|NK|NT|TN|ZZ|PP999999P)[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z][0-9]{6}[ABCD]",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.gov.uk/hmrc-internal-manuals/national-insurance-manual/nim39110",
+        "source_section": "The Prefix / The Suffix",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "CA": [
+      {
+        "rule_id": "CA_CA_SIN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "CA_SIN",
+        "regex": "[0-9]{9}",
+        "algorithm": "CA_SIN",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/canada-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks public checksum formula, not registration, residency, holder identity or issuance.",
+        "algorithm_source_url": "https://publications.gc.ca/collections/collection_2012/servicecanada/SG5-58-2011-eng.pdf"
+      },
+      {
+        "rule_id": "CA_CA_BN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "CA_BN",
+        "regex": "[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/canada-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "CA_CA_TRUST_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "CA_TRUST",
+        "regex": "T[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/canada-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "DE": [
+      {
+        "rule_id": "DE_DE_IDNR_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "DE_IDNR",
+        "regex": "[0-9]{11}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/germany-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "DE_WIDNR_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "DE_WIDNR",
+        "regex": "DE[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.bundesfinanzministerium.de/Web/DE/Service/FAQ_Glossar/Glossar/Functions/glossar.html?lv2=176982&lv3=419562",
+        "source_section": "Wirtschafts-Identifikationsnummer",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Economic actors only. Distinguishes base number and number with five-digit activity discriminator; not VAT registration or activity allocation validation."
+      },
+      {
+        "rule_id": "DE_WIDNR_ACTIVITY_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "DE_WIDNR_ACTIVITY",
+        "regex": "DE[0-9]{9}[0-9]{5}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.bundesfinanzministerium.de/Web/DE/Service/FAQ_Glossar/Glossar/Functions/glossar.html?lv2=176982&lv3=419562",
+        "source_section": "Wirtschafts-Identifikationsnummer",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Economic actors only. Distinguishes base number and number with five-digit activity discriminator; not VAT registration or activity allocation validation."
+      },
+      {
+        "rule_id": "DE_WIDNR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "DE_WIDNR",
+        "regex": "DE[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.bundesfinanzministerium.de/Web/DE/Service/FAQ_Glossar/Glossar/Functions/glossar.html?lv2=176982&lv3=419562",
+        "source_section": "Wirtschafts-Identifikationsnummer",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Economic actors only. Distinguishes base number and number with five-digit activity discriminator; not VAT registration or activity allocation validation."
+      },
+      {
+        "rule_id": "DE_WIDNR_ACTIVITY_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "DE_WIDNR_ACTIVITY",
+        "regex": "DE[0-9]{9}[0-9]{5}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.bundesfinanzministerium.de/Web/DE/Service/FAQ_Glossar/Glossar/Functions/glossar.html?lv2=176982&lv3=419562",
+        "source_section": "Wirtschafts-Identifikationsnummer",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Economic actors only. Distinguishes base number and number with five-digit activity discriminator; not VAT registration or activity allocation validation."
+      }
+    ],
+    "FR": [
+      {
+        "rule_id": "FR_FR_SPI_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "FR_SPI",
+        "regex": "[0-3][0-9]{12}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/france-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "FR_FR_SIREN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "FR_SIREN",
+        "regex": "[0-9]{9}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/france-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "FR_FR_SIRET_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "FR_SIRET",
+        "regex": "[0-9]{14}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/france-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "JP": [
+      {
+        "rule_id": "JP_JP_MY_NUMBER_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "JP_MY_NUMBER",
+        "regex": "[0-9]{12}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/japan-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "JP_JP_CORPORATE_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "JP_CORPORATE",
+        "regex": "[0-9]{13}",
+        "algorithm": "JP_CORPORATE",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/japan-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.houjin-bangou.nta.go.jp/documents/checkdigit.pdf"
+      }
+    ],
+    "IN": [
+      {
+        "rule_id": "IN_IN_PAN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "IN_PAN",
+        "regex": "[A-Z]{3}P[A-Z](?!0000)[0-9]{4}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/india-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "IN_IN_PAN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "IN_PAN",
+        "regex": "[A-Z]{3}[FCHATBLJG][A-Z](?!0000)[0-9]{4}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/india-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "CH": [
+      {
+        "rule_id": "CH_CH_OASI_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "CH_OASI",
+        "regex": "756\\.?[0-9]{4}\\.?[0-9]{4}\\.?[0-9]{2}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/switzerland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "CH_CH_UID_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "CH_UID",
+        "regex": "CHE[0-9]{3}\\.?[0-9]{3}\\.?[0-9]{3}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/switzerland-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "KR": [
+      {
+        "rule_id": "KR_KR_RRN_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "KR_RRN",
+        "regex": "[0-9]{13}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/korea-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "KR_KR_BRN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "KR_BRN",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/korea-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "KR_KR_CRN_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "KR_CRN",
+        "regex": "[0-9]{13}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/korea-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "ES": [
+      {
+        "rule_id": "ES_ES_DNI_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "ES_DNI",
+        "regex": "[0-9]{8}[A-Z]",
+        "algorithm": "ES_NIF_NIE",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/spain-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks public checksum formula, not registration, residency, holder identity or issuance.",
+        "algorithm_source_url": "https://www.interior.gob.es/opencms/es/servicios-al-ciudadano/tramites-y-gestiones/dni/calculo-del-digito-de-control-del-nif-nie/"
+      },
+      {
+        "rule_id": "ES_ES_NIE_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "ES_NIE",
+        "regex": "[XYZ][0-9]{7}[A-Z]",
+        "algorithm": "ES_NIF_NIE",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/spain-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks public checksum formula, not registration, residency, holder identity or issuance.",
+        "algorithm_source_url": "https://www.interior.gob.es/opencms/es/servicios-al-ciudadano/tramites-y-gestiones/dni/calculo-del-digito-de-control-del-nif-nie/"
+      },
+      {
+        "rule_id": "ES_ES_SPECIAL_NIF_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "ES_SPECIAL_NIF",
+        "regex": "[KLM][0-9]{7}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/spain-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "ES_ES_NIF_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "ES_NIF",
+        "regex": "[ABCDEFGHJNPQSUVW][0-9]{7}[0-9A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/spain-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "SE": [
+      {
+        "rule_id": "SE_SE_PERSONNUMMER_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SE_PERSONNUMMER",
+        "regex": "[0-9]{6}\\+?[0-9]{4}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/sweden-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "SE_SE_COORDINATION_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SE_COORDINATION",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/sweden-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "SE_SE_ORGNR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "SE_ORGNR",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/sweden-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ],
+    "NO": [
+      {
+        "rule_id": "NO_NO_NATIONAL_ID_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "NO_NATIONAL_ID",
+        "regex": "[0-9]{11}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/norway-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "NO_NO_D_NUMBER_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "NO_D_NUMBER",
+        "regex": "[4-7][0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/norway-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "NO_NO_ORGNR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "NO_ORGNR",
+        "regex": "[89][0-9]{8}(?:MVA)?",
+        "algorithm": "NO_ORGNR",
+        "verification_level": "CHECKSUM",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/norway-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Checks format and public checksum formula; no issuance, ownership or residency lookup.",
+        "algorithm_source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/norway-tin.pdf"
+      }
+    ],
+    "DK": [
+      {
+        "rule_id": "DK_DK_CPR_INDIVIDUAL",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "DK_CPR",
+        "regex": "[0-9]{10}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/denmark-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "DK_DK_CVR_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "DK_CVR",
+        "regex": "[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/denmark-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      },
+      {
+        "rule_id": "DK_DK_SE_ENTITY",
+        "holder_type": "ENTITY",
+        "tin_type": "DK_SE",
+        "regex": "[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "verification_level": "FORMAT_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/denmark-tin.pdf",
+        "source_section": "Section II",
+        "reviewed_on": "2026-11-02",
+        "limitations": "Length and character structure only; no checksum, issuance, tax residency, date semantics or exceptional types verified."
+      }
+    ]
+  }
+}
