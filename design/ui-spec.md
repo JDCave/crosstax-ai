@@ -500,6 +500,6 @@ frontend/src/
 
 - [PRD §F8](../specs/prd.md) — React 演示 SPA + FastAPI 后端功能定义
 - [架构设计](./architecture.md) — 展现层 + API 层设计
-- [OpenAPI 契约](./openapi.yaml) — 前后端接口规范
+- OpenAPI 契约 `design/openapi.yaml` — 前后端接口规范（**规划中**，文件尚未产出，见 ROADMAP §2.1）
 - [Ant Design 文档](https://ant.design/) — 组件 API 参考
 - [React 文档](https://react.dev/) — 框架参考

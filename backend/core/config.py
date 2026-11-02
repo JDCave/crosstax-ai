@@ -18,8 +18,10 @@ class DatabaseSettings(BaseSettings):
         default="sqlite+aiosqlite:///./crosstax.db",
         description="SQLAlchemy async connection URL",
     )
-    pool_size: int = Field(default=5, ge=1)
-    max_overflow: int = Field(default=10, ge=0)
+    # ADR-010: Alibaba Cloud PG caps total connections at 30 for the 4-person
+    # team, so each developer gets <= 3 with overflow disabled.
+    pool_size: int = Field(default=3, ge=1)
+    max_overflow: int = Field(default=0, ge=0)
     pool_recycle: int = Field(default=1800, description="Recycle connections after N seconds")
     pool_pre_ping: bool = Field(default=True, description="Enable connection health check before use")
     echo: bool = Field(default=False, description="Log all SQL statements")

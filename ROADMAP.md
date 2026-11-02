@@ -2,6 +2,10 @@
 
 > 从 PM 视角出发，覆盖需求、设计、实现、部署四个阶段。
 > 本清单不绑定具体时间线，按依赖关系排序。
+>
+> **进度快照（2026-11-02）：** 后端脚手架已落地（FastAPI 应用工厂、pydantic-settings 配置、结构化日志、全局异常处理、健康探针、SQLAlchemy 2.0 异步数据库层、Alembic 初始化、Docker/compose、ruff+mypy+pytest+pre-commit 门禁）。**尚未开始：** 审核流水线各 Agent、规则引擎、审计留痕、前端 SPA（仓库内无 `frontend/`）、Mock 数据与规则 JSON。
+>
+> 任务状态与代码实际路径已于 2026-11-02 与仓库现状对齐；技术细节以 `specs/adr/` 与 `design/architecture.md` v1.3 为准。
 
 ---
 
@@ -72,26 +76,30 @@
 
 ### 3.1 工程基础设施
 
-- [ ] 后端工程初始化（`backend/` 目录、FastAPI 应用骨架、依赖管理 `pyproject.toml` + `uv`、代码规范）
-- [ ] 前端工程初始化（`frontend/` 目录、Vite + React 18 + TypeScript、Ant Design 集成、ESLint/Prettier）
-- [ ] Docker Compose 开发环境编排（前后端联调）
-- [ ] 数据库抽象层实现（`backend/core/database.py`，SQLAlchemy 引擎切换 SQLite/PG）
-- [ ] 环境变量配置模块（`backend/core/config.py`，pydantic-settings 管理 APP_ENV / DATABASE_URL 等）
-- [ ] SQLAlchemy ORM 模型定义（`backend/models/`，AuditSession / Merchant 等表结构）
-- [ ] Alembic 数据库迁移初始化（双后端兼容 migration script）
-- [ ] Mock 数据准备：商户底表 `mock_merchants.json`
+- [x] 后端工程初始化（`backend/` 目录、FastAPI 应用骨架、依赖管理 `pyproject.toml` + `uv`、代码规范）→ 已完成：`create_app()` 工厂 + lifespan + CORS + 全局异常处理 + health/ready 探针；ruff/mypy(strict)/pre-commit/Makefile 全绿
+- [ ] 前端工程初始化（`frontend/` 目录、Vite + React 18 + TypeScript、Ant Design 集成、ESLint/Prettier）→ **仓库内尚无 `frontend/`**
+- [x] Docker Compose 开发环境编排 → 已完成：`backend` + `postgres:16-alpine` + `redis:7-alpine` 三服务（健康检查 + 依赖顺序）；**前后端联调部分待 `frontend/` 落地后补充前端服务**
+- [x] 数据库抽象层实现（`backend/infrastructure/database.py`，SQLAlchemy 2.0 **异步**引擎，`DATABASE_URL` 切换 SQLite/PG）→ 已完成：`create_async_engine` + `async_sessionmaker` + FastAPI 依赖 `get_session()`（自动 commit/rollback）
+- [x] 环境变量配置模块（`backend/core/config.py`，pydantic-settings 管理 `ENVIRONMENT` / `DATABASE_URL` / `REDIS_URL` 等）→ 已完成：`Settings` + `DatabaseSettings`/`RedisSettings` 分组，`.env` 加载，`get_settings()` 缓存单例
+- [x] 结构化日志与请求追踪（`backend/core/logging/`）→ 已完成：console/json 双格式 + `RequestIdMiddleware`
+- [x] 全局异常处理（`backend/infrastructure/exceptions.py`）→ 已完成：`register_exception_handlers()` 统一错误响应
+- [x] Redis 接入准备（`RedisSettings` + compose 编排 + `redis` 依赖）→ 依赖与配置就位；**业务用途待确认**（见架构文档 §6 待确认事项 #11）
+- [ ] SQLAlchemy ORM 模型定义（`backend/models/`，AuditSession / Merchant 等表结构）→ 部分完成：`base.py`（`Base` + `TimestampMixin`）、`user.py`、`repositories/base.py` 已就绪；AuditSession / Merchant 待建
+- [x] Alembic 数据库迁移初始化 → 已完成：`alembic.ini` + `alembic/env.py`（已对接异步引擎）+ `script.py.mako` + Makefile `migrate*` 目标；**首个迁移脚本待 `make migrate-init` 生成**（`alembic/versions/` 目前为空）
+- [ ] Mock 数据准备：商户底表 `mock_merchants.json` → `assets/mock-data/` 仅占位
 - [ ] Mock 数据准备：5 个 CRS 样本表单（PDF / 图片）
-- [ ] 规则配置文件编写：`rules/rules_v1_base.json`（CN / HK / SG 等核心法域）
+- [ ] 规则配置文件编写：`rules/rules_v1_base.json`（CN / HK / SG 等核心法域）→ `rules/` 目录为空
 - [ ] 规则补丁文件编写：`rules/rules_v2_patch.json`（演示热重载用）
 - [ ] OpenAPI 契约文件编写：`design/openapi.yaml`
 
 ### 3.2 后端核心模块开发（Python + FastAPI）
 
-- [ ] FastAPI 应用骨架 + 路由注册（`backend/main.py`）
-- [ ] Pydantic 请求/响应模型（`backend/api/schemas/`）
+- [x] FastAPI 应用骨架 + 路由注册（`backend/main.py`）→ 已完成：`create_app()` + `_register_middleware()` + `_register_routers()`；当前仅注册 health 路由
+- [x] 健康/就绪探针（`backend/api/routes/health.py`）→ 已完成：`GET /health` 存活 + `GET /ready` 就绪（含 `SELECT 1` 数据库连通性检查）
+- [ ] Pydantic 请求/响应模型（`backend/api/schemas/`）→ 目录尚未创建
 - [ ] REST API 路由：`/api/v1/audit`、`/api/v1/rules`、`/api/v1/cases`
 - [ ] WebSocket 端点：`/ws/audit/{session_id}` 实时推送流水线状态
-- [ ] CORS 配置（允许前端开发服务器跨域）
+- [x] CORS 配置（允许前端开发服务器跨域）→ 已完成：`CORSMiddleware` + `CORS_ORIGINS`（缺省放行 `localhost:3000` / `localhost:5173`）
 - [ ] 媒体预处理模块 —— PDF 解析（pdf2image）、图像清洗（EXIF 纠正、缩放）
 - [ ] Vision Parser Agent —— 调用 Vision API，输出结构化 CRSFormData
 - [ ] TIN 规则引擎 —— 正则匹配 + 校验位算法（MOD11_2 / HKID_WEIGHT / NRIC_WEIGHT / REGEX_ONLY）
@@ -118,14 +126,16 @@
 
 ### 3.4 测试
 
+- [x] 基础设施测试（`tests/backend/test_config.py`、`test_health.py`）→ 已完成：配置缺省值与环境变量覆盖、ADR-010 连接池断言、探针路由；`conftest.py` 就位
 - [ ] 后端各模块单元测试（TIN 校验、冲突判定、裁决逻辑）
-- [ ] 后端 API 路由测试（FastAPI TestClient）
+- [ ] 后端业务 API 路由测试（FastAPI TestClient，覆盖 `/api/v1/audit`、`/rules`、`/cases`）
 - [ ] 前端组件单元测试（Vitest + React Testing Library）
 - [ ] 5 个典型 Case 端到端集成测试（前后端联调）
 - [ ] 边界条件测试（未配置法域的兜底策略、空文件、损坏 PDF）
 - [ ] 热重载验证（加载 v2 补丁后规则即时生效，无需重启）
 - [ ] WebSocket 实时推送验证（流水线状态无延迟）
 - [ ] 审计完整性验证（报告可穿透溯源至原始文件 + 规则版本）
+- [ ] 覆盖率达标（`pyproject.toml` 已设 `fail_under = 80`，当前仅覆盖脚手架代码）
 
 ---
 
@@ -133,11 +143,11 @@
 
 ### 4.1 云基础设施
 
-- [ ] 阿里云资源规划与开通（ECS / 容器服务 / 存储 / 网络）
-- [ ] 阿里云 PG 16 连接验证（ECS 内网直连测试、连接池配置、pgvector 扩展安装）
-- [ ] 应用容器化（Dockerfile 编写）
+- [ ] 阿里云资源规划与开通（ECS / 容器服务 / 存储 / 网络 / Redis）
+- [ ] 阿里云 PG 16 连接验证（ECS 内网直连测试、pgvector 扩展安装）→ 连接池配置已按 ADR-010 落地为 `pool_size=3, max_overflow=0`，待内网连通性实测
+- [x] 应用容器化（Dockerfile 编写）→ 已完成：uv 多阶段构建、非 root 用户、`EXPOSE 8000`、`/health` HEALTHCHECK；**前端编译产物静态托管阶段待 `frontend/` 落地后接入**（ADR-002）
 - [ ] 部署流水线配置（代码推送 → 构建 → 部署）
-- [ ] 环境变量与配置管理（API Key、DATABASE_URL、规则路径等敏感配置外置）
+- [ ] 环境变量与配置管理（API Key、DATABASE_URL、规则路径等敏感配置外置）→ 部分完成：`.env.example` + pydantic-settings + `.gitignore` 已就位；`DASHSCOPE_API_KEY` / `SECRET_KEY` 等待 LLM 与安全模块接入时新增
 
 ### 4.2 安全加固
 

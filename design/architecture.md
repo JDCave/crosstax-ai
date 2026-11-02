@@ -1,13 +1,14 @@
 # CrossTax AI — 架构设计文档
 
-> **版本：** v1.2 | **日期：** 2026-10-23 | **作者：** PM + Tech Lead  
-> **关联图表：** [architecture-overview.html](./architecture-overview.html)  
+> **版本：** v1.3 | **日期：** 2026-11-02 | **作者：** PM + Tech Lead  
+> **关联图表：** [diagrams/architecture-overview.html](./diagrams/architecture-overview.html)  
 > **输入来源：** `specs/prd.md`、`docs/proposal/crosstax-ai-solution (from ppt).md`  
 > **状态：** 草案，待团队评审  
 > **变更记录：**  
 > - v1.0 (2026-10-22): 初始草案  
 > - v1.1 (2026-10-22): 技术选型确认 — 前端由 Streamlit 切换为 React 18 + TypeScript，后端新增 FastAPI API 层，详见 ADR-002
 > - v1.2 (2026-10-23): 数据库方案确认 — 混合方案（本地 SQLite + 阿里云 PG 生产），LLM 平台确认神机百炼，pgvector 竞赛阶段豁免，详见 ADR-008/009/010
+> - v1.3 (2026-11-02): 与已落地代码对齐 — §2.4.1 改为异步 SQLAlchemy 实现、§4.2 改为 uv 多阶段 Dockerfile、§4.3 环境变量改为实际名称、§5 目录树标注实现状态；修正失效链接与 `docs/` 路径；补充 Redis
 
 ---
 
@@ -233,71 +234,92 @@ class RuleEngine:
 
 ### 2.4 L4 — 基础设施层 (Infrastructure)
 
-| 组件 | 技术选型 | 部署方式 | 说明 |
-|------|----------|----------|------|
-| 规则配置库 | JSON 文件 | 本地磁盘 + 内存缓存 | `assets/mock-data/rules/` |
-| Vision API | 阿里云神机百炼（Qwen-VL-Max） | 外部 HTTP 调用 | API Key 通过环境变量注入 |
-| LLM 推理 | 神机百炼（Qwen-Max / GLM / DeepSeek） | 外部 HTTP 调用 | 跨源冲突研判 + 名称模糊匹配 fallback |
-| Embedding | 神机百炼 Embedding 模型 | 外部 HTTP 调用 | 竞赛阶段暂不启用向量检索，预留接口 |
-| Mock 商户数据 | JSON 文件 | 本地磁盘 | `assets/mock-data/mock_merchants.json` |
-| 数据库（本地开发） | SQLite | 本地文件 | Python 内置，零配置，`crosstax_dev.db` |
-| 数据库（生产/测试） | PostgreSQL 16 + pgvector 0.8.0.2 | 阿里云 RDS（ECS 内网） | 连接池 ≤ 3/人，总连接上限 30 |
-| 审计存储 | 数据库（SQLite / PG 按环境切换） | 本地文件 / 阿里云 RDS | 通过 `APP_ENV` 环境变量控制 |
-| 运行时 | Python 3.11+ | 阿里云 ECS | 容器化部署 |
+| 组件 | 技术选型 | 部署方式 | 说明 | 状态 |
+|------|----------|----------|------|------|
+| 规则配置库 | JSON 文件 | 本地磁盘 + 内存缓存 | `rules/`（ADR-003；原稿写的 `assets/mock-data/rules/` 已废弃） | 规划中 |
+| Vision API | 阿里云神机百炼（Qwen-VL-Max） | 外部调用（SDK / HTTP 待裁定，见 ADR-007） | API Key 通过环境变量注入 | 规划中 |
+| LLM 推理 | 神机百炼（Qwen-Max / GLM / DeepSeek） | 外部调用（同上） | 跨源冲突研判 + 名称模糊匹配 fallback | 规划中 |
+| Embedding | 神机百炼 Embedding 模型 | 外部调用 | 竞赛阶段不启用向量检索，预留接口（ADR-009） | 规划中 |
+| Mock 商户数据 | JSON 文件 | 本地磁盘 | `assets/mock-data/mock_merchants.json`（ADR-005） | 规划中 |
+| 数据库（本地开发） | SQLite + `aiosqlite` | 本地文件 | 缺省 `sqlite+aiosqlite:///./crosstax.db` | 已落地 |
+| 数据库（生产/测试） | PostgreSQL 16 + `asyncpg` | 阿里云 RDS（ECS 内网） | 连接池 ≤ 3/人且禁止溢出，总上限 30（ADR-010） | 待部署验证 |
+| pgvector | 0.8.0.2 扩展 | 阿里云 RDS | 竞赛阶段豁免，降级为规则 + LLM fallback（ADR-009） | 豁免 |
+| 缓存 | Redis 7 | compose 容器 / 阿里云 | `REDIS_URL`；依赖与编排已就位，业务尚未接入 | 部分落地 |
+| 审计存储 | 数据库（SQLite / PG） | 本地文件 / 阿里云 RDS | 后端由 `DATABASE_URL` 决定，**非** `APP_ENV` | 规划中 |
+| 运行时 | Python 3.11+（uv 管理依赖） | 阿里云 ECS | 容器化部署，非 root 运行 | 已落地 |
 
 #### 2.4.1 数据库抽象层设计
 
-采用 SQLAlchemy ORM 屏蔽 SQLite 与 PG 差异，通过环境变量 `APP_ENV` 切换后端。
+采用 **SQLAlchemy 2.0 异步 ORM** 屏蔽 SQLite 与 PG 差异。后端切换只由 `DATABASE_URL` 决定，`ENVIRONMENT` 仅控制日志与调试开关（原稿设计的 `APP_ENV` 分支切换未采用）。
+
+配置集中在 `backend/core/config.py`，引擎与会话工厂在 `backend/infrastructure/database.py`：
 
 ```python
-# backend/core/database.py
-import os
-from sqlalchemy import create_engine, event
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+# backend/core/config.py（节选）
+class DatabaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DATABASE_")
 
-APP_ENV = os.getenv("APP_ENV", "development")
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if APP_ENV in ("testing", "production") and DATABASE_URL:
-    # 阿里云 PG 16（ECS 内网直连）
-    engine = create_engine(
-        DATABASE_URL,
-        pool_size=int(os.getenv("DB_POOL_SIZE", "3")),
-        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "0")),
-        pool_timeout=10,
-        pool_recycle=1800,
-        pool_pre_ping=True,
-    )
-else:
-    # 本地 SQLite（零配置，Python 内置）
-    DB_PATH = os.getenv("SQLITE_PATH", "./crosstax_dev.db")
-    engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
-    # SQLite 开启 WAL 模式提升并发读性能
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_conn, _):
-        dbapi_conn.execute("PRAGMA journal_mode=WAL")
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+    url: str = Field(default="sqlite+aiosqlite:///./crosstax.db")
+    # ADR-010: 阿里云 PG 总连接上限 30，4 人团队每人 ≤ 3 且禁止溢出
+    pool_size: int = Field(default=3, ge=1)
+    max_overflow: int = Field(default=0, ge=0)
+    pool_recycle: int = Field(default=1800)
+    pool_pre_ping: bool = Field(default=True)
+    echo: bool = Field(default=False)
 ```
+
+```python
+# backend/infrastructure/database.py（节选）
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine,
+)
+
+engine: AsyncEngine = create_async_engine(
+    db.url,
+    pool_size=db.pool_size,
+    max_overflow=db.max_overflow,
+    pool_recycle=db.pool_recycle,
+    pool_pre_ping=db.pool_pre_ping,
+    echo=db.echo,
+)
+
+async_session_factory = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False,
+)
+
+async def get_session() -> AsyncSession:
+    """FastAPI 依赖：自动 commit / rollback。"""
+```
+
+**关键约定：**
+- 连接 URL **必须带异步驱动前缀**：`sqlite+aiosqlite://`（本地）/ `postgresql+asyncpg://`（PG）
+- ORM 声明基类 `Base` 位于 `backend/models/base.py`（含 `TimestampMixin`），**不在** `database.py` 中
+- 会话通过 FastAPI 依赖 `get_session()` 注入，路由内不得自建 session
+- 连接池上限由 ADR-010 锁定为 `pool_size=3, max_overflow=0`，`tests/backend/test_config.py` 断言防回归
 
 **兼容性约束：**
 - 仅使用 SQLAlchemy 标准类型（String, Integer, Float, Boolean, DateTime, JSON, Text）
 - 避免 PG 特有语法（如 `ILIKE`、`::` 类型转换）
 - JSON 字段 SQLite ≥ 3.38 原生支持，PG 使用 `jsonb`
-- 迁移工具：Alembic（双后端均可生成 migration script）
+- 迁移工具：Alembic（`alembic/env.py` 已对接异步引擎，双后端均可生成 migration script）
+
+**尚未实现的原设计点：**
+- SQLite `PRAGMA journal_mode=WAL`（原稿通过 `event.listens_for` 注入）当前未实现，异步引擎下需改用 `connect` 事件 + `AsyncAdaptedQueuePool` 适配
+- 原稿的 `SQLITE_PATH` 独立环境变量未采用，统一由 `DATABASE_URL` 表达
 
 **环境切换：**
 ```bash
-# 本地开发（默认 SQLite）
-APP_ENV=development uvicorn backend.main:app --reload
+# 本地开发（不设 DATABASE_URL，走缺省 SQLite）
+uv run uvicorn backend.main:app --reload
 
-# 集成测试（切换 PG）
-APP_ENV=testing DATABASE_URL=postgresql://... pytest tests/integration/
+# 集成测试 / 本地 PG 容器
+DATABASE_URL=postgresql+asyncpg://crosstax:crosstax@localhost:5432/crosstax \
+  uv run pytest tests/
 
-# 生产部署（ECS 内网 PG）
-APP_ENV=production DATABASE_URL=postgresql://... uvicorn backend.main:app
+# 生产部署（ECS 内网连阿里云 RDS PG 16）
+ENVIRONMENT=prod \
+DATABASE_URL=postgresql+asyncpg://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax \
+  uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -380,118 +402,162 @@ APP_ENV=production DATABASE_URL=postgresql://... uvicorn backend.main:app
 
 ### 4.1 阿里云资源规划
 
-| 资源 | 规格 | 用途 |
-|------|------|------|
-| ECS 实例 | 2C4G（竞赛足够） | 应用运行 |
-| 系统盘 | 40GB SSD | 操作系统 + 应用 |
-| 数据盘 | 20GB | Mock 数据 + 审计存储 |
-| 安全组 | 开放 80/443/8000 | HTTP/HTTPS/FastAPI |
-| 域名 | 可选 | 演示用 |
+| 资源 | 规格 | 用途 | 状态 |
+|------|------|------|------|
+| ECS 实例 | 2C4G（竞赛足够） | 应用运行 | 待开通 |
+| 系统盘 | 40GB SSD | 操作系统 + 应用 | 待开通 |
+| 数据盘 | 20GB | Mock 数据 + 审计存储 | 待开通 |
+| RDS PostgreSQL 16 | 仅 ECS 内网可达，账号总连接上限 30 | 生产/测试数据库（ADR-008 / ADR-010） | 组委会提供 |
+| Redis | 阿里云 Redis 或 ECS 自建 | 缓存 / 流水线状态 | 待确认 |
+| 安全组 | 开放 80/443/8000 | HTTP/HTTPS/FastAPI | 待配置 |
+| 域名 | 可选 | 演示用 | 待确认 |
 
 ### 4.2 容器化方案
 
-采用多阶段构建，前端编译产物由 FastAPI 静态托管，实现单容器部署。
+**目标形态：** 多阶段构建，前端编译产物由 FastAPI 静态托管，实现单容器部署（ADR-002）。
+
+**当前实现：** `Dockerfile` 为 **后端单服务** uv 多阶段镜像（前端阶段待 `frontend/` 落地后接入）：
 
 ```dockerfile
-# Stage 1: 构建 React 前端
+# ---- Build stage ----
+FROM python:3.11-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+WORKDIR /app
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY backend/ backend/
+COPY alembic/ alembic/
+COPY alembic.ini .
+
+# ---- Runtime stage ----
+FROM python:3.11-slim AS runtime
+RUN groupadd -r app && useradd -r -g app -G app app
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
+COPY --from=builder --chown=app:app /app/backend /app/backend
+COPY --from=builder --chown=app:app /app/alembic /app/alembic
+COPY --from=builder --chown=app:app /app/alembic.ini /app/alembic.ini
+ENV PATH="/app/.venv/bin:$PATH" PYTHONPATH="/app" \
+    PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+USER app
+WORKDIR /app
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+与原稿设计的差异（均为有意调整）：
+- 依赖安装由 `pip install -r backend/requirements.txt` 改为 **`uv sync --frozen`**（仓库内无 `requirements.txt`，见 ADR-001）
+- 健康检查用 Python `urllib` 而非 `curl`（`python:3.11-slim` 不含 curl）
+- 以非 root 用户 `app` 运行
+- 尚未 `COPY assets/ rules/`，待规则与 Mock 数据产出后补入
+
+**前端阶段接入后**需追加（目标）：
+
+```dockerfile
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
-
-# Stage 2: Python 后端 + 静态前端
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# 安装 Python 依赖
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制后端代码
-COPY backend/ ./backend/
-
-# 复制前端构建产物到静态目录
-COPY --from=frontend-builder /app/frontend/dist ./static/
-
-# 复制规则与 Mock 数据
-COPY assets/ ./assets/
-COPY rules/ ./rules/
-
-EXPOSE 8000
-HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1
-
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# runtime 阶段追加：COPY --from=frontend-builder /app/frontend/dist ./static/
 ```
+
+**本地编排：** `docker-compose.yml` 起 `backend` + `postgres:16-alpine` + `redis:7-alpine` 三服务（含健康检查与依赖顺序）。其中 PG 为**本地开发容器**，与仅 ECS 内网可达的阿里云 RDS 不是同一实例。环境变量须用单下划线前缀（`DATABASE_URL` / `REDIS_URL`），与 `config.py` 的 `env_prefix="DATABASE_"` / `"REDIS_"` 匹配。
 
 ### 4.3 环境变量
 
+配置文件位于**仓库根目录** `.env`（模板 `.env.example`），由 `backend/core/config.py` 的 pydantic-settings 读取。
+
+**已实现（与 `.env.example` 一致）：**
+
 ```bash
-# 应用环境
-APP_ENV=development                    # development / testing / production
+# 应用（ENVIRONMENT 取值 dev / test / prod；仅控制日志与调试，不切换数据库后端）
+ENVIRONMENT=dev
+DEBUG=true
+LOG_LEVEL=INFO
+LOG_FORMAT=console                     # console / json
+HOST=0.0.0.0
+PORT=8000
+CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]   # JSON 数组格式
 
-# 后端服务
-BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
-CORS_ORIGINS=http://localhost:3000,https://crosstax.example.com
+# 数据库（前缀 DATABASE_；URL 必须带异步驱动前缀）
+DATABASE_URL=sqlite+aiosqlite:///./crosstax.db
+# DATABASE_URL=postgresql+asyncpg://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax
+DATABASE_POOL_SIZE=3                   # ADR-010：每人 ≤ 3（总上限 30）
+DATABASE_MAX_OVERFLOW=0                # ADR-010：禁止溢出
+DATABASE_POOL_RECYCLE=1800
+DATABASE_ECHO=false
 
-# 数据库（混合方案）
-# development 环境：不设置 DATABASE_URL，自动使用 SQLite
-# testing/production 环境：设置 DATABASE_URL 连接阿里云 PG
-DATABASE_URL=postgresql://user:pass@rm-xxx.pg.rds.aliyuncs.com:5432/crosstax_dev
-DB_POOL_SIZE=3                         # 每人连接池上限（总连接上限 30）
-DB_MAX_OVERFLOW=0                      # 禁止溢出
+# Redis（前缀 REDIS_）
+REDIS_URL=redis://localhost:6379/0
+REDIS_MAX_CONNECTIONS=10
+```
 
-# Vision API（阿里云神机百炼）
-VISION_API_PROVIDER=dashscope
+**规划中（尚未在 `config.py` 中定义，接入 Vision/LLM 与安全模块时新增）：**
+
+```bash
+# Vision API（阿里云神机百炼）— 调用方式待 ADR-007 裁定
 DASHSCOPE_API_KEY=sk-xxx
 VISION_API_MODEL=qwen-vl-max
 
 # LLM 推理（神机百炼）
-LLM_API_PROVIDER=dashscope
 LLM_API_MODEL=qwen-max                 # qwen-max / glm-4 / deepseek-v3
 
-# 规则引擎
+# 规则引擎（ADR-003）
 RULES_BASE_PATH=./rules/rules_v1_base.json
 RULES_PATCH_PATH=./rules/rules_v2_patch.json
 
-# 审计存储
-AUDIT_STORAGE_PATH=./data/audit/
+# 审计报告模板
+AUDIT_TEMPLATE_PATH=./assets/templates/audit_report.html.j2
 
-# 前端 (构建时注入)
+# 前端（构建时注入，待 frontend/ 落地）
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 
 # 安全
 SECRET_KEY=xxx
 ```
 
+与原稿设计的差异：
+- `APP_ENV`（development/testing/production）→ 实际 `ENVIRONMENT`（dev/test/prod），且不再承担数据库后端切换职责
+- `BACKEND_HOST` / `BACKEND_PORT` → 实际 `HOST` / `PORT`
+- `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` → 实际 `DATABASE_POOL_SIZE` / `DATABASE_MAX_OVERFLOW`
+- `CORS_ORIGINS` 为 JSON 数组格式，非逗号分隔字符串
+- 原稿 `VISION_API_PROVIDER` / `LLM_API_PROVIDER` / `SQLITE_PATH` / `AUDIT_STORAGE_PATH` 未采用（审计落数据库而非本地文件）
+
 ---
 
 ## 5. 模块目录结构
 
+> 标注 **(规划中)** 的为设计目标，尚未创建或为空；其余为当前真实结构。
+
 ```
 crosstax-ai/
-├── assets/
-│   ├── mock-data/
-│   │   ├── mock_merchants.json        # Mock 商户底表
-│   │   └── samples/                   # 5 个 CRS 样本文件
-│   └── templates/
-│       └── audit_report.html.j2       # Jinja2 审计报告模板
 ├── backend/                            # Python 后端服务 (uv-managed)
-│   ├── main.py                         # FastAPI 入口
-│   ├── core/
-│   │   ├── database.py                 # 数据库抽象层（SQLite/PG 切换）
-│   │   └── config.py                   # 环境变量配置（pydantic-settings）
+│   ├── main.py                         # 应用工厂 create_app() + lifespan + 中间件注册
 │   ├── api/
-│   │   ├── routes/                     # REST 路由
-│   │   │   ├── audit.py                # /api/v1/audit
-│   │   │   ├── rules.py                # /api/v1/rules
-│   │   │   └── cases.py                # /api/v1/cases
-│   │   ├── schemas/                    # Pydantic 请求/响应模型
-│   │   └── websocket.py                # WebSocket 实时推送
-│   ├── agents/
+│   │   ├── routes/
+│   │   │   ├── health.py               # /health 存活 + /ready 就绪探针
+│   │   │   ├── audit.py                # /api/v1/audit            (规划中)
+│   │   │   ├── rules.py                # /api/v1/rules            (规划中)
+│   │   │   └── cases.py                # /api/v1/cases            (规划中)
+│   │   ├── schemas/                    # Pydantic 请求/响应模型    (规划中)
+│   │   └── websocket.py                # WebSocket 实时推送        (规划中)
+│   ├── core/
+│   │   ├── config.py                   # pydantic-settings 配置
+│   │   └── logging/                    # config / formatter / RequestId 中间件
+│   ├── infrastructure/
+│   │   ├── database.py                 # 异步引擎 + async_sessionmaker + get_session()
+│   │   └── exceptions.py               # 全局异常处理器
+│   ├── models/                         # SQLAlchemy ORM 模型
+│   │   ├── base.py                     # DeclarativeBase + TimestampMixin
+│   │   ├── user.py                     # 用户表
+│   │   ├── audit_session.py            # 审核会话表               (规划中)
+│   │   └── merchant.py                 # 商户底表                 (规划中)
+│   ├── repositories/
+│   │   └── base.py                     # 仓储基类
+│   ├── agents/                         # 流水线智能体             (规划中)
 │   │   ├── media_preprocessor.py       # 媒体预处理
 │   │   ├── vision_parser.py            # Vision Agent
 │   │   ├── form_checker.py             # 形式完备性校验
@@ -499,74 +565,72 @@ crosstax-ai/
 │   │   ├── indicia_reasoner.py         # 跨源冲突研判
 │   │   ├── verdict_resolver.py         # 三态裁决器
 │   │   └── audit_trail.py              # 审计留痕
-│   ├── engine/
+│   ├── engine/                         # 规则引擎                 (规划中)
 │   │   ├── rule_engine.py              # 规则引擎 + 热重载
-│   │   └── models.py                   # 数据模型 (CRSFormData, AuditIssue, etc.)
-│   ├── models/                         # SQLAlchemy ORM 模型
-│   │   ├── audit_session.py            # 审核会话表
-│   │   └── merchant.py                 # 商户底表
-│   └── utils/
-│       ├── file_hash.py                # 文件哈希计算
-│       └── logger.py                   # 日志
-├── frontend/                           # React 前端应用 (npm-managed)
-│   ├── public/
-│   ├── src/
-│   │   ├── main.tsx                    # React 入口
-│   │   ├── App.tsx                     # 根组件
-│   │   ├── api/                        # API 客户端封装
-│   │   ├── components/
-│   │   │   ├── PipelineStatus/         # 流水线状态组件
-│   │   │   ├── VerdictBanner/          # 裁决横幅
-│   │   │   ├── RemediationCard/        # 修复卡片
-│   │   │   ├── ConflictEvidence/       # 冲突证据链
-│   │   │   ├── AuditTrail/             # 审计底稿
-│   │   │   └── RuleReload/             # 规则热重载
-│   │   ├── pages/
-│   │   │   ├── AuditPage.tsx           # 主审核页
-│   │   │   └── CasesPage.tsx           # 样本切换页
-│   │   ├── hooks/                      # 自定义 Hooks
-│   │   ├── types/                      # TypeScript 类型定义
-│   │   └── styles/                     # 样式文件
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
-├── rules/                              # CRS 规则配置（后端消费）
+│   │   └── models.py                   # CRSFormData / AuditIssue 等
+│   └── utils/                          # 文件哈希等工具           (规划中)
+├── alembic/                            # 数据库迁移
+│   ├── env.py                          # 已对接异步引擎
+│   ├── script.py.mako
+│   └── versions/                       # 暂无迁移脚本             (规划中)
+├── tests/
+│   ├── conftest.py
+│   ├── backend/
+│   │   ├── test_config.py              # 配置与 ADR-010 连接池断言
+│   │   ├── test_health.py              # 探针测试
+│   │   ├── test_tin_validator.py       # (规划中)
+│   │   ├── test_verdict_resolver.py    # (规划中)
+│   │   ├── test_indicia_reasoner.py    # (规划中)
+│   │   └── test_e2e_pipeline.py        # (规划中)
+│   ├── fixtures/                       # (空)
+│   └── frontend/                       # 前端测试                 (规划中)
+├── frontend/                           # React 18 + TS + Vite (npm) (规划中，尚未创建)
+│   └── src/
+│       ├── main.tsx / App.tsx
+│       ├── api/                        # Axios 客户端封装
+│       ├── components/                 # PipelineStatus / VerdictBanner /
+│       │                               # RemediationCard / ConflictEvidence /
+│       │                               # AuditTrail / RuleReload
+│       ├── pages/                      # AuditPage / CasesPage
+│       ├── hooks/                      # useAuditStream 等
+│       ├── stores/                     # Zustand
+│       ├── types/                      # TS 类型定义
+│       └── styles/                     # 主题 token + 全局样式
+├── assets/
+│   ├── mock-data/                      # 商户底表 + 5 个 CRS 样本 (规划中，仅占位)
+│   └── templates/                      # Jinja2 审计报告模板      (规划中，仅占位)
+├── rules/                              # CRS 规则配置（后端消费）  (规划中，目录为空)
 │   ├── rules_v1_base.json              # 基准规则
 │   └── rules_v2_patch.json             # 增量补丁（热重载演示）
+├── fixtures/                           # (规划中，目录为空)
+├── docker/                             # (规划中，目录为空；编排见 docker-compose.yml)
 ├── design/
 │   ├── architecture.md                 # 本文档
 │   ├── ui-spec.md                      # UI 设计规范
-│   ├── diagrams/                       # 说明性图表
+│   ├── diagrams/
 │   │   └── architecture-overview.html  # 架构蓝图
-│   └── prototypes/                     # 可交互原型
-│       └── react-ui-wireframe.html
-├── docs/
-│   ├── README.md                       # 文档索引
-│   ├── proposal/                       # 原始提案归档
-│   └── roadmap.md                      # 项目路线图
+│   └── prototypes/
+│       └── react-ui-wireframe.html     # 可交互原型
 ├── specs/
 │   ├── prd.md                          # PRD
 │   ├── data-spec.md                    # 数据模型规格
 │   └── adr/                            # 架构决策记录（10 个独立文件）
-├── tests/
-│   ├── backend/                        # 后端测试
-│   │   ├── test_tin_validator.py
-│   │   ├── test_verdict_resolver.py
-│   │   ├── test_indicia_reasoner.py
-│   │   ├── test_api_routes.py
-│   │   └── test_e2e_pipeline.py
-│   └── frontend/                       # 前端测试
-│       ├── components/
-│       └── pages/
-├── alembic/                            # 数据库迁移
-├── pyproject.toml                      # Python 项目配置 + uv 依赖管理
+├── docs/
+│   └── proposal/                       # 原始提案归档
+├── pyproject.toml                      # 依赖 + ruff/mypy/pytest/coverage 配置
 ├── uv.lock                             # uv 依赖锁文件
-├── Dockerfile                          # 多阶段构建（前端编译 → 后端托管）
-├── docker-compose.yml                  # 开发环境编排
+├── alembic.ini                         # Alembic 配置
+├── Makefile                            # 命令入口（dev/test/lint/mypy/migrate/build/up/down）
+├── Dockerfile                          # uv 多阶段后端镜像（前端阶段待接入）
+├── docker-compose.yml                  # backend + postgres:16 + redis:7
 ├── .env.example                        # 环境变量模板
+├── .pre-commit-config.yaml             # 提交前钩子
 ├── AGENTS.md                           # AI 编码助手规范
-└── README.md
+├── ROADMAP.md                          # 项目路线图 / 任务清单
+└── README.md                           # 项目说明 + 文档导航
 ```
+
+> 原稿将文档索引与路线图放在 `docs/README.md`、`docs/roadmap.md`，现已分别迁移至仓库根目录的 `README.md` 与 `ROADMAP.md`，`docs/` 仅保留 `proposal/` 原始提案归档。
 
 ---
 
@@ -583,6 +647,8 @@ crosstax-ai/
 | 7 | 前后端实时通信方案 | 流水线状态推送体验 | WebSocket 优先，SSE 备选 | 待确认 |
 | 8 | pgvector 向量检索 | 名称模糊匹配准确率 | 竞赛阶段暂不启用，规则 + LLM fallback | **已确认：竞赛阶段豁免** |
 | 9 | LLM 推理模型选型 | 冲突研判质量、成本 | 神机百炼 Qwen-Max（主力）/ GLM / DeepSeek | **已确认** |
+| 10 | 神机百炼调用方式 | 依赖体积、异步兼容性 | ADR-007 写 `dashscope` SDK，本文档 §2.4 写「外部 HTTP 调用」，且 `dashscope` 未入 `pyproject.toml`（现有 `httpx`）。需统一 | **待裁定** |
+| 11 | Redis 用途与部署形态 | 是否引入额外云资源 | 依赖与 compose 编排已就位，但业务尚未使用；需明确用途（缓存 / 流水线状态 / WebSocket 广播）后再决定云上形态 | **待确认** |
 
 ---
 

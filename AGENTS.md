@@ -17,18 +17,31 @@ If a spec is ambiguous or missing, ask the team before inventing behavior. Do no
 ## Repository Structure (Monorepo)
 
 This is a **single repository** containing both frontend and backend as peer modules.
+Entries marked **(planned)** do not exist yet — do not assume you can import from them.
 
 ```
 crosstax-ai/
 ├── backend/          # Python FastAPI service (uv-managed)
-│   ├── main.py       # App entry, CORS, lifespan
-│   ├── core/         # Database abstraction (database.py), config (config.py)
-│   ├── api/          # Routes, schemas, websocket
-│   ├── agents/       # Pipeline agents (vision, TIN, indicia, verdict, audit)
-│   ├── engine/       # Rule engine, data models
-│   ├── models/       # SQLAlchemy ORM models (audit_session, merchant, etc.)
-│   └── utils/        # File hash, logger
-├── frontend/         # React 18 + TypeScript + Vite (npm-managed)
+│   ├── main.py       # App factory create_app(), CORS, lifespan, router registration
+│   ├── core/
+│   │   ├── config.py # pydantic-settings: Settings / DatabaseSettings / RedisSettings
+│   │   └── logging/  # setup_logging, formatter, RequestIdMiddleware
+│   ├── infrastructure/
+│   │   ├── database.py   # Async engine + async_sessionmaker + get_session() dependency
+│   │   └── exceptions.py # register_exception_handlers()
+│   ├── api/
+│   │   ├── routes/   # health.py (live); audit/rules/cases (planned)
+│   │   ├── schemas/  # Pydantic request/response models (planned)
+│   │   └── websocket.py # /ws/audit/{session_id} (planned)
+│   ├── models/       # SQLAlchemy ORM models
+│   │   ├── base.py   # DeclarativeBase + TimestampMixin — Alembic targets this
+│   │   └── user.py   # audit_session.py / merchant.py (planned)
+│   ├── repositories/ # base.py repository pattern
+│   ├── agents/       # Pipeline agents: vision, TIN, indicia, verdict, audit (planned)
+│   ├── engine/       # Rule engine + hot reload, data models (planned)
+│   └── utils/        # File hash, helpers (planned)
+├── alembic/          # Migrations: env.py (async-aware) + script.py.mako; versions/ empty
+├── frontend/         # React 18 + TypeScript + Vite (npm-managed) — **planned, not created**
 │   └── src/
 │       ├── api/      # Axios client wrappers
 │       ├── components/  # UI components (one folder per component)
@@ -37,15 +50,20 @@ crosstax-ai/
 │       ├── stores/   # Zustand stores
 │       ├── types/    # TypeScript type definitions
 │       └── styles/   # Theme tokens, global CSS
-├── assets/           # Shared: Mock data + Jinja2 report templates
-├── rules/            # CRS rule JSON configs (backend consumes)
-├── tests/            # Mirrors backend/ and frontend/ structure
+├── assets/           # Shared: Mock data + Jinja2 report templates (placeholders only)
+├── rules/            # CRS rule JSON configs, backend consumes (planned, dir empty)
+├── tests/            # Mirrors backend/ (tests/backend/); tests/frontend/ planned
 ├── design/           # Design documents (DO NOT edit from code agent)
-├── docs/             # Supporting docs (DO NOT edit from code agent)
+├── docs/             # Supporting docs — proposal/ only (DO NOT edit from code agent)
 ├── specs/            # Requirements: PRD, data spec, ADRs (DO NOT edit from code agent)
-├── pyproject.toml    # Backend dependencies (uv)
-├── Dockerfile        # Multi-stage: frontend build → backend serves static
-└── docker-compose.yml
+├── pyproject.toml    # Backend dependencies + ruff/mypy/pytest/coverage config (uv)
+├── uv.lock           # uv lockfile — commit it, never hand-edit
+├── alembic.ini       # Alembic configuration
+├── Makefile          # Canonical command entry points (see below)
+├── Dockerfile        # uv multi-stage backend image, non-root (frontend stage planned)
+├── docker-compose.yml # backend + postgres:16 + redis:7
+├── .env.example      # Env var template — copy to root .env
+└── .pre-commit-config.yaml
 ```
 
 ## Development Commands
@@ -70,6 +88,8 @@ uv run mypy backend/
 ```
 
 ### Frontend (Node / npm)
+
+> **Not yet created** — `frontend/` does not exist. Scaffold it first (ROADMAP §3.1) before using these commands.
 
 ```bash
 cd frontend/
@@ -109,9 +129,12 @@ docker compose run --rm backend pytest
 - Error responses: use HTTP status codes + JSON body `{ "code": "...", "message": "..." }`
 - No business logic in route handlers — delegate to agents/engine
 - Environment variables via `pydantic-settings` (see `.env.example`), never hardcode secrets
-- Database: all persistence through `backend/core/database.py` — SQLAlchemy ORM only, no raw SQL dialect features
-- Models: one file per table in `backend/models/`, inherit from `Base` in `backend/core/database.py`
-- Migrations: Alembic, generate via `alembic revision --autogenerate`, test on both SQLite and PG
+- Database: all persistence through `backend/infrastructure/database.py` — SQLAlchemy 2.0 **async** ORM only, no raw SQL dialect features
+- Sessions: inject via the `get_session()` FastAPI dependency — never construct sessions manually in routes
+- Connection URLs must carry the async driver prefix: `sqlite+aiosqlite://` (local) / `postgresql+asyncpg://` (PG)
+- Pool limits are fixed by ADR-010 (`pool_size=3`, `max_overflow=0`) because Alibaba Cloud PG caps the team at 30 total connections; `tests/backend/test_config.py` asserts them — do not raise them
+- Models: one file per table in `backend/models/`, inherit from `Base` in `backend/models/base.py` (Alembic autogenerate targets this)
+- Migrations: Alembic, generate via `make migrate msg="..."` (`alembic revision --autogenerate`), test on both SQLite and PG
 
 ## Frontend Conventions (React / TypeScript)
 
@@ -129,7 +152,7 @@ docker compose run --rm backend pytest
 
 - **DO NOT** hardcode CRS rules — all rules come from JSON files in `rules/`
 - **DO NOT** bypass the agent pipeline — all audit flows through `run_audit_pipeline()`
-- **DO NOT** use PG-specific SQL syntax directly — go through `backend/core/database.py` abstraction (ADR-008: SQLite dev + PG production)
+- **DO NOT** use PG-specific SQL syntax directly — go through the `backend/infrastructure/database.py` abstraction (ADR-008: SQLite dev + PG production)
 - **DO NOT** call Vision API directly from routes — go through `VisionParserAgent`
 - **DO NOT** modify files in `specs/`, `design/`, or `docs/` — those are PM/designer-owned
 - **DO NOT** introduce new top-level dependencies without team agreement

@@ -21,3 +21,6 @@
 - Mock 商户底表：`assets/mock-data/mock_merchants.json`
 - 5 个 CRS 样本文件：`assets/mock-data/samples/`
 - 需与合规专家共同设计 Case 数据，确保覆盖三态裁决
+
+## 实现状态
+- `assets/mock-data/` 与 `assets/templates/` 已创建但仅含占位文件，商户底表、5 个样本与 Jinja2 报告模板均待产出。

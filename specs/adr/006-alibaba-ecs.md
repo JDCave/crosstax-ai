@@ -21,3 +21,8 @@
 - 安全组开放 80/443/8000 端口
 - 环境变量通过 `.env` 文件管理，敏感配置外置
 - 数据库连接仅 ECS 内网可达阿里云 PG 16
+
+## 实现状态
+- `Dockerfile` 已按本决策编写（uv 多阶段构建、非 root 用户运行、`EXPOSE 8000`、`/health` 健康检查），暴露端口与上述安全组规划一致。
+- `docker-compose.yml` 现编排 `backend` + `postgres:16-alpine` + `redis:7-alpine` 三服务，其中 PG 为**本地开发容器**，与阿里云 RDS PG 16（仅 ECS 内网可达）不是同一实例；生产部署仍需按本决策连内网 RDS。
+- ECS 资源开通与部署流水线尚未开始。
