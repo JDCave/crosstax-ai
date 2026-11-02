@@ -83,7 +83,7 @@ Reason A/C 要求提供代码；B 还要求去除两端空白后解释长度至�
 ## 7. TIN 算子
 
 先限制原始输入最长 256 字符，移除空白、连字符和圆括号，再转大写。
-配置法域执行 fullmatch，然后计算校验位；未知法域仅检查清洗后长度 4-30。
+配置法域执行 fullmatch，然后计算校验位；旧版 schema=1 未知法域仅检查清洗后长度 4-30；schema=2 返回未覆盖 WARNING。
 上述长度上限为执行保护，不代表每个法域 TIN 的业务长度。
 原始表单不被修改，错误信息不回显敏感号码。
 
@@ -142,10 +142,18 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 ## 10. 验证与限制
 
-现有测试总计 34 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+现有测试总计 55 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
 完整测试集在隔离 SQLite 上运行；另已在本地 PostgreSQL 导入并激活来源支持的两版规则，并只读运行全部五 Case，不持久化审核输入。
 没有提供 AI 调用，因为语义推理和提取不在本轮规则引擎范围。
 新增模块通过 mypy；全项目已有日志模块两处 dict 泛型类型错误仍待队友处理。
+
+
+## 全球规则集更新
+
+已接入 22 法域 62 条规则，配置和逐国来源见 rules/rules_global_v3.json 与 rules/GLOBAL_COVERAGE.md。
+输出新增 tin_check，披露命中规则、官方来源、验证等级和覆盖状态；结构规则不代表号码真实性验证。
+Case E 更新前因未覆盖 SG 返回 MANUAL_TRIAGE，更新后识别格式错误返回 NEED_USER_FIX。
+本次只核对规则资料，无新增真实税号或客户数据。
