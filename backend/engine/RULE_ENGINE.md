@@ -180,3 +180,14 @@ has_no_tin 路径不再直接自动放行：Reason A/B/C 仅检查声明完整�
 新增 INCONSISTENT_TIN_DECLARATION、MISSING_FIELD 业务问题，检查 TIN/无 TIN/理由矛盾和纯空白必填字段。
 出生或成立日期检查有效 YYYY-MM-DD 日期，不自行增加年龄或成立年限条件；输入增加合理长度边界。
 这些新增问题码与策略属于本次已授权的完整性加固，API 层需保留原样展示。
+
+
+## 单次执行与可解释追踪
+
+TINValidatorEngine.evaluate 一次返回问题列表和 TINCheck，统一审核入口只执行一次。
+validate/trace 保留为独立调用的兼容包装；不要在同一请求里连续调用两个包装。
+checks_performed 记录实际执行的规则选择、清洗、格式和校验位；checks_not_performed 列出未执行检查。
+格式失败时不会声称运行过校验位，verification_level 为本次实际执行深度。
+reason_code 区分输入缺失、格式失败、校验位失败、未覆盖、历史长度兜底和豁免待复核。
+无 TIN 的 NOT_APPLICABLE 仅表示未运行号码校验；豁免适用性仍未执行，并在裁决问题中体现。
+追踪不回显 TIN 明文，仍返回来源和规则 ID。

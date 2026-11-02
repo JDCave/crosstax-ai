@@ -51,6 +51,9 @@ class TINCheck(BaseModel):
     rule_id: str | None = None
     source_url: str | None = None
     algorithm_source_url: str | None = None
+    checks_performed: tuple[str, ...] = ()
+    checks_not_performed: tuple[str, ...] = ()
+    reason_code: str | None = None
 
 
 class ValidationResult(BaseModel):

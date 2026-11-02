@@ -60,7 +60,78 @@ OPERATORS: MappingProxyType[str, Callable[[str], bool]] = MappingProxyType(
 
 
 class TINValidatorEngine:
-    """No database access, network calls or country-specific rules in execution."""
+    """One evaluation produces issues and a trace; wrappers preserve old callers."""
+
+    def evaluate(
+        self,
+        tin: str | None,
+        jurisdiction_code: str,
+        snapshot: RuleSnapshot,
+        holder_type: str | None = None,
+        tin_type: str | None = None,
+        *,
+        strict_coverage: bool = False,
+    ) -> tuple[list[AuditIssue], TINCheck]:
+        code = jurisdiction_code.strip().upper()
+        rule = snapshot.variants.get((code, holder_type or "", tin_type or "")) or snapshot.rules.get(code)
+        performed = ["rule_selection"]
+
+        def finish(issues: list[AuditIssue], status: str, reason: str) -> tuple[list[AuditIssue], TINCheck]:
+            from typing import Literal, cast
+
+            level: Literal["NONE", "FORMAT_ONLY", "CHECKSUM"] = "NONE"
+            if "format" in performed:
+                level = "FORMAT_ONLY"
+            if "checksum" in performed:
+                level = "CHECKSUM"
+            pending = [name for name in ("format", "checksum") if name not in performed]
+            pending.extend(("issuance", "ownership", "tax_residency"))
+            return issues, TINCheck(
+                status=cast(Literal["PASSED", "FAILED", "NOT_COVERED", "NOT_APPLICABLE"], status),
+                verification_level=level,
+                rule_id=rule.rule_id if rule else None,
+                source_url=rule.source_url if rule else None,
+                algorithm_source_url=rule.algorithm_source_url if rule else None,
+                checks_performed=tuple(performed),
+                checks_not_performed=tuple(pending),
+                reason_code=reason,
+            )
+
+        if tin is None or len(tin) > 256:
+            return finish(self._invalid("TIN 缺失或长度超出允许范围"), "FAILED", "INVALID_INPUT")
+        value = re.sub(r"[\s()\-]", "", tin).upper()
+        performed.append("normalization")
+        if rule is None:
+            country_known = code in snapshot.rules or any(key[0] == code for key in snapshot.variants)
+            if snapshot.variants or strict_coverage:
+                issue_code = "UNSUPPORTED_TIN_TYPE" if country_known else "UNSUPPORTED_JURISDICTION"
+                field = "tin_type" if country_known else "jurisdiction_code"
+                return finish(
+                    [
+                        AuditIssue(
+                            code=issue_code,
+                            severity="WARNING",
+                            field=field,
+                            message="规则未覆盖该主体或标识类型。需要人工复核",
+                            confidence=1.0,
+                        )
+                    ],
+                    "NOT_COVERED",
+                    issue_code,
+                )
+            performed.append("legacy_length_fallback")
+            issues = [] if 4 <= len(value) <= 30 else self._invalid("未配置法域的 TIN 长度必须为 4-30 位")
+            return finish(issues, "NOT_COVERED", "LEGACY_LENGTH_FALLBACK")
+        performed.append("format")
+        if rule.pattern.fullmatch(value) is None:
+            return finish(self._invalid("TIN 格式不符合当前规则。请核对后重新提交"), "FAILED", "FORMAT_MISMATCH")
+        if rule.algorithm != "REGEX_ONLY":
+            performed.append("checksum")
+            if not OPERATORS[rule.algorithm](value):
+                return finish(
+                    self._invalid("TIN 校验位或标识类型不符合当前规则。请核对后重新提交"), "FAILED", "CHECKSUM_MISMATCH"
+                )
+        return finish([], "PASSED", "CHECKS_PASSED")
 
     def validate(
         self,
@@ -70,57 +141,12 @@ class TINValidatorEngine:
         holder_type: str | None = None,
         tin_type: str | None = None,
     ) -> list[AuditIssue]:
-        # Guard before regex processing. The input contract expects short identifiers.
-        if tin is None or len(tin) > 256:
-            return self._invalid("TIN 缺失或长度超出允许范围")
-        value = re.sub(r"[\s()\-]", "", tin).upper()
-        code = jurisdiction_code.strip().upper()
-        rule = snapshot.rules.get(code)
-        if snapshot.variants and code in {key[0] for key in snapshot.variants}:
-            rule = snapshot.variants.get((code, holder_type or "", tin_type or ""))
-            if rule is None:
-                return [
-                    AuditIssue(
-                        code="UNSUPPORTED_TIN_TYPE",
-                        severity="WARNING",
-                        field="tin_type",
-                        message="请补充受支持的主体和 TIN 标识类型以便复核",
-                        confidence=1.0,
-                    )
-                ]
-
-        if rule is None and snapshot.variants:
-            return [
-                AuditIssue(
-                    code="UNSUPPORTED_JURISDICTION",
-                    severity="WARNING",
-                    field="jurisdiction_code",
-                    message="当前规则未覆盖该法域。需要人工复核",
-                    confidence=1.0,
-                )
-            ]
-        if rule is None:
-            return [] if 4 <= len(value) <= 30 else self._invalid("未配置法域的 TIN 长度必须为 4-30 位")
-        if rule.pattern.fullmatch(value) is None:
-            return self._invalid("TIN 格式不符合当前规则。请核对后重新提交")
-        if not OPERATORS[rule.algorithm](value):
-            return self._invalid("TIN 校验位或标识类型不符合当前规则。请核对后重新提交")
-        return []
+        return self.evaluate(tin, jurisdiction_code, snapshot, holder_type, tin_type)[0]
 
     def trace(
         self, tin: str | None, code: str, snapshot: RuleSnapshot, holder_type: str | None, tin_type: str | None
     ) -> TINCheck:
-        rule = snapshot.variants.get((code, holder_type or "", tin_type or "")) or snapshot.rules.get(code)
-        issues = self.validate(tin, code, snapshot, holder_type, tin_type)
-        if rule is None:
-            return TINCheck(status="NOT_COVERED", verification_level="NONE")
-        return TINCheck(
-            status="FAILED" if issues else "PASSED",
-            verification_level="FORMAT_ONLY" if rule.algorithm == "REGEX_ONLY" else "CHECKSUM",
-            rule_id=rule.rule_id,
-            source_url=rule.source_url,
-            algorithm_source_url=rule.algorithm_source_url,
-        )
+        return self.evaluate(tin, code, snapshot, holder_type, tin_type)[1]
 
     @staticmethod
     def _invalid(message: str) -> list[AuditIssue]:

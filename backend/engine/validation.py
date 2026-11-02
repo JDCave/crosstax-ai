@@ -31,18 +31,8 @@ class ValidationEngine:
         covered = form.jurisdiction_code in snapshot.rules or any(
             key[0] == form.jurisdiction_code for key in snapshot.variants
         )
-        if policy.strict_coverage and not covered and not snapshot.variants:
-            form_issues.append(
-                AuditIssue(
-                    code="UNSUPPORTED_JURISDICTION",
-                    severity="WARNING",
-                    field="jurisdiction_code",
-                    message="法域未覆盖。需要人工复核",
-                    confidence=1.0,
-                )
-            )
         if form.has_no_tin:
-            if not covered and snapshot.variants:
+            if not covered and (snapshot.variants or policy.strict_coverage):
                 form_issues.append(
                     AuditIssue(
                         code="UNSUPPORTED_JURISDICTION",
@@ -61,15 +51,31 @@ class ValidationEngine:
                     confidence=1.0,
                 )
             )
-        if not form.has_no_tin:
-            form_issues.extend(
-                self.tin_validator.validate(form.tin, form.jurisdiction_code, snapshot, form.holder_type, form.tin_type)
+        if form.has_no_tin:
+            tin_check = TINCheck(
+                status="NOT_APPLICABLE",
+                verification_level="NONE",
+                checks_performed=("exemption_declaration_completeness",),
+                checks_not_performed=(
+                    "exemption_applicability",
+                    "format",
+                    "checksum",
+                    "issuance",
+                    "ownership",
+                    "tax_residency",
+                ),
+                reason_code="EXEMPTION_REVIEW_REQUIRED",
             )
-        tin_check = (
-            TINCheck(status="NOT_APPLICABLE", verification_level="NONE")
-            if form.has_no_tin
-            else self.tin_validator.trace(form.tin, form.jurisdiction_code, snapshot, form.holder_type, form.tin_type)
-        )
+        else:
+            tin_issues, tin_check = self.tin_validator.evaluate(
+                form.tin,
+                form.jurisdiction_code,
+                snapshot,
+                form.holder_type,
+                form.tin_type,
+                strict_coverage=policy.strict_coverage,
+            )
+            form_issues.extend(tin_issues)
         all_issues = [*form_issues, *indicia_issues]
         return ValidationResult(
             rule_version_id=snapshot.version_id,
