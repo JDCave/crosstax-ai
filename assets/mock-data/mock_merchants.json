@@ -1,0 +1,42 @@
+[
+  {
+    "merchant_id": "DEMO_A",
+    "kyc_legal_name": "DEMO PERSON A",
+    "incorporation_jurisdiction": "CN",
+    "primary_operating_country": "CN",
+    "bank_settlement_country": "CN",
+    "phone_country_code": "+86"
+  },
+  {
+    "merchant_id": "DEMO_B",
+    "kyc_legal_name": "DEMO PERSON B",
+    "incorporation_jurisdiction": "CN",
+    "primary_operating_country": "CN",
+    "bank_settlement_country": "CN",
+    "phone_country_code": "+86"
+  },
+  {
+    "merchant_id": "DEMO_C",
+    "kyc_legal_name": "DEMO PERSON C",
+    "incorporation_jurisdiction": "CN",
+    "primary_operating_country": "CN",
+    "bank_settlement_country": "CN",
+    "phone_country_code": "+86"
+  },
+  {
+    "merchant_id": "DEMO_D",
+    "kyc_legal_name": "DEMO OFFSHORE ENTITY D",
+    "incorporation_jurisdiction": "HK",
+    "primary_operating_country": "CN",
+    "bank_settlement_country": "CN",
+    "phone_country_code": "+86"
+  },
+  {
+    "merchant_id": "DEMO_E",
+    "kyc_legal_name": "DEMO SG ENTITY E",
+    "incorporation_jurisdiction": "SG",
+    "primary_operating_country": "SG",
+    "bank_settlement_country": "SG",
+    "phone_country_code": "+86"
+  }
+]

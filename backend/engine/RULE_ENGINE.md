@@ -39,7 +39,7 @@ ValidationResult 包含 rule_version_id、rule_revision、form_issues、indicia_
 
 ## 4. 规则契约与发布
 
-规则集沿用法域键 → regex/algorithm 的 JSON 对象；禁止额外规则字段。
+schema_version=1 保留法域键 → regex/algorithm 的旧契约。schema_version=2 为已获用户同意的新结构，根对象包含 schema_version 和 jurisdictions；每个法域对应 TypedRule 列表，增加 rule_id、holder_type、tin_type、source_url、source_section、verification_level。
 算法白名单为 MOD11_2、HKID_WEIGHT、NRIC_WEIGHT、REGEX_ONLY。
 规则来自上游或团队提供的配置，执行代码不内置国家正则。
 
@@ -95,8 +95,7 @@ Reason A/C 要求提供代码；B 还要求去除两端空白后解释长度至�
 | REGEX_ONLY | 仅校验配置正则 |
 
 通过只表示格式/校验位通过，不证明真实签发、主体身份或税籍。
-现有单法域单规则契约不能完整表达同国个人/实体多种 TIN，不能把上述个人算子套用于所有主体。
-扩大范围前须团队扩展契约，并由规则提供方确认规则。
+新版契约通过主体和标识类型精确选择规则；已覆盖法域缺少匹配类型时返回 UNSUPPORTED_TIN_TYPE WARNING，而非套用其他主体算法。CRSFormData 新字段可选，以兼容旧调用；新版规则下应明确提供。
 Python re 没有执行超时，输入长度限制不能完全避免恶意回溯；仅使用经审核的可信规则，复杂度隔离留待后续。
 
 ## 8. 队友接入
@@ -139,14 +138,14 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 注册可以重复传 --document-id 绑定已存在资料。activate 的 revision 必须是当前数据库修订号。
 回滚使用 activate 历史批准版本，并传当前 revision。
-未生成或激活生产规则，本次不写入演示规则到你的数据库。
+可使用 python -m backend.cli.demo_cases --install 安装仓库竞赛规则基线；当前本地已激活最新版。详见 rules/README.md。
 
 ## 10. 验证与限制
 
-现有测试总计 32 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+现有测试总计 34 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
-五条集成路径为合成测试，仓库尚无正式 Case A-E 数据，不能宣称已通过正式五 Case 验收。
+仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
-完整执行测试在隔离 SQLite 上运行，未向 PostgreSQL 写入规则或业务测试数据。
+完整测试集在隔离 SQLite 上运行；另已在本地 PostgreSQL 导入并激活来源支持的两版规则，并只读运行全部五 Case，不持久化审核输入。
 没有提供 AI 调用，因为语义推理和提取不在本轮规则引擎范围。
 新增模块通过 mypy；全项目已有日志模块两处 dict 泛型类型错误仍待队友处理。

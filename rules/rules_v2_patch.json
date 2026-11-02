@@ -1,0 +1,111 @@
+{
+  "schema_version": 2,
+  "jurisdictions": {
+    "CN": [
+      {
+        "rule_id": "CN_CN_ID",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "CN_ID",
+        "regex": "[0-9]{17}[0-9X]",
+        "algorithm": "MOD11_2",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM"
+      },
+      {
+        "rule_id": "CN_CN_LEGACY_TIN",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_LEGACY_TIN",
+        "regex": "[0-9]{15}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      },
+      {
+        "rule_id": "CN_CN_ENTITY_TIN",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_ENTITY_TIN",
+        "regex": "[0-9]{8}[0-9A-Z]{10}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      }
+    ],
+    "HK": [
+      {
+        "rule_id": "HK_HKID",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "HKID",
+        "regex": "[A-Z]{1,2}[0-9]{6}[0-9A]",
+        "algorithm": "HKID_WEIGHT",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM"
+      },
+      {
+        "rule_id": "HK_HK_BR",
+        "holder_type": "ENTITY",
+        "tin_type": "HK_BR",
+        "regex": "[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      }
+    ],
+    "SG": [
+      {
+        "rule_id": "SG_SG_NRIC",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SG_NRIC",
+        "regex": "[ST][0-9]{7}[A-Z]",
+        "algorithm": "NRIC_WEIGHT",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM"
+      },
+      {
+        "rule_id": "SG_SG_FIN",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "SG_FIN",
+        "regex": "[FGM][0-9]{7}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      },
+      {
+        "rule_id": "SG_SG_UEN_ROB",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_ROB",
+        "regex": "[0-9]{8}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      },
+      {
+        "rule_id": "SG_SG_UEN_ROC",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_ROC",
+        "regex": "[0-9]{9}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      },
+      {
+        "rule_id": "SG_SG_UEN_OTHER",
+        "holder_type": "ENTITY",
+        "tin_type": "SG_UEN_OTHER",
+        "regex": "[ST][0-9]{2}[A-Z]{2}[0-9]{4}[A-Z]",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/singapore-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      }
+    ]
+  }
+}

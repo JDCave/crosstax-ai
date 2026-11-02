@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "jurisdictions": {
+    "CN": [
+      {
+        "rule_id": "CN_CN_ID",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "CN_ID",
+        "regex": "[0-9]{17}[0-9X]",
+        "algorithm": "MOD11_2",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM"
+      },
+      {
+        "rule_id": "CN_CN_LEGACY_TIN",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_LEGACY_TIN",
+        "regex": "[0-9]{15}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      },
+      {
+        "rule_id": "CN_CN_ENTITY_TIN",
+        "holder_type": "ENTITY",
+        "tin_type": "CN_ENTITY_TIN",
+        "regex": "[0-9]{8}[0-9A-Z]{10}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/china-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      }
+    ],
+    "HK": [
+      {
+        "rule_id": "HK_HKID",
+        "holder_type": "INDIVIDUAL",
+        "tin_type": "HKID",
+        "regex": "[A-Z]{1,2}[0-9]{6}[0-9A]",
+        "algorithm": "HKID_WEIGHT",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "CHECKSUM"
+      },
+      {
+        "rule_id": "HK_HK_BR",
+        "holder_type": "ENTITY",
+        "tin_type": "HK_BR",
+        "regex": "[0-9]{8}",
+        "algorithm": "REGEX_ONLY",
+        "source_url": "https://www.oecd.org/content/dam/oecd/en/topics/policy-issue-focus/aeoi/hong-kong-tin.pdf",
+        "source_section": "Section II",
+        "verification_level": "FORMAT_ONLY"
+      }
+    ]
+  }
+}

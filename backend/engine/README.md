@@ -57,3 +57,6 @@ issues = TINValidatorEngine().validate(tin, jurisdiction_code, snapshot)
 
 测试覆盖算法校验位、清洗、格式失败、缺失/超长、未知法域兜底及快照隔离。
 HKID/NRIC 测试向量不代表官方认证；上线前应由规则提供方确认适用范围和算法依据。
+
+
+2026-11-02 更新：已接入带来源的 schema v2 个人/实体规则与仓库 Case A-E，旧规则继续兼容。范围、命令及例外见 [规则基线说明](../../rules/README.md)。
