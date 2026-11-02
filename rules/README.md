@@ -1,4 +1,4 @@
-当前全球版本见 [GLOBAL_COVERAGE.md](GLOBAL_COVERAGE.md)，配置为 `rules_global_v3.json`。以下内容保留原三法域竞赛基线说明。
+当前全球版本见 [GLOBAL_COVERAGE.md](GLOBAL_COVERAGE.md)，配置为 `rules_global_v4.json`，v3 为历史快照。以下内容保留原三法域竞赛基线说明。
 
 # 来源支持的规则基线与 Case A-E
 

@@ -142,7 +142,7 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 
 ## 10. 验证与限制
 
-现有测试总计 55 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
+现有测试总计 92 项：校验位和边界、输入类型、Reason A/B/C、日期、三态优先级、
 数据库发布、无效候选回滚、热更新快照隔离及历史版本回滚等。
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
@@ -157,3 +157,14 @@ SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六�
 输出新增 tin_check，披露命中规则、官方来源、验证等级和覆盖状态；结构规则不代表号码真实性验证。
 Case E 更新前因未覆盖 SG 返回 MANUAL_TRIAGE，更新后识别格式错误返回 NEED_USER_FIX。
 本次只核对规则资料，无新增真实税号或客户数据。
+
+
+## 官方算法增强版本
+
+rules_global_v4.json：22 法域、66 条规则，其中 13 条使用校验位，53 条仅格式。
+新增 checksums.py 提供 AU_ABN、NL_MOD11、PL_NIP、PL_PESEL、NO_ORGNR、JP_CORPORATE、CA_SIN、ES_NIF_NIE。
+PL_PESEL 还校验日期和世纪月份映射。美国号码段及德国企业 W-IdNr 结构条件已补充。
+规则增加可选 algorithm_source_url；编译快照与 tin_check 均保留该字段。
+来源依据、类型边界和待补范围详见 rules/GLOBAL_COVERAGE.md，不扩展为税籍或真实号码查询。
+八种算子使用官方公开计算说明核对；测试覆盖官方示例、校验位错误、畸形输入和结构限制。
+本地 PostgreSQL 已发布增强版本（revision=3），并验证从数据库加载后执行 ABN 算法及来源追踪。
