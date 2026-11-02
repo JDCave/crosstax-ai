@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -21,6 +23,7 @@ engine: AsyncEngine = create_async_engine(
     pool_recycle=db.pool_recycle,
     pool_pre_ping=db.pool_pre_ping,
     echo=db.echo,
+    execution_options={"schema_translate_map": {"crosstax": None}} if db.url.startswith("sqlite") else {},
 )
 
 async_session_factory = async_sessionmaker(
@@ -30,7 +33,7 @@ async_session_factory = async_sessionmaker(
 )
 
 
-async def get_session() -> AsyncSession:  # type: ignore[misc]
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async database session."""
     async with async_session_factory() as session:
         try:

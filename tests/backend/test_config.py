@@ -12,7 +12,7 @@ def test_default_settings():
     assert settings.environment == "dev"
     assert settings.debug is False
     assert settings.port == 8000
-    assert settings.database.pool_size == 5
+    assert settings.database.pool_size == 3
 
 
 def test_settings_env_override(monkeypatch: pytest.MonkeyPatch):

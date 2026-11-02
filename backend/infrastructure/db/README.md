@@ -2,6 +2,8 @@
 
 本目录保存规则引擎的数据层设计和 PostgreSQL 建表评审稿。
 `validation_engine.sql` 尚未执行；正式部署应通过 SQLAlchemy 模型和 Alembic 迁移完成。
+PostgreSQL 数据库名为 `devdb`，schema 为 `crosstax`。执行 SQL 前需连接 `devdb`；脚本包含 `CREATE SCHEMA IF NOT EXISTS crosstax`。SQL 显式限定所有表、索引目标表、外键及初始数据的 schema，不依赖连接的 search_path；执行账号需要具备相应建表权限，schema 不存在时还需要创建 schema 的权限。
+
 复用现有 `backend/infrastructure/database.py` 的数据库连接与会话，不创建第二套连接池。
 连接池应遵守 ADR-010：`pool_size=3`、`max_overflow=0`。
 
@@ -70,5 +72,29 @@ DDL 已包含主外键、状态检查、时间检查和活动状态单行约束�
 应用层负责 JSON 结构、哈希正确性、批准后内容不可修改、合法状态转换，以及只允许批准版本激活。
 当前活动指针只保存最新发布状态；若后续要求逐次发布操作审计，应新增发布事件表。
 
-当前交付仅为设计和 SQL，尚未创建 ORM 模型、迁移或数据库表，也未验证 PostgreSQL 执行。
+当前已添加六张表的 ORM 模型和 `backend/repositories/rules.py` 数据访问层，并验证本地 PostgreSQL 连通性。数据库表由已有 SQL 创建，本次不会自动重建表或创建 schema。Alembic 迁移尚未生成。
 后续新增模型应放在 backend/models/，继承现有 Base；迁移通过 Alembic 生成并在 SQLite 和 PostgreSQL 验证。
+
+
+## 本地连接与调用
+
+项目根目录 `.env` 使用 `DATABASE_URL` 配置异步连接；本地目标为 `localhost:5432/devdb`，ORM 表显式指定 `crosstax` schema。
+`.env` 被 Git 忽略。若服务主机实际名为 `local`，请修改 URL 主机部分。
+数据库配置会读取根目录 `.env`，环境变量优先。
+
+```python
+from backend.infrastructure.database import async_session_factory
+from backend.repositories.rules import RuleRepository
+
+async def read_active_rules():
+    async with async_session_factory() as session:
+        repository = RuleRepository(session)
+        revision, version = await repository.get_active_version()
+        return revision, version.version_id, version.rules
+```
+
+写操作使用 `async with session.begin():` 包裹，由调用者提交/回滚；Repository 只 flush，不自行 commit。
+`create_candidate` 按规范化 JSON 哈希去重，`review_candidate` 只允许候选转批准或拒绝，`activate` 必须传入预期 revision。
+规则结构和测试报告的业务验证由后续引擎服务完成；Repository 不判断报告能否支持批准。
+相同内容的重复写入受唯一约束保护；并发采集发生唯一冲突时调用方回滚并重试，首期建议单同步任务运行。
+SQLite 测试通过 schema_translate_map 将 crosstax 映射到默认 schema，生产 PostgreSQL 保持显式 schema。
