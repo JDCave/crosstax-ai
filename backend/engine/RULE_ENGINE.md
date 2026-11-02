@@ -168,3 +168,15 @@ PL_PESEL 还校验日期和世纪月份映射。美国号码段及德国企业 W
 来源依据、类型边界和待补范围详见 rules/GLOBAL_COVERAGE.md，不扩展为税籍或真实号码查询。
 八种算子使用官方公开计算说明核对；测试覆盖官方示例、校验位错误、畸形输入和结构限制。
 本地 PostgreSQL 已发布增强版本（revision=3），并验证从数据库加载后执行 ABN 算法及来源追踪。
+
+
+## 审核完整性加固
+
+ValidationPolicy.strict_coverage 默认 true：旧 schema=1 的未知法域在统一入口也转人工复核。
+旧版长度兜底仅在显式设置 strict_coverage=false 时兼容；schema=2 始终保持未覆盖转复核。
+has_no_tin 路径不再直接自动放行：Reason A/B/C 仅检查声明完整性，未实现法域适用规则，
+统一返回 EXEMPTION_REVIEW_REQUIRED WARNING，避免将格式完整误认为豁免成立。
+未知法域的豁免同时返回未覆盖 WARNING；缺理由或矛盾仍按 BLOCKER 优先。
+新增 INCONSISTENT_TIN_DECLARATION、MISSING_FIELD 业务问题，检查 TIN/无 TIN/理由矛盾和纯空白必填字段。
+出生或成立日期检查有效 YYYY-MM-DD 日期，不自行增加年龄或成立年限条件；输入增加合理长度边界。
+这些新增问题码与策略属于本次已授权的完整性加固，API 层需保留原样展示。

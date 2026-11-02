@@ -21,18 +21,18 @@ class CRSFormData(BaseModel):
     """Dates remain strings so invalid signing dates become business issues."""
 
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
-    holder_name: str = Field(min_length=1)
-    holder_dob: str
-    residence_address: str = Field(min_length=1)
+    holder_name: str = Field(min_length=1, max_length=300)
+    holder_dob: str = Field(max_length=32)
+    residence_address: str = Field(min_length=1, max_length=2000)
     jurisdiction_code: str = Field(pattern=r"^[A-Z]{2}$")
     holder_type: Literal["INDIVIDUAL", "ENTITY"] | None = None
-    tin_type: str | None = None
+    tin_type: str | None = Field(default=None, max_length=100)
     tin: str | None = None
     has_no_tin: bool
     tin_reason_code: Literal["A", "B", "C"] | None = None
-    tin_reason_explanation: str | None = None
+    tin_reason_explanation: str | None = Field(default=None, max_length=4000)
     has_signature: bool
-    signing_date: str | None = None
+    signing_date: str | None = Field(default=None, max_length=32)
 
 
 class ValidationPolicy(BaseModel):
@@ -41,6 +41,7 @@ class ValidationPolicy(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     today: date
     earliest_signing_date: date | None = None
+    strict_coverage: bool = True
 
 
 class TINCheck(BaseModel):

@@ -90,7 +90,7 @@ async def test_five_paths_and_hot_reload(test_engine):
         assert result.rule_version_id == first_id
         assert (
             await engine.validate(form(has_no_tin=True, tin=None, tin_reason_code="A"), POLICY)
-        ).verdict == "AUTO_PASS"
+        ).verdict == "MANUAL_TRIAGE"
         retained_snapshot = engine.loader.current()
         # Synthetic E: a deliberately stricter test-only configuration.
         async with sessions.begin() as session:
