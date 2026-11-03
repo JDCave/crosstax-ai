@@ -14,6 +14,7 @@ RULE_AI_API_KEY=
 RULE_AI_MODEL=qwen-plus
 RULE_AI_TIMEOUT_SECONDS=8
 RULE_AI_MAX_CONCURRENCY=2
+RULE_AI_MAX_RETRIES=1
 ```
 
 将你的 Key 填入 `RULE_AI_API_KEY`，重启后端即可。
@@ -69,7 +70,14 @@ API Key、地域和模型权限需要对应；不同地域 Key 不可混用。
 
 该实现遵循[百炼 Function Calling](https://help.aliyun.com/zh/model-studio/qwen-function-calling)多轮协议，
 非思考模式与 JSON 参数依据[官方结构化输出说明](https://help.aliyun.com/zh/model-studio/qwen-structured-output)。
-总预算仍为默认 8 秒、最多 4 轮和 12 次工具调用；不自动重试，以免放大耗时和调用费用。
+总预算仍为默认 8 秒、最多 4 轮和 12 次工具调用。
+HTTP 429（可恢复限流）、500/502/503 可在预算内重试；默认整个 Agent 合计最多额外 1 次，不是每轮各重试一次。
+RULE_AI_MAX_RETRIES 可设为 0 关闭、最多 2；默认最多 5 次 HTTP 尝试（4 轮加 1 次重试）。
+优先遵循 Retry-After 秒数或 HTTP 日期；未提供时使用带抖动的指数退避。
+等待时间超出剩余总预算时直接返回原失败，不缩短服务端要求的等待。
+鉴权、权限、额度、参数、输出错误，以及读超时／连接异常／HTTP 408/504 不自动重发，避免执行状态不明时重复调用。
+不自动切换模型。排队、网络、工具轮次和重试等待均计入原有总预算。
+响应在传输接收时累计检查 256 KiB 上限，超过后立即停止读取并关闭连接。gzip 等压缩内容按解码后的字节检查。
 当前没有核实的官方正文片段，原文工具返回 unavailable；模型只能引用已有规则和问题证据。
 
 ## 通用错误分类与降级状态
@@ -103,7 +111,7 @@ guidance.error 在成功或未请求时为 null；降级时包含供应商无关
 | service_unavailable | AI_PROVIDER_UNAVAILABLE | true | 供应商 5xx 或资源拥塞 |
 | internal | AI_INTERNAL_ERROR | false | 应用内部异常，联系维护者 |
 
-retryable 仅为后续请求的处理建议，本接口不会自动重试，也不能保证重试成功。
+retryable 是一般恢复建议；服务端仅按上述更严格的有限重试策略处理，不保证重试成功。
 根据百炼 HTTP 状态和已知 error.code/error.type 白名单分类，未识别代码回退到 HTTP 状态。
 Arrearage、BudgetLimitExceeded、insufficient_quota 等归入 quota，不与普通 429 限流混为一类。
 Throttling.AllocationQuota 按 token 速率限制处理；同类供应商代码也可能因套餐限制出现，仍需按控制台确认实际原因。
@@ -121,3 +129,24 @@ Throttling.AllocationQuota 按 token 速率限制处理；同类供应商代码�
 自动测试使用 MockTransport 校验真实请求结构、工具／JSON 两阶段、Key 优先级、地域入口覆盖、
 错误分类、超时降级和个人资料不外发，不包含真实付费模型调用。
 填入有效 Key 后，需按上述错误号码示例完成真实模型联调；尚未实测真实供应商的延迟和输出质量。
+
+
+## 耗时、次数和用量
+
+返回的 guidance.metrics 为当前请求独享，不跨并发请求累计：
+
+| 字段 | 含义 |
+| --- | --- |
+| attempts | 发起的 HTTP 尝试数，含失败与重试 |
+| retries | 已启动的额外重试数，跨全部模型轮次共享上限 |
+| provider_duration_ms | HTTP 请求与读取响应所耗时间之和，不含退避等待 |
+| queue_duration_ms | 等待 Agent 并发名额的时间，超时排队也记录 |
+| prompt_tokens / completion_tokens / total_tokens | 百炼响应中已报告的 token 数累计 |
+| usage_complete | 每次尝试是否都提供了完整、有效且一致的 usage |
+
+guidance.duration_ms 仍是整体 AI 耗时，包含排队、退避和模型调用。
+缺少 usage、失败、取消、超时或统计字段非法时 usage_complete=false，token 为已知部分，不能当作实际计费总量。
+未请求 AI 或未配置 Key 时 attempts=0，不会产生模型调用。
+这些统计不是账单估算，也不包含规则数据库查询耗时；实际费用以百炼控制台为准。
+本轮测试包含限流恢复、共享重试上限、Retry-After、永久错误不重试、总时限取消、并发统计隔离、
+部分 usage 和超大／压缩响应处理。真实付费调用仍待填 Key 后验证。

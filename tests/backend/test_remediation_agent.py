@@ -307,3 +307,38 @@ async def test_auth_rate_quota_and_output_have_consistent_public_error_metadata(
         assert guidance.error.category == category
         assert guidance.error.retryable is retryable
         assert result.verdict == "NEED_USER_FIX"
+
+
+async def test_queue_timeout_has_no_model_attempts_and_counts_wait_time(evaluation):
+    result, snapshot = evaluation
+    agent = RemediationAgent(settings(timeout_seconds=0.01, max_concurrency=1))
+    await agent.semaphore.acquire()
+    try:
+        guidance = await agent.generate(result, snapshot, True)
+    finally:
+        agent.semaphore.release()
+    assert guidance.reason_code == "AI_TIMEOUT"
+    assert guidance.metrics.attempts == 0
+    assert guidance.metrics.queue_duration_ms >= 5
+
+
+async def test_success_keeps_usage_metrics_separate_between_concurrent_requests(evaluation):
+    result, snapshot = evaluation
+    passed = result.model_copy(
+        update={"form_issues": (), "indicia_issues": (), "issue_origins": [], "verdict": "AUTO_PASS"}
+    )
+
+    def handler(request):
+        body = {
+            "choices": [{"message": {"content": '{"summary":"已完成当前检查。","actions":[]}'}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 3, "total_tokens": 13},
+        }
+        return httpx.Response(200, json=body)
+
+    agent = RemediationAgent(settings(), httpx.MockTransport(handler))
+    first, second = await asyncio.gather(agent.generate(passed, snapshot, True), agent.generate(passed, snapshot, True))
+    assert first.status == second.status == "GENERATED"
+    assert first.metrics.total_tokens == second.metrics.total_tokens == 13
+    assert first.metrics.attempts == second.metrics.attempts == 1
+    assert first.metrics.usage_complete and second.metrics.usage_complete
+    assert first.metrics is not second.metrics

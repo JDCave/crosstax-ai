@@ -80,6 +80,59 @@
   },
   "components": {
     "schemas": {
+      "AICallMetrics": {
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Attempts",
+            "default": 0
+          },
+          "retries": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Retries",
+            "default": 0
+          },
+          "provider_duration_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Provider Duration Ms",
+            "default": 0
+          },
+          "queue_duration_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queue Duration Ms",
+            "default": 0
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Tokens",
+            "default": 0
+          },
+          "usage_complete": {
+            "type": "boolean",
+            "title": "Usage Complete",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "AICallMetrics"
+      },
       "AIErrorCategory": {
         "type": "string",
         "enum": [
@@ -527,6 +580,9 @@
             "type": "integer",
             "title": "Duration Ms",
             "default": 0
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AICallMetrics"
           },
           "output_fingerprint": {
             "anyOf": [

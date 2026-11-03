@@ -19,6 +19,7 @@ class BailianSettings(BaseSettings):
     )
     timeout_seconds: float = Field(default=8.0, gt=0, le=20)
     max_concurrency: int = Field(default=2, ge=1, le=5)
+    max_retries: int = Field(default=1, ge=0, le=2)
 
     @field_validator("base_url")
     @classmethod

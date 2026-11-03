@@ -236,6 +236,16 @@ true 时服务器按配置调用模型；AI 不修改裁决、严重级别、原
   "prompt_version": "remediation-v2",
   "prompt_fingerprint": "<提示词指纹>",
   "duration_ms": 1000,
+  "metrics": {
+    "attempts": 2,
+    "retries": 0,
+    "provider_duration_ms": 800,
+    "queue_duration_ms": 0,
+    "prompt_tokens": 200,
+    "completion_tokens": 60,
+    "total_tokens": 260,
+    "usage_complete": true
+  },
   "output_fingerprint": "<补正 summary/actions 的规范化哈希>"
 }
 ```
@@ -251,10 +261,18 @@ guidance.error 在未请求或成功时为 null；降级时含 category 和 retr
 category 包含 configuration、authentication、permission、quota、rate_limit、timeout、connection、
 invalid_request、invalid_response、service_unavailable、internal。
 限流、超时、连接和服务不可用标记 retryable=true；鉴权、额度、参数或输出错误标记 false。
-retryable 是后续调用建议，服务端不自动重试；供应商状态与错误码仅保留于内部诊断。
+retryable 是恢复建议；服务端仅对明确限流及 500/502/503，在总预算内共享最多 1 次重试。
+Retry-After 超出剩余预算时直接降级；设置 RULE_AI_MAX_RETRIES=0 关闭。供应商状态和错误码仅用于内部诊断。
 旧 AI_MODEL_OR_ENDPOINT_NOT_FOUND 统一为 AI_REQUEST_REJECTED；旧 AI_OUTPUT_OR_SERVICE_ERROR 拆分为明确分类。
 不要因 AI 降级而将已完成的规则结果当作失败或通过。
 主后端保存 guidance 的实际输出及元数据，不能假设重新调用模型逐字重现。
+
+guidance.metrics 返回本次请求的 attempts、retries、provider_duration_ms、queue_duration_ms、
+prompt_tokens、completion_tokens、total_tokens、usage_complete。
+只有 usage_complete=true 才表示全部尝试都报告了完整且一致的用量；否则 token 只反映已知部分，不是实际账单。
+guidance.duration_ms 是含并发排队和重试退避的总 AI 耗时；总预算仍默认 8 秒，不因重试延长。
+读超时、发送后断连、408/504、永久错误或无效输出不自动重发；错误提示中的 retryable 与自动重试范围不同。
+
 
 ### 服务端启用 AI
 
@@ -267,6 +285,7 @@ RULE_AI_API_KEY=<组委会提供的密钥>
 RULE_AI_MODEL=qwen-plus
 RULE_AI_TIMEOUT_SECONDS=8
 RULE_AI_MAX_CONCURRENCY=2
+RULE_AI_MAX_RETRIES=1
 ```
 
 如组委会提供其他兼容网关，替换 base URL；代码自动追加 `/chat/completions`。

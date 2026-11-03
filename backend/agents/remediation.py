@@ -13,6 +13,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.ai_errors import REASON_CODES, AIErrorCategory, AIErrorInfo
+from backend.core.ai_metrics import AICallMetrics
 from backend.core.bailian import BailianSettings
 from backend.engine.document_validation import DocumentResult
 from backend.engine.reproducibility import canonical_hash
@@ -61,6 +62,7 @@ class GuidanceResult(BaseModel):
     prompt_version: str = PROMPT_VERSION
     prompt_fingerprint: str = Field(default_factory=lambda: canonical_hash(SYSTEM))
     duration_ms: int = 0
+    metrics: AICallMetrics = Field(default_factory=AICallMetrics)
     output_fingerprint: str | None = None
 
 
@@ -132,21 +134,28 @@ class RemediationAgent:
         if not requested:
             return GuidanceResult(status="NOT_REQUESTED")
         started = time.monotonic()
+        metrics = AICallMetrics()
         if not self.settings.enabled or not self.settings.effective_api_key() or not self.settings.model:
-            return self._fallback(result, AIErrorCategory.CONFIGURATION, started)
+            return self._fallback(result, AIErrorCategory.CONFIGURATION, started, metrics)
+        acquired = False
         try:
             async with asyncio.timeout(self.settings.timeout_seconds):
                 async with self.semaphore:
-                    generated = await self._run(result, snapshot)
+                    acquired = True
+                    metrics.queue_duration_ms = int((time.monotonic() - started) * 1000)
+                    generated = await self._run(result, snapshot, metrics, started + self.settings.timeout_seconds)
             return GuidanceResult(
                 status="GENERATED",
                 **generated.model_dump(),
                 model=self.settings.model,
+                metrics=metrics,
                 duration_ms=int((time.monotonic() - started) * 1000),
                 output_fingerprint=canonical_hash(generated.model_dump(mode="json")),
             )
         except (TimeoutError, httpx.TimeoutException):
-            return self._fallback(result, AIErrorCategory.TIMEOUT, started)
+            if not acquired:
+                metrics.queue_duration_ms = int((time.monotonic() - started) * 1000)
+            return self._fallback(result, AIErrorCategory.TIMEOUT, started, metrics)
         except BailianAPIError as exc:
             logger.warning(
                 "remediation_provider_failed",
@@ -156,16 +165,22 @@ class RemediationAgent:
                     "provider_code": exc.provider_code,
                 },
             )
-            return self._fallback(result, exc.error.category, started)
+            return self._fallback(result, exc.error.category, started, metrics)
         except httpx.TransportError:
-            return self._fallback(result, AIErrorCategory.CONNECTION, started)
+            return self._fallback(result, AIErrorCategory.CONNECTION, started, metrics)
         except (ValueError, KeyError, TypeError, IndexError, AttributeError, httpx.DecodingError):
-            return self._fallback(result, AIErrorCategory.INVALID_RESPONSE, started)
+            return self._fallback(result, AIErrorCategory.INVALID_RESPONSE, started, metrics)
         except Exception as exc:  # Optional AI must not break deterministic validation.
             logger.warning("remediation_failed", extra={"error_type": type(exc).__name__})
-            return self._fallback(result, AIErrorCategory.INTERNAL, started)
+            return self._fallback(result, AIErrorCategory.INTERNAL, started, metrics)
 
-    def _fallback(self, result: DocumentResult, category: AIErrorCategory, started: float) -> GuidanceResult:
+    def _fallback(
+        self,
+        result: DocumentResult,
+        category: AIErrorCategory,
+        started: float,
+        metrics: AICallMetrics,
+    ) -> GuidanceResult:
         actions = []
         hints = {
             "INVALID_TIN": "请核对对应地区及标识类型, 并根据原始证件重新填写号码; 不要猜测或生成号码。",
@@ -189,12 +204,19 @@ class RemediationAgent:
             status="FALLBACK",
             reason_code=REASON_CODES[category],
             error=AIErrorInfo.for_category(category),
+            metrics=metrics,
             **generated.model_dump(),
             duration_ms=int((time.monotonic() - started) * 1000),
             output_fingerprint=canonical_hash(generated.model_dump(mode="json")),
         )
 
-    async def _run(self, result: DocumentResult, snapshot: RuleSnapshot) -> GeneratedGuidance:
+    async def _run(
+        self,
+        result: DocumentResult,
+        snapshot: RuleSnapshot,
+        metrics: AICallMetrics,
+        deadline: float,
+    ) -> GeneratedGuidance:
         safe, matched = self._evidence(result, snapshot)
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM},
@@ -219,7 +241,7 @@ class RemediationAgent:
             timeout=self.settings.timeout_seconds,
             follow_redirects=False,
         ) as client:
-            provider = BailianClient(self.settings, client)
+            provider = BailianClient(self.settings, client, metrics, deadline)
             for _ in range(4):
                 needs_tools = bool(safe) and (seen != set(range(len(safe))) or not set(matched) <= inspected_rules)
                 body = await provider.complete(messages, TOOLS if needs_tools else None)
