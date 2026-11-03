@@ -11,3 +11,5 @@
 
 支持兼容单税籍请求与 1–20 项多税籍请求；`include_guidance=true` 可选请求补正 Agent，失败自动降级。
 [队友接入指南与表格样例](../../assets/crs-templates/API_INTEGRATION.md)包含实体日期处理、逐项结果、字段映射和 AI 配置说明。
+
+[百炼 Agent 配置与联调](../agents/BAILIAN.md)：默认 qwen-plus，填入 Key 并重启后，在请求中传 include_guidance=true。

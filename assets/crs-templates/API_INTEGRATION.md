@@ -232,7 +232,7 @@ true 时服务器按配置调用模型；AI 不修改裁决、严重级别、原
     }
   ],
   "model": "<配置的模型标识>",
-  "prompt_version": "remediation-v1",
+  "prompt_version": "remediation-v2",
   "prompt_fingerprint": "<提示词指纹>",
   "duration_ms": 1000,
   "output_fingerprint": "<补正 summary/actions 的规范化哈希>"
@@ -244,7 +244,8 @@ issue:N 引用顶层 issues[N]；rule:N 引用 residence_results[N].checks 及�
 GENERATED 仍仅是辅助文案，需按用户真实资料补正，不能作为税务适用性结论。
 
 未启用／配置模型、超时、服务错误、无效引用或输出不完整时，status=FALLBACK，
-返回固定补正提示；reason_code 为 AI_NOT_CONFIGURED、AI_TIMEOUT 或 AI_OUTPUT_OR_SERVICE_ERROR。
+返回固定补正提示；reason_code 区分 AI_NOT_CONFIGURED、AI_TIMEOUT、鉴权／权限／限流／端点错误和输出异常。
+百炼接入与完整错误码见 [百炼配置说明](../../backend/agents/BAILIAN.md)。
 不要因 AI 降级而将已完成的规则结果当作失败或通过。
 主后端保存 guidance 的实际输出及元数据，不能假设重新调用模型逐字重现。
 
@@ -256,14 +257,15 @@ GENERATED 仍仅是辅助文案，需按用户真实资料补正，不能作为�
 RULE_AI_ENABLED=true
 RULE_AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 RULE_AI_API_KEY=<组委会提供的密钥>
-RULE_AI_MODEL=<支持工具调用和JSON输出的模型>
+RULE_AI_MODEL=qwen-plus
 RULE_AI_TIMEOUT_SECONDS=8
 RULE_AI_MAX_CONCURRENCY=2
 ```
 
 如组委会提供其他兼容网关，替换 base URL；代码自动追加 `/chat/completions`。
 修改配置后重启服务。配置参考仓库 [.env.example](../../.env.example)。
-默认关闭 AI；仅传 include_guidance=true 不会自动获得密钥或启用服务端模型配置。
+服务端默认允许 AI，但默认请求不调用模型；需传 include_guidance=true 并填入有效 Key。
+也支持标准 DASHSCOPE_API_KEY；非空 RULE_AI_API_KEY 优先，空占位不会遮蔽标准 Key。
 当前官方原文工具明确返回“未安装核实正文”，只可使用已有规则元数据及来源，不会生成官方原文引文。
 
 ## 错误

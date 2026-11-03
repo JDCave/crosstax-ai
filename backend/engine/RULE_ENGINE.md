@@ -383,10 +383,10 @@ rule:N 引用 residence_results[N]，issue:N 引用顶层 issues[N]。
 
 ### 调用预算、失败降级与配置
 
-RULE_AI_ENABLED 默认 false；需配置 RULE_AI_BASE_URL、RULE_AI_API_KEY、RULE_AI_MODEL。
+百炼专用接入后 RULE_AI_ENABLED 默认 true，但 include_guidance 默认 false；模型默认 qwen-plus，需填入 RULE_AI_API_KEY 或 DASHSCOPE_API_KEY。
 密钥使用 SecretStr，来自环境或 .env，不进入日志、响应或版本库。
 接口 include_guidance=true 但配置缺失时返回 FALLBACK/AI_NOT_CONFIGURED。
-配置好后需要所选模型支持工具调用和 JSON Object 输出；不支持时固定提示降级。
+百炼默认关闭思考、非流式，证据工具调用与最终 JSON Object 输出分阶段；模型不支持时固定提示降级。
 进程内最多并发 2 个 Agent，最多 4 轮模型调用、12 次工具调用、每轮最多 8 个工具调用。
 默认总预算 8 秒，包含并发排队、工具编排和网络；可配置 0–20 秒范围内的正值。
 每次最多输出 2500 tokens、模型响应上限 256 KiB（在接收后检查）；超预算或输出不完整则降级。
@@ -414,3 +414,39 @@ NOT_REQUESTED／GENERATED／FALLBACK 区分未请求、生成成功和固定提�
 未修改数据库表结构；SQLite 路径与现有持久化测试继续通过。
 真实组委会模型未配置／联调，当前 Agent 工具协议通过 MockTransport 测试，不把模拟结果当作模型供应商验收。
 仓库没有 frontend/，无法运行 npm test。本轮不修改前端、PM 所有的 specs/、design/、docs/。
+
+
+## 2026-11-04：百炼专用接入
+
+用户确认供应商为阿里云百炼，后续自行填 Key。本轮将兼容 HTTP 调用抽取为专用客户端，不增加依赖或对外路由。
+
+- ../core/bailian.py：BailianSettings，统一环境配置、HTTPS base URL 校验、默认 qwen-plus；GuidanceSettings 保留别名兼容。
+- ../infrastructure/bailian.py：BailianClient，使用现有 httpx 发送百炼 Chat Completions 请求，处理脱敏错误分类。
+- ../agents/BAILIAN.md：本地 Key 填充、地域／业务空间地址、curl 联调及降级排查手册。
+
+默认 RULE_AI_ENABLED=true，只有 include_guidance=true 且 Key 非空才发起模型调用。
+Key 优先使用非空 RULE_AI_API_KEY，否则使用 DASHSCOPE_API_KEY；本地空占位不会覆盖环境中的标准 Key。
+RULE_AI_MODEL 未设置或空白时使用 qwen-plus；密钥仍为 SecretStr，不输出到日志或响应。
+本地 .env 仅补充缺失配置，不覆盖原有配置、密钥或数据库连接，不提交 Git。
+base URL 必须完整 HTTPS，不允许查询参数、凭据、片段、未替换占位符或尾部 /chat/completions。
+北京默认入口仍为 dashscope.aliyuncs.com/compatible-mode/v1；其他地域或业务空间采用控制台完整 base URL。
+地区 Key、域名和模型权限必须匹配，参考 [官方地域信息](https://help.aliyun.com/zh/model-studio/regions)。
+
+每次请求明确 stream=false、enable_thinking=false。
+证据阶段发送 tools、tool_choice=auto、parallel_tool_calls=true，不同时强制 JSON 输出。
+相关问题和匹配规则读取完成后，最终请求去掉 tools，启用 response_format=json_object。
+应用端仍校验结构、问题归属、引用和完整性；不能用“模型输出合法 JSON”替代业务检查。
+协议依据 [百炼 Function Calling](https://help.aliyun.com/zh/model-studio/qwen-function-calling)
+与 [非思考模式结构化输出](https://help.aliyun.com/zh/model-studio/qwen-structured-output)。
+提示词版本升级 remediation-v2，并更新 OpenAPI 快照。
+
+401/403/404/429/400 分别映射 AI_AUTHENTICATION_FAILED、AI_PERMISSION_DENIED、
+AI_MODEL_OR_ENDPOINT_NOT_FOUND、AI_RATE_LIMITED、AI_REQUEST_REJECTED，其他供应商错误返回 AI_PROVIDER_UNAVAILABLE。
+这些均为 guidance.FALLBACK 原因，不改变确定性 verdict、issues 或业务 HTTP 200。
+不回传供应商原始错误正文，不自动重试；沿用 8 秒总预算、并发和工具轮数限制。
+
+自动测试增加配置 Key 优先级、空 .env 占位、默认模型、非法 URL、业务空间入口、
+两阶段请求参数、供应商错误分类及 Agent 裁决隔离。
+真实 Key 尚未填入，因此未发起真实付费调用，也未声称验证真实模型输出质量或延迟。
+
+百炼接入完成后常规测试为 170 项通过、3 项 PostgreSQL 按环境跳过；本轮未修改持久化模型。

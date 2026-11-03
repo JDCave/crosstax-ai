@@ -473,7 +473,7 @@
           "prompt_version": {
             "type": "string",
             "title": "Prompt Version",
-            "default": "remediation-v1"
+            "default": "remediation-v2"
           },
           "prompt_fingerprint": {
             "type": "string",

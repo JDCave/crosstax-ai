@@ -91,6 +91,10 @@ async def test_agent_uses_tools_fixed_evidence_and_never_sends_personal_data(eva
     assert guidance.model == "mock-model"
     assert guidance.output_fingerprint and guidance.prompt_fingerprint
     assert len(requests) == 2
+    assert "tools" in json.loads(requests[0])
+    assert "response_format" not in json.loads(requests[0])
+    assert "tools" not in json.loads(requests[1])
+    assert json.loads(requests[1])["response_format"] == {"type": "json_object"}
     assert all(marker not in "".join(requests) for marker in ("PRIVATE NAME", "PRIVATE ADDRESS", "PRIVATE TIN"))
     tool_messages = json.loads(requests[-1])["messages"]
     details = json.loads(next(m["content"] for m in tool_messages if m.get("tool_call_id") == "call-1"))
@@ -218,3 +222,51 @@ async def test_truncated_generation_and_unexpected_sdk_shape_are_isolated(evalua
             settings(), httpx.MockTransport(lambda request, body=body: httpx.Response(200, json=body))
         )
         assert (await agent.generate(result, snapshot, True)).status == "FALLBACK"
+
+
+@pytest.mark.parametrize("status,reason", [(401, "AI_AUTHENTICATION_FAILED"), (429, "AI_RATE_LIMITED")])
+async def test_bailian_errors_preserve_rules_and_return_actionable_reason(evaluation, status, reason):
+    result, snapshot = evaluation
+    agent = RemediationAgent(
+        settings(),
+        httpx.MockTransport(
+            lambda request: httpx.Response(status, json={"message": "private provider body"}),
+        ),
+    )
+    guidance = await agent.generate(result, snapshot, True)
+    assert guidance.status == "FALLBACK"
+    assert guidance.reason_code == reason
+    assert result.verdict == "NEED_USER_FIX"
+    assert "private provider body" not in guidance.model_dump_json()
+
+
+async def test_bailian_key_missing_never_calls_provider(evaluation, monkeypatch):
+    monkeypatch.delenv("RULE_AI_API_KEY", raising=False)
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    result, snapshot = evaluation
+
+    def forbidden(request):
+        raise AssertionError("Missing keys must not make a network request")
+
+    agent = RemediationAgent(GuidanceSettings(_env_file=None), httpx.MockTransport(forbidden))
+    assert (await agent.generate(result, snapshot, True)).reason_code == "AI_NOT_CONFIGURED"
+    assert (await agent.generate(result, snapshot, False)).status == "NOT_REQUESTED"
+
+
+async def test_no_issues_uses_json_stage_without_tool_round(evaluation):
+    result, snapshot = evaluation
+    passed = result.model_copy(
+        update={"form_issues": (), "indicia_issues": (), "issue_origins": [], "verdict": "AUTO_PASS"}
+    )
+    requests = []
+
+    def handler(request):
+        requests.append(json.loads(request.content))
+        return envelope(
+            {"role": "assistant", "content": '{"summary":"当前已执行检查无异常, 仍需关注未评估范围。","actions":[]}'}
+        )
+
+    guidance = await RemediationAgent(settings(), httpx.MockTransport(handler)).generate(passed, snapshot, True)
+    assert guidance.status == "GENERATED"
+    assert len(requests) == 1 and "tools" not in requests[0]
+    assert requests[0]["response_format"] == {"type": "json_object"}
