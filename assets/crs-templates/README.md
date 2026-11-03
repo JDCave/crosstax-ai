@@ -15,6 +15,8 @@
 
 ## API 请求示例
 
+队友接入请先阅读 [CRS 表格校验接口说明](API_INTEGRATION.md)，包含两份完整请求、字段映射、调用方式和返回结果说明。
+
 - [个人版请求](crs-individual-request.json)
 - [实体版请求](crs-entity-request.json)
 
