@@ -80,3 +80,17 @@ cron 使用部署机器时区，维护者需确认与业务时区一致；业务
 SQLite 集成覆盖候选等待、可信发布、未审批阻断、删除／降级／裁决风险、证据不足、过期基准、幂等重跑、
 抓取失败保留旧版、运行记录、CAS 并发冲突及锁重叠。
 保留既有测试，更新接口说明入口和详细设计；不修改 PM 所有 specs/、design/、docs/。
+
+## 阶段 2：已实现的离线影响分析
+
+```bash
+uv run python -m backend.cli.rule_updates impact \
+  --base rules/rules_v1_base.json --candidate rules/rules_v2_patch.json \
+  --cases assets/mock-data/cases.json --today 2026-11-04 --base-revision 0
+```
+
+stdout 为 JSON 报告，可重定向到 outputs/；不连接数据库、不调用 AI、不修改活动版本。
+输入文件上限 1 MiB，样本 1–500 项、case_id 唯一，仅支持显式声明的 demo 包装字段及结构化表单。
+impact_hash 对应报告 report_hash；Case E 展示从规则未覆盖转人工复核，到新规则命中后发现错误。
+样本预期 verdict 仅为兼容已有 fixture，不参与影响报告的裁决；回归断言仍由独立门禁负责。
+报告不会直接输出表单值；请勿把真实个人标识作为 case_id。
