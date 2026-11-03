@@ -1,17 +1,39 @@
-"""One synchronous validation request and one flat result."""
+"""One synchronous validation request with optional grounded remediation."""
 
-from typing import Literal
+from collections.abc import Sequence
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, model_validator
 
+from backend.agents.remediation import GuidanceResult
 from backend.engine.contracts import AuditIssue, CRSFormData, ExecutionContext, TINCheck, ValidationPolicy
+from backend.engine.document_contracts import (
+    CheckItem,
+    IssueOrigin,
+    MultiResidenceForm,
+    ResidenceResult,
+    ReviewScope,
+)
+
+
+def form_kind(value: Any) -> str:
+    if isinstance(value, MultiResidenceForm) or (isinstance(value, dict) and "tax_residencies" in value):
+        return "multi"
+    return "single"
+
+
+FormInput = Annotated[
+    Annotated[CRSFormData, Tag("single")] | Annotated[MultiResidenceForm, Tag("multi")],
+    Discriminator(form_kind),
+]
 
 
 class ValidationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    form_data: CRSFormData
+    form_data: FormInput
     policy: ValidationPolicy
     indicia_issues: list[AuditIssue] = Field(default_factory=list, max_length=100)
+    include_guidance: bool = Field(default=False, strict=True)
 
     @model_validator(mode="after")
     def check_policy(self) -> "ValidationRequest":
@@ -27,8 +49,62 @@ class ValidationResponse(BaseModel):
     rule_revision: int
     checks: TINCheck | None
     execution: ExecutionContext | None
+    residence_results: list[ResidenceResult]
+    check_items: list[CheckItem]
+    issue_origins: list[IssueOrigin]
+    review_scope: ReviewScope
+    guidance: GuidanceResult
+
+
+class FieldError(BaseModel):
+    field: str
+    code: str
+    message: str
 
 
 class ErrorResponse(BaseModel):
     code: str
     message: str
+    details: list[FieldError] | None = None
+
+
+def field_errors(errors: Sequence[dict[str, Any]]) -> list[dict[str, str]]:
+    """Keep safe schema paths, never input values, validator context or arbitrary field names."""
+    from backend.engine.document_contracts import TaxResidence
+
+    known = set().union(
+        *(
+            set(model.model_fields)
+            for model in (
+                ValidationRequest,
+                CRSFormData,
+                MultiResidenceForm,
+                TaxResidence,
+                ValidationPolicy,
+                AuditIssue,
+            )
+        )
+    )
+    messages = {
+        "missing": "Required field is missing",
+        "extra_forbidden": "Unknown field is not accepted",
+        "json_invalid": "Malformed JSON",
+        "bool_type": "Expected a JSON boolean",
+        "value_error": "Field combination or policy is invalid",
+    }
+    details = []
+    for error in errors[:20]:
+        parts = [
+            str(part) if isinstance(part, int) or part in known else "<unknown>"
+            for part in error["loc"]
+            if part not in ("body", "single", "multi")
+        ]
+        code = error["type"]
+        detail = {
+            "field": ".".join(parts) or "body",
+            "code": code,
+            "message": messages.get(code, "Invalid field type, format or allowed value"),
+        }
+        if detail not in details:
+            details.append(detail)
+    return details

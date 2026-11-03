@@ -28,7 +28,7 @@
 CRSFormData 沿用 specs/data-spec.md，严格拒绝字符串冒充布尔值、未知字段和非法法域代码。
 签署日期保持字符串，以便缺失、格式错误、未来日期返回 INVALID_DATE，而非仅返回请求结构错误。
 不存在的 Reason 枚举属于结构错误；合法枚举缺失或解释不足属于业务问题。
-当前 holder_dob 仅按共享契约接收字符串，不额外发明年龄/成立日期判断规则。
+个人 holder_dob 缺失或非法产生业务阻断；实体 holder_dob 为兼容旧请求的可选成立日期别名，推荐使用可选 incorporation_date。实体无需补造日期；不发明年龄或成立年限规则。
 
 ValidationPolicy.today 必须由调用方传入业务日期，避免服务主机时区影响重放。
 earliest_signing_date 为可选的团队确认阈值；未提供时仅检查日期有效性和不晚于业务日期。
@@ -147,7 +147,7 @@ uv run python -m backend.cli.rule_engine validate /path/to/form.json --today 202
 仓库 Case A-E JSON 已按 PRD 和用户确认的 E 热重载定义落地，并通过本地 PostgreSQL 活动规则执行。全部数据为虚构演示，D 的跨源问题由测试上游提供，不替代真实 AI 研判验收。
 SQLite 验证使用 schema_translate_map；此前已确认本地 PostgreSQL 六表连通，
 完整测试集在隔离 SQLite 上运行；另已在本地 PostgreSQL 导入并激活来源支持的两版规则，并只读运行全部五 Case，不持久化审核输入。
-没有提供 AI 调用，因为语义推理和提取不在本轮规则引擎范围。
+历史阶段未提供 AI 调用；2026-11-04 新增可选补正 Agent，仍不承担字段提取或税收居民身份认定。
 新增模块通过 mypy；全项目已有日志模块两处 dict 泛型类型错误仍待队友处理。
 
 
@@ -305,8 +305,8 @@ PostgreSQL 测试创建随机 crosstax_test_ 前缀 schema，先创建原六表�
 ## HTTP 服务接入（单接口）
 
 仅公开 POST /api/v1/rule-engine/validate，详细契约见 backend/api/RULE_ENGINE_API.md。
-输入为 form_data、policy 与可选 indicia_issues，无 session_id。
-RuleAPIService 直接调用 ValidationEngine.validate，返回扁平 verdict、issues、rule_version_id、rule_revision、checks、execution。
+输入为 form_data、policy、可选 indicia_issues 与 include_guidance，无 session_id。
+RuleAPIService 先获取一次固定快照，由 document_validation.validate_document 逐项调用 ValidationEngine.validate_snapshot，并在裁决完成后可选调用补正 Agent。保持原扁平响应字段，并追加逐项结果、范围、来源和建议。
 本接口不调用 AuditValidationService，不写规则审核归档表，也不建立或查询会话。
 队友在自己的 run_audit_pipeline() 中调用一次并保存自己的请求和响应即可。
 原有 validations、结果查询、重放、current/coverage HTTP 路由已移除，不保留隐藏调用步骤。
@@ -319,3 +319,98 @@ HTTP 响应是精简适配契约，不等同于内部 ValidationResult；不要�
 ### 对外文档收敛
 
 OpenAPI 和 Swagger 仅展示 POST /api/v1/rule-engine/validate。健康与就绪探针保持原地址和行为，但不列入契约。关闭重复的 /redoc 文档入口和未使用的 Swagger OAuth2 回调；/docs 与 /openapi.json 保留。隐藏文档不等同于网络访问控制。
+
+
+## 2026-11-04：多税籍文档校验与补正 Agent
+
+### 模块与职责
+
+- document_contracts.py：多税籍输入、逐项 TIN 结果、公共检查项、问题来源和审核范围。
+- document_validation.py：同一文档使用一份不可变快照，逐项校验、定位问题、去除公共重复问题并汇总裁决。
+- ../agents/remediation.py：可选工具调用编排、固定补正提示、提示词版本及输出指纹；不调用 DB，不写表，不改裁决。
+- API 仍为一个 POST /api/v1/rule-engine/validate。队友在自己的主审核流水线中调用，不新增文件或 OCR 流程。
+
+### 输入与兼容
+
+form_data 支持原 CRSFormData 或 MultiResidenceForm。
+API 用可调用 Discriminator 根据 tax_residencies 是否存在选择单／多税籍契约，避免返回两个分支的混杂错误。
+多税籍列表要求 1–20 项、地区不能重复；不支持同时传旧版顶层税籍字段和列表。
+共同字段为主体姓名、地址、类型、签名、签署日期；多税籍要求明确主体类型。
+每个税籍包含 jurisdiction_code、tin_type、tin、has_no_tin、tin_reason_code、tin_reason_explanation。
+
+个人缺失出生日期属于 INVALID_DATE 业务问题，返回 HTTP 200 + NEED_USER_FIX。
+实体无需出生／成立日期；incorporation_date 提供时检查格式。
+旧实体 holder_dob 继续接受，两种日期同时提供必须一致；个人填写 incorporation_date 产生 UNEXPECTED_FIELD。
+原实体请求样例已删除人为补充的成立日期，新增多税籍＋include_guidance 样例。
+
+### 文档执行与可解释结果
+
+一次 loader.refresh 获取快照，在所有税籍完成和 AI 工具读取结束前固定使用该对象。
+原有 ValidationEngine 单项入口继续用于 CLI、发布回归和旧内部归档服务。
+公共姓名、地址、出生／成立日期、签名和签署日期问题只保留一次；税籍问题路径为 tax_residencies.N.field。
+所有 issues 按引擎问题在前、上游问题在后排序，issue_origins 明确 RULE_ENGINE／UPSTREAM。
+每个税籍返回 TINCheck 和 issue_indexes，公共 check_items 也引用同一 issues 数组。
+多税籍 checks=null，单税籍保持旧 checks 行为；统一使用 residence_results 展示逐地区验证深度。
+汇总继续遵循任意 BLOCKER 优先，其次 WARNING，无问题才 AUTO_PASS。
+
+review_scope 明确未核实税籍认定、号码签发与归属、签名真伪、实体分类、控权人、税籍申报是否遗漏及无 TIN 豁免适用性。
+AUTO_PASS 表示当前检查无异常，不能展示为整张表格所有法律条件已经满足。
+个人／实体日期不是税籍认定依据。
+
+execution.input_fingerprint 哈希整个已验证表单、完整 policy 及有序上游问题；不包含 include_guidance 和模型文案。
+修改表单或任意税籍将改变指纹；AI 是否启用不改变确定性输入身份。
+主后端保存完整 HTTP 请求和响应；现有内部单税籍 replay/归档接口不能直接重放 HTTP 文档结果。
+历史构建重现仍需保留原构建，不能用新代码逐字复现旧结果。
+
+### Agent 流程与证据约束
+
+include_guidance 默认 false，不增加基础校验的模型依赖和调用耗时。
+true 时以 Chat Completions 兼容 API 发起工具调用，使用现有 httpx，不增加依赖、队列、向量库或外部 API 路由。
+
+1. get_validation_evidence(issue_index)：只读本次问题代码、严重级别、固定字段路径和来源；上游自由文本不发送模型。
+2. get_rule_details(issue_index)：只读本次快照中与该问题关联的规则 ID、正则、校验深度、来源、章节、限制和实际检查轨迹。
+3. get_source_excerpt(issue_index)：当前明确返回 available=false，因为未安装核实过的官方正文片段；不实时抓取、不把 URL 当作原文，不生成引文。
+
+模型必须先读取对应问题工具才能为该问题生成动作；只有读取相关规则工具后才能引用其 rule:N。
+每个现有问题恰好对应一个 action，issue_index 不得重复或越界，field 必须匹配原问题，且必须引用 issue:N。
+rule:N 引用 residence_results[N]，issue:N 引用顶层 issues[N]。
+服务端使用 Pydantic 校验输出，并检查引用白名单、字段归属、动作完整性、已读取证据。
+额外阻断文案中的 URL、连续六位及以上数字和显式裁决枚举，减少编造链接、标识号码和替代裁决的风险。
+这不是对自然语言真实性的形式证明；AI 文案仅辅助补正，不能据此确认税法适用性。
+未传原始姓名、完整地址、TIN、自由文本解释或上游 message/code/field 给模型。
+上游 field 仅在输出校验完成后由服务端附回，不来自模型。
+模型提示词和工具数据不是发布规则的权限，Agent 没有写工具或任意网络抓取工具。
+
+### 调用预算、失败降级与配置
+
+RULE_AI_ENABLED 默认 false；需配置 RULE_AI_BASE_URL、RULE_AI_API_KEY、RULE_AI_MODEL。
+密钥使用 SecretStr，来自环境或 .env，不进入日志、响应或版本库。
+接口 include_guidance=true 但配置缺失时返回 FALLBACK/AI_NOT_CONFIGURED。
+配置好后需要所选模型支持工具调用和 JSON Object 输出；不支持时固定提示降级。
+进程内最多并发 2 个 Agent，最多 4 轮模型调用、12 次工具调用、每轮最多 8 个工具调用。
+默认总预算 8 秒，包含并发排队、工具编排和网络；可配置 0–20 秒范围内的正值。
+每次最多输出 2500 tokens、模型响应上限 256 KiB（在接收后检查）；超预算或输出不完整则降级。
+模型拒绝、截断、网络错误、格式错误、工具越界和不可信引用不改变核心裁决。
+NOT_REQUESTED／GENERATED／FALLBACK 区分未请求、生成成功和固定提示降级。
+失败仅记录异常类型，不记录模型响应、个人信息、API Key 或数据库连接信息。
+
+响应记录配置模型标识、prompt_version、提示词哈希、耗时和 summary/actions 输出哈希。
+主后端应保存实际 guidance 输出；temperature=0 也不保证重新调用逐字相同。
+目前不保存供应商内部模型构建版本，不宣称可以精确重放模型推理。
+对未知地区、规则未覆盖和豁免适用性只提示人工复核，不由模型自动放行。
+大批问题可能超过工具预算，此时整体补正降级为完整固定提示列表，确定性结果仍正常返回。
+
+### 接口错误与验收
+
+422 新增 details，含安全字段路径、错误类型和固定说明；最多 20 项，不返回 input、ctx、原始异常或任意未知字段名。
+未知字段路径用 <unknown> 替代；413、503 和共享异常响应保持现有行为。
+请求体仍限制 1 MiB，不新增认证或对外管理接口。
+
+本轮新增测试覆盖实体缺日期、多税籍定位／汇总／公共问题去重／单快照读取、重复与空列表、旧 Case A–E、
+缺失个人日期、日期别名冲突、上游来源、AI 工具读取和规则引用、个人信息不外发、
+无效引用／字段／输出、不完整建议、超时、服务错误、截断、恶意工具、循环预算和并发限制。
+常规测试目前 150 通过、3 个 PostgreSQL 用例未配置时跳过；Ruff 和本次模块 Mypy 校验通过。
+尝试开启本地 PostgreSQL 集成测试，但 localhost:5432 拒绝连接，3 个 PG fixture 设置失败，未能完成本轮 PG 复验。
+未修改数据库表结构；SQLite 路径与现有持久化测试继续通过。
+真实组委会模型未配置／联调，当前 Agent 工具协议通过 MockTransport 测试，不把模拟结果当作模型供应商验收。
+仓库没有 frontend/，无法运行 npm test。本轮不修改前端、PM 所有的 specs/、design/、docs/。

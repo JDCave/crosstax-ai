@@ -66,6 +66,8 @@ class CompiledRule:
     verification_level: str = "FORMAT_ONLY"
     source_url: str | None = None
     algorithm_source_url: str | None = None
+    source_section: str | None = None
+    limitations: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +110,8 @@ def compile_snapshot(version_id: str, revision: int, rules: dict[str, object]) -
                     entry.verification_level,
                     entry.source_url,
                     entry.algorithm_source_url,
+                    entry.source_section,
+                    entry.limitations,
                 )
                 ids.add(entry.rule_id)
         return RuleSnapshot(version_id, revision, MappingProxyType({}), MappingProxyType(variants))

@@ -1,0 +1,31 @@
+{
+  "form_data": {
+    "holder_name": "CHAN DEMO",
+    "holder_dob": "1990-05-20",
+    "residence_address": "Flat 1, Demo Building, Demo Street, Hong Kong",
+    "holder_type": "INDIVIDUAL",
+    "has_signature": true,
+    "signing_date": "2026-11-04",
+    "tax_residencies": [
+      {
+        "jurisdiction_code": "HK",
+        "tin_type": "HKID",
+        "tin": "A123456(3)",
+        "has_no_tin": false,
+        "tin_reason_code": null,
+        "tin_reason_explanation": null
+      },
+      {
+        "jurisdiction_code": "GB",
+        "tin_type": "GB_NINO",
+        "tin": "AB123456C",
+        "has_no_tin": false
+      }
+    ]
+  },
+  "policy": {
+    "today": "2026-11-04"
+  },
+  "indicia_issues": [],
+  "include_guidance": true
+}

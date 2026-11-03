@@ -22,7 +22,8 @@ class CRSFormData(BaseModel):
 
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     holder_name: str = Field(min_length=1, max_length=300)
-    holder_dob: str = Field(max_length=32)
+    holder_dob: str | None = Field(default=None, max_length=32)
+    incorporation_date: str | None = Field(default=None, max_length=32)
     residence_address: str = Field(min_length=1, max_length=2000)
     jurisdiction_code: str = Field(pattern=r"^[A-Z]{2}$")
     holder_type: Literal["INDIVIDUAL", "ENTITY"] | None = None

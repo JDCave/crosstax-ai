@@ -1,23 +1,38 @@
 # CRS 表格校验接口：队友接入说明
 
-主后端从表格或其他资料提取结构化数据后，调用本接口，同步获取校验结果。
-本接口不负责读取 PDF、OCR、调用大模型提取信息，也不保存表单或结果。
+主后端提交结构化数据，一次调用同步返回规则校验结果和可选 AI 补正建议。
+接口不负责 PDF/OCR/字段提取，不保存表单和结果。主后端负责用户授权、会话和持久化。
 
-## 调用地址
+## 地址与兼容性
 
 ```http
 POST /api/v1/rule-engine/validate
 Content-Type: application/json
 ```
 
-本地 Base URL：`http://localhost:8000`。其他机器调用时替换为规则引擎服务的可达地址。
-服务运行后可访问 `http://localhost:8000/docs` 查看交互文档。
-需要先配置数据库并发布活动规则，否则返回 503。
-当前接口面向内部服务，未新增认证；主后端负责用户权限及结果保存。
+本地 Base URL 为 `http://localhost:8000`，远程调用替换为服务可达地址。
+启动：`uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000`。
+需预先配置数据库并发布活动规则。运行后访问 `/docs` 或 `/openapi.json`。
+OpenAPI 仍只展示这一个接口；健康探针保留但隐藏，未新增查询、AI、管理路由。
 
-## 个人版请求
+旧的单税籍请求继续支持，响应原有字段保留并增加解释字段。
+新请求支持 `tax_residencies` 数组；不可同时提交旧版顶层 TIN 字段和数组。
+当前没有新增 API 认证，仅供内部服务接入。
 
-对应 [个人版官方 PDF](crs-individual-ird.pdf)，可直接使用 [请求 JSON](crs-individual-request.json)。
+## 请求体
+
+| 字段 | 要求 |
+| --- | --- |
+| form_data | 必填，单税籍或多税籍表单，见下方 |
+| policy | 必填，today 为业务日期 YYYY-MM-DD |
+| indicia_issues | 可选，默认 []，最多 100 项上游问题 |
+| include_guidance | 可选，默认 false；必须为 JSON 布尔值，true 请求 AI 补正，未配置或失败时固定提示降级 |
+
+请求最大 1 MiB，未知字段拒绝。布尔值必须为 true/false；号码必须为字符串，保留前导零。
+日期转换为 YYYY-MM-DD；不要直接传 PDF 中的 dd/mm/yyyy。
+policy.today 由主后端明确提供；示例固定为 2026-11-04，不会自动跟随服务器日期。
+
+### 个人版样例（兼容单税籍）
 
 ```json
 {
@@ -42,15 +57,12 @@ Content-Type: application/json
 }
 ```
 
-## 实体版请求
-
-对应 [实体版官方 PDF](crs-entity-ird.pdf)，可直接使用 [请求 JSON](crs-entity-request.json)。
+### 实体版样例（不要求成立日期）
 
 ```json
 {
   "form_data": {
     "holder_name": "DEMO CROSS BORDER LIMITED",
-    "holder_dob": "2020-06-15",
     "residence_address": "Room 101, Demo Commercial Building, Hong Kong",
     "jurisdiction_code": "HK",
     "holder_type": "ENTITY",
@@ -69,104 +81,219 @@ Content-Type: application/json
 }
 ```
 
-以上姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
-实体成立日期为示例补充资料，不是从该 PDF 提取的字段。
+### 多税籍样例（推荐新接入采用）
 
-## 字段与表格映射
+```json
+{
+  "form_data": {
+    "holder_name": "CHAN DEMO",
+    "holder_dob": "1990-05-20",
+    "residence_address": "Flat 1, Demo Building, Demo Street, Hong Kong",
+    "holder_type": "INDIVIDUAL",
+    "has_signature": true,
+    "signing_date": "2026-11-04",
+    "tax_residencies": [
+      {
+        "jurisdiction_code": "HK",
+        "tin_type": "HKID",
+        "tin": "A123456(3)",
+        "has_no_tin": false,
+        "tin_reason_code": null,
+        "tin_reason_explanation": null
+      },
+      {
+        "jurisdiction_code": "GB",
+        "tin_type": "GB_NINO",
+        "tin": "AB123456C",
+        "has_no_tin": false
+      }
+    ]
+  },
+  "policy": {
+    "today": "2026-11-04"
+  },
+  "indicia_issues": [],
+  "include_guidance": true
+}
+```
 
-| API 字段 | 个人表格来源 | 实体表格来源及注意事项 |
+两个税籍仅为接口演示，不能根据地址或注册地推定某人实际拥有这些税收居民身份。
+姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
+
+## 字段与官方表格映射
+
+| 字段 | 类型与约束 | 表格来源／语义 |
 | --- | --- | --- |
-| form_data.holder_name | Part 1 姓名，合并姓名各部分 | Part 1 实体或分支机构法定名称 |
-| form_data.holder_dob | Part 1 出生日期 | 当前接口必填，表示成立日期；PDF 没有此字段，需上游其他资料补充，不能编造 |
-| form_data.residence_address | Part 1 当前居住地址，合并为字符串 | Part 1 当前营业地址，合并为字符串 |
-| form_data.jurisdiction_code | Part 2 税收居民地区 | Part 4 税收居民地区；不是注册地或地址所在地区 |
-| form_data.holder_type | 固定 INDIVIDUAL | 固定 ENTITY；不是表格中的 Active/Passive NFE 分类 |
-| form_data.tin_type | 香港个人示例使用 HKID | 香港实体示例使用 HK_BR；其他地区按规则支持的类型填写 |
-| form_data.tin | 对应税收居民地区的 TIN | 对应税收居民地区的 TIN；香港实体使用商业登记号码 |
-| form_data.has_no_tin | 是否声明无 TIN | 同个人；使用 JSON true/false |
-| form_data.tin_reason_code | 无 TIN 原因 A/B/C | 同个人；有 TIN 时省略或 null |
-| form_data.tin_reason_explanation | Reason B 的解释 | 同个人；Reason B 去除首尾空白后至少 5 字符 |
-| form_data.has_signature | Part 3 是否有签名 | Part 5 是否有签名；由上游判断，本接口不验证笔迹或签名真伪 |
-| form_data.signing_date | Part 3 签署日期 | Part 5 签署日期 |
-| policy.today | 主后端提供业务日期 | 同个人；不是 PDF 提取字段 |
-| indicia_issues | 可选，上游跨源核查问题 | 同个人；无问题可省略或传空数组 |
+| holder_name | string，1–300 字符，纯空白阻断 | 个人 Part 1 姓名；实体 Part 1 法定名称 |
+| holder_type | INDIVIDUAL / ENTITY；多税籍必填 | 主体类型；不是 Active/Passive NFE 分类 |
+| holder_dob | string / null，最长 32 字符 | 个人出生日期必需；缺失返回业务阻断。实体不要求；旧实体请求仍可作为成立日期别名使用 |
+| incorporation_date | string / null，最长 32 字符 | 可选实体成立日期。实体 PDF 无此字段，不得编造；提供时检查日期有效性。个人提供则业务阻断 |
+| residence_address | string，1–2000 字符，纯空白阻断 | 个人现居住地址／实体营业地址，合并为字符串 |
+| has_signature | boolean，必填 | 个人 Part 3／实体 Part 5 是否存在签名，由上游判断，不检查真伪 |
+| signing_date | string / null，最长 32 字符 | 签署日期，必须有效且不晚于 policy.today |
+| tax_residencies | 1–20 项数组，新版必填 | 个人 Part 2／实体 Part 4 的税收居民地区及 TIN；同一地区不能重复 |
 
-日期统一转换为 `YYYY-MM-DD`，PDF 上的 `dd/mm/yyyy` 不能原样传入。
-签署日期不得晚于 policy.today；示例业务日期为 2026-11-04，实际调用由主后端明确传入。
-TIN 必须为字符串，保留前导零；引擎会移除空白、括号和连字符并转换大写。
-顶层和 form_data 不接受未知字段。完整长度、类型和 policy 可选字段见
-[完整接口文档](../../backend/api/RULE_ENGINE_API.md)。
+旧版单税籍可以省略 holder_type，但正式 schema v2 规则要求明确主体类型，否则可能未覆盖转人工复核。
+实体 holder_dob 与 incorporation_date 同时提供时必须一致；两者均可省略。
+本接口不根据出生／成立日期自动判断税收居民身份，也不自定义年龄或实体存续年限。
 
-无 TIN 时传 `has_no_tin: true`、`tin: null`，并填写 A/B/C；B 还须解释。
-当前只检查豁免声明完整性，适用性需要人工复核，不会凭无 TIN 声明自动通过。
+数组每项字段如下；旧版单税籍将这些字段直接放在 form_data：
+
+| 字段 | 类型与约束 |
+| --- | --- |
+| jurisdiction_code | 必填，两位大写地区代码；是税收居民地区，不是地址或注册地 |
+| tin_type | string / null，最长 100 字符；香港个人 HKID、香港实体 HK_BR |
+| tin | string / null；原文超过 256 字符产生业务阻断；清洗空白、括号、连字符并转大写 |
+| has_no_tin | 必填 boolean；true 与非空 TIN 同时存在会阻断 |
+| tin_reason_code | A / B / C / null；无 TIN 时必需，有 TIN 时不应提供 |
+| tin_reason_explanation | string / null，最长 4000 字符；Reason B 去首尾空白后至少 5 字符 |
+
+无 TIN 时：has_no_tin=true、tin=null，并填写 A/B/C；B 还需解释实际原因。
+仅检查声明完整性，豁免适用性仍需人工复核，不会仅凭声明自动放行。
+支持的地区、主体和标识类型见 [规则覆盖说明](../../rules/GLOBAL_COVERAGE.md)。
+
+policy 还可包含 earliest_signing_date（可选最早签署日期，不得晚于 today）、strict_coverage（默认 true）。
+strict_coverage=false 仅影响旧 schema v1 的长度兜底，不会关闭 schema v2 未覆盖复核。
+indicia_issues 每项必须含 code、severity（BLOCKER/WARNING）、message、confidence（0–1），field 可省略/null。
+上游问题参与同一严重级别汇总，不会因来源不同而被忽略。
 
 ## 调用示例
 
-在仓库根目录执行个人样例：
+在仓库根目录执行：
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/rule-engine/validate \
   -H 'Content-Type: application/json' \
-  --data-binary @assets/crs-templates/crs-individual-request.json
+  --data-binary @assets/crs-templates/crs-multi-residence-request.json
 ```
 
-实体样例：
+个人／实体单税籍分别替换文件名为 crs-individual-request.json、crs-entity-request.json。
 
-```bash
-curl -X POST http://localhost:8000/api/v1/rule-engine/validate \
-  -H 'Content-Type: application/json' \
-  --data-binary @assets/crs-templates/crs-entity-request.json
+```python
+import httpx
+
+async def validate_form(body: dict) -> dict:
+    async with httpx.AsyncClient(base_url="http://localhost:8000", timeout=30) as client:
+        response = await client.post("/api/v1/rule-engine/validate", json=body)
+        response.raise_for_status()
+        return response.json()
 ```
 
-## 返回结果
-
-接口直接返回 JSON，不包裹 result，也不需要 session_id。成功响应字段如下：
+## 响应与前端展示
 
 | 字段 | 含义 |
 | --- | --- |
-| verdict | AUTO_PASS、NEED_USER_FIX 或 MANUAL_TRIAGE |
-| issues | 问题数组；每项有 code、severity、field、message、confidence |
-| rule_version_id | 本次规则内容哈希 |
-| rule_revision | 本次活动规则修订号 |
-| checks | TIN 执行状态、校验深度、官方来源、已执行及未执行检查；可为 null |
-| execution | 引擎构建指纹、输入指纹、执行策略；可为 null |
+| verdict | AUTO_PASS / NEED_USER_FIX / MANUAL_TRIAGE |
+| issues | 引擎问题在前，上游问题在后；每项 code、severity、field、message、confidence |
+| rule_version_id / rule_revision | 全部税籍和 AI 工具引用固定使用的本次规则版本 |
+| checks | 旧版单税籍 TIN 检查，兼容保留；多税籍返回 null，请读取 residence_results |
+| execution | 引擎构建指纹、规范化输入指纹和策略，不包含 AI 文案指纹 |
+| residence_results | 每项 index、jurisdiction_code、checks、issue_indexes；index 对应税籍数组下标 |
+| check_items | 姓名、地址、个人／实体日期、签名、签署日期和每项税籍声明的检查状态及问题下标 |
+| issue_origins | 每项 issue_index、source（RULE_ENGINE/UPSTREAM）、evidence_ref（issue:N） |
+| review_scope | 已执行范围、未评估项目及说明，前端应展示，避免把 AUTO_PASS 当成整表合规认证 |
+| guidance | 可选 AI 的状态、补正动作、引用、模型及提示词／输出指纹，见下一节 |
 
-两份样例在当前 global v4 规则下、没有上游问题时，均预期返回
-`verdict: AUTO_PASS`、`issues: []`，checks 的 status 为 PASSED、
-verification_level 为 FORMAT_ONLY。它们只通过当前已实现的检查，不代表税收居民身份、
-号码签发或归属、整张官方表格的全部要求均已核实。规则版本和指纹以实际响应为准。
+TIN checks 包含 status（PASSED/FAILED/NOT_COVERED/NOT_APPLICABLE）、verification_level
+（FORMAT_ONLY/CHECKSUM/NONE）、rule_id、source_url、algorithm_source_url、checks_performed、checks_not_performed、reason_code。
+check_items.status 为 PASSED/FAILED/REVIEW_REQUIRED/NOT_APPLICABLE。
+实体未提供可选日期时相关检查显示 NOT_APPLICABLE。
+多税籍问题路径示例：`tax_residencies.1.tin`；公共缺签等问题只返回一次。
+issue_indexes 均引用顶层 issues 数组，避免前端依赖问题消息字符串做判断。
 
-| verdict | 主后端处理建议 |
-| --- | --- |
-| AUTO_PASS | 当前检查无问题，记录本次结果 |
-| NEED_USER_FIX | 存在 BLOCKER，展示 issues 并要求用户更正 |
-| MANUAL_TRIAGE | 无 BLOCKER 但存在 WARNING，进入人工复核 |
+| 裁决 | 条件 | 建议展示 |
+| --- | --- | --- |
+| NEED_USER_FIX | 任意 BLOCKER | 需要补正，展示对应字段问题 |
+| MANUAL_TRIAGE | 无 BLOCKER，但存在 WARNING | 待人工复核 |
+| AUTO_PASS | 当前检查无问题 | 当前检查通过，同时展示审核范围 |
 
-正常业务裁决均为 HTTP 200，必须读取 verdict，不能仅按 HTTP 状态判定通过。
-BLOCKER 优先于 WARNING；上游 indicia_issues 也参与裁决。
+两份单税籍样例和多税籍样例在当前 global v4 下无上游问题时预期 AUTO_PASS；
+香港和本例英国 NINO 都仅 FORMAT_ONLY，不代表号码签发、归属或实际税收居民身份已经核实。
+正常业务裁决均为 HTTP 200，必须读取 verdict。
 
-## 错误处理
+## AI 补正结果
 
-错误结构示例：
+include_guidance=false（默认）不调用模型，guidance.status=NOT_REQUESTED。
+true 时服务器按配置调用模型；AI 不修改裁决、严重级别、原始字段和规则。
+
+以下为单个错误 TIN 的 guidance 结构示意，不是前述通过样例的完整响应：
 
 ```json
-{"code": "VALIDATION_ERROR", "message": "Invalid request JSON or field values"}
+{
+  "status": "GENERATED",
+  "reason_code": null,
+  "summary": "请核对原始证件上的号码。",
+  "actions": [
+    {
+      "issue_index": 0,
+      "field": "tin",
+      "instruction": "请确认税收居民地区与标识类型，再依据原始资料补正号码。",
+      "evidence_refs": ["issue:0", "rule:0"]
+    }
+  ],
+  "model": "<配置的模型标识>",
+  "prompt_version": "remediation-v1",
+  "prompt_fingerprint": "<提示词指纹>",
+  "duration_ms": 1000,
+  "output_fingerprint": "<补正 summary/actions 的规范化哈希>"
+}
 ```
 
-| HTTP | code | 处理 |
+issue:N 引用顶层 issues[N]；rule:N 引用 residence_results[N].checks 及其官方来源。
+无匹配规则或未读取该规则工具时不允许引用 rule:N。
+GENERATED 仍仅是辅助文案，需按用户真实资料补正，不能作为税务适用性结论。
+
+未启用／配置模型、超时、服务错误、无效引用或输出不完整时，status=FALLBACK，
+返回固定补正提示；reason_code 为 AI_NOT_CONFIGURED、AI_TIMEOUT 或 AI_OUTPUT_OR_SERVICE_ERROR。
+不要因 AI 降级而将已完成的规则结果当作失败或通过。
+主后端保存 guidance 的实际输出及元数据，不能假设重新调用模型逐字重现。
+
+### 服务端启用 AI
+
+在 `.env` 中配置（密钥不要提交）：
+
+```dotenv
+RULE_AI_ENABLED=true
+RULE_AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+RULE_AI_API_KEY=<组委会提供的密钥>
+RULE_AI_MODEL=<支持工具调用和JSON输出的模型>
+RULE_AI_TIMEOUT_SECONDS=8
+RULE_AI_MAX_CONCURRENCY=2
+```
+
+如组委会提供其他兼容网关，替换 base URL；代码自动追加 `/chat/completions`。
+修改配置后重启服务。配置参考仓库 [.env.example](../../.env.example)。
+默认关闭 AI；仅传 include_guidance=true 不会自动获得密钥或启用服务端模型配置。
+当前官方原文工具明确返回“未安装核实正文”，只可使用已有规则元数据及来源，不会生成官方原文引文。
+
+## 错误
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Invalid request JSON or field values",
+  "details": [
+    {"field": "form_data.has_signature", "code": "bool_type", "message": "Expected a JSON boolean"}
+  ]
+}
+```
+
+422 返回最多 20 条安全字段错误；不回显原始输入、异常上下文或任意未知字段名。
+未知字段路径显示 <unknown>。日期内容错误、缺签和缺少个人出生日期等业务问题返回 200 + issues。
+
+| HTTP | code | 说明 |
 | --- | --- | --- |
-| 413 | REQUEST_TOO_LARGE | 请求体超过 1 MiB，缩小请求 |
-| 422 | VALIDATION_ERROR | 检查 JSON、未知字段、字段类型和日期策略 |
-| 503 | NO_ACTIVE_RULES | 联系规则引擎维护者发布活动规则 |
-| 503 | RULE_ENGINE_UNAVAILABLE | 数据库或规则不可用，按主后端策略重试 |
-| 500 | INTERNAL_ERROR | 记录错误并联系维护者 |
+| 413 | REQUEST_TOO_LARGE | 请求超过 1 MiB |
+| 422 | VALIDATION_ERROR | JSON、字段类型、未知字段、税籍数组、策略组合不合法 |
+| 503 | NO_ACTIVE_RULES | 未发布活动规则 |
+| 503 | RULE_ENGINE_UNAVAILABLE | 数据库或规则不可用 |
+| 500 | INTERNAL_ERROR | 未预期系统错误 |
 
-表单缺签、TIN 格式错误等业务问题通常是 HTTP 200 + NEED_USER_FIX，区别于请求结构错误。
+## 当前范围与结果保存
 
-## 当前接入边界
-
-- 一次请求只支持一个税收居民地区及一个 TIN；两份 PDF 均支持多地区，当前接口不能给出多地区整表的汇总裁决。
-- 实体分类、控权人、邮寄地址、出生地、授权签署人等完整表格信息尚未纳入此请求契约，不能直接增加字段提交。
-- 实体成立日期缺失时，当前契约无法仅靠这份 PDF 构造完整请求，应由上游补充资料；不要填写虚构日期用于真实业务。
-- 当前香港规则为格式校验，不检查校验位、真实性或归属；规则未覆盖的地区或类型转人工复核。
-- 每次调用读取当时的活动规则，重试可能因规则更新返回不同结果；主后端应保存请求与完整响应作为本次审核依据。
+- 支持最多 20 个不同税收居民地区，一次请求使用一份固定快照，BLOCKER 优先于 WARNING 汇总。
+- 不核实是否遗漏其他税收居民地区，也不核实真实身份、TIN 签发／归属和签名真伪。
+- 实体分类、控权人、授权签署人等完整表格信息仍未纳入契约，不应额外提交。
+- 每次调用读取当时的活动版本；重试可能因规则更新得到不同结果。
+- HTTP 不写审核记录；主后端保存请求、完整响应和原始文件引用。内部历史归档／重放接口不适用于多税籍 HTTP 文档结果。
+- 本轮包含模拟模型 HTTP 工具调用测试；真实组委会模型需配置后联调，不能将 Mock 测试等同于真实模型可用性验证。

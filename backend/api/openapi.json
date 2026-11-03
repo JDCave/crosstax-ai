@@ -135,9 +135,28 @@
             "title": "Holder Name"
           },
           "holder_dob": {
-            "type": "string",
-            "maxLength": 32,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Holder Dob"
+          },
+          "incorporation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Date"
           },
           "residence_address": {
             "type": "string",
@@ -241,7 +260,6 @@
         "type": "object",
         "required": [
           "holder_name",
-          "holder_dob",
           "residence_address",
           "jurisdiction_code",
           "has_no_tin",
@@ -249,6 +267,42 @@
         ],
         "title": "CRSFormData",
         "description": "Dates remain strings so invalid signing dates become business issues."
+      },
+      "CheckItem": {
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "FAILED",
+              "REVIEW_REQUIRED",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Status"
+          },
+          "issue_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Issue Indexes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_id",
+          "field",
+          "status"
+        ],
+        "title": "CheckItem"
       },
       "ErrorResponse": {
         "properties": {
@@ -259,6 +313,20 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
           }
         },
         "type": "object",
@@ -290,6 +358,314 @@
           "policy"
         ],
         "title": "ExecutionContext"
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "FieldError"
+      },
+      "GuidanceAction": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "instruction": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Instruction"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Evidence Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "issue_index",
+          "field",
+          "instruction",
+          "evidence_refs"
+        ],
+        "title": "GuidanceAction"
+      },
+      "GuidanceResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "NOT_REQUESTED",
+              "GENERATED",
+              "FALLBACK"
+            ],
+            "title": "Status"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceAction"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version",
+            "default": "remediation-v1"
+          },
+          "prompt_fingerprint": {
+            "type": "string",
+            "title": "Prompt Fingerprint"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "output_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Fingerprint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "GuidanceResult"
+      },
+      "IssueOrigin": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "RULE_ENGINE",
+              "UPSTREAM"
+            ],
+            "title": "Source"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue_index",
+          "source",
+          "evidence_ref"
+        ],
+        "title": "IssueOrigin"
+      },
+      "MultiResidenceForm": {
+        "properties": {
+          "holder_name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Holder Name"
+          },
+          "holder_type": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "ENTITY"
+            ],
+            "title": "Holder Type"
+          },
+          "holder_dob": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Dob"
+          },
+          "incorporation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Date"
+          },
+          "residence_address": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Residence Address"
+          },
+          "has_signature": {
+            "type": "boolean",
+            "title": "Has Signature"
+          },
+          "signing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Date"
+          },
+          "tax_residencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaxResidence"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Tax Residencies"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holder_name",
+          "holder_type",
+          "residence_address",
+          "has_signature",
+          "tax_residencies"
+        ],
+        "title": "MultiResidenceForm"
+      },
+      "ResidenceResult": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "jurisdiction_code": {
+            "type": "string",
+            "title": "Jurisdiction Code"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/TINCheck"
+          },
+          "issue_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Issue Indexes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "jurisdiction_code",
+          "checks",
+          "issue_indexes"
+        ],
+        "title": "ResidenceResult"
+      },
+      "ReviewScope": {
+        "properties": {
+          "statement": {
+            "type": "string",
+            "title": "Statement",
+            "default": "当前已执行检查通过不代表整份 CRS 合规或税收居民身份已经核实"
+          },
+          "evaluated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evaluated"
+          },
+          "not_evaluated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Not Evaluated"
+          }
+        },
+        "type": "object",
+        "title": "ReviewScope"
       },
       "TINCheck": {
         "properties": {
@@ -381,6 +757,77 @@
         ],
         "title": "TINCheck"
       },
+      "TaxResidence": {
+        "properties": {
+          "jurisdiction_code": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Jurisdiction Code"
+          },
+          "tin_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Type"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin"
+          },
+          "has_no_tin": {
+            "type": "boolean",
+            "title": "Has No Tin"
+          },
+          "tin_reason_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Code"
+          },
+          "tin_reason_explanation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Explanation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jurisdiction_code",
+          "has_no_tin"
+        ],
+        "title": "TaxResidence"
+      },
       "ValidationPolicy": {
         "properties": {
           "today": {
@@ -417,7 +864,15 @@
       "ValidationRequest": {
         "properties": {
           "form_data": {
-            "$ref": "#/components/schemas/CRSFormData"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CRSFormData"
+              },
+              {
+                "$ref": "#/components/schemas/MultiResidenceForm"
+              }
+            ],
+            "title": "Form Data"
           },
           "policy": {
             "$ref": "#/components/schemas/ValidationPolicy"
@@ -429,6 +884,11 @@
             "type": "array",
             "maxItems": 100,
             "title": "Indicia Issues"
+          },
+          "include_guidance": {
+            "type": "boolean",
+            "title": "Include Guidance",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -484,6 +944,33 @@
                 "type": "null"
               }
             ]
+          },
+          "residence_results": {
+            "items": {
+              "$ref": "#/components/schemas/ResidenceResult"
+            },
+            "type": "array",
+            "title": "Residence Results"
+          },
+          "check_items": {
+            "items": {
+              "$ref": "#/components/schemas/CheckItem"
+            },
+            "type": "array",
+            "title": "Check Items"
+          },
+          "issue_origins": {
+            "items": {
+              "$ref": "#/components/schemas/IssueOrigin"
+            },
+            "type": "array",
+            "title": "Issue Origins"
+          },
+          "review_scope": {
+            "$ref": "#/components/schemas/ReviewScope"
+          },
+          "guidance": {
+            "$ref": "#/components/schemas/GuidanceResult"
           }
         },
         "type": "object",
@@ -493,7 +980,12 @@
           "rule_version_id",
           "rule_revision",
           "checks",
-          "execution"
+          "execution",
+          "residence_results",
+          "check_items",
+          "issue_origins",
+          "review_scope",
+          "guidance"
         ],
         "title": "ValidationResponse"
       }

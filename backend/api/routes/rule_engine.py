@@ -29,10 +29,16 @@ class RuleAPIRoute(APIRoute):
                     body.extend(chunk)
                 request._body = bytes(body)  # Starlette caches request.body() here after its stream is consumed.
                 return await original(request)
-            except RequestValidationError:
+            except RequestValidationError as exc:
+                from backend.api.schemas.rule_engine import field_errors
+
                 return JSONResponse(
                     status_code=422,
-                    content={"code": "VALIDATION_ERROR", "message": "Invalid request JSON or field values"},
+                    content={
+                        "code": "VALIDATION_ERROR",
+                        "message": "Invalid request JSON or field values",
+                        "details": field_errors(exc.errors()),
+                    },
                 )
             except AppException:
                 raise
@@ -63,4 +69,4 @@ Service = Annotated[RuleAPIService, Depends(get_rule_api_service)]
     summary="Validate structured CRS data and return results synchronously",
 )
 async def validate(payload: ValidationRequest, service: Service) -> ValidationResponse:
-    return await service.validate(payload.form_data, payload.policy, payload.indicia_issues)
+    return await service.validate(payload.form_data, payload.policy, payload.indicia_issues, payload.include_guidance)
