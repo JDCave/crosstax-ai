@@ -1,0 +1,20 @@
+{
+  "form_data": {
+    "holder_name": "DEMO CROSS BORDER LIMITED",
+    "holder_dob": "2020-06-15",
+    "residence_address": "Room 101, Demo Commercial Building, Hong Kong",
+    "jurisdiction_code": "HK",
+    "holder_type": "ENTITY",
+    "tin_type": "HK_BR",
+    "tin": "12345678",
+    "has_no_tin": false,
+    "tin_reason_code": null,
+    "tin_reason_explanation": null,
+    "has_signature": true,
+    "signing_date": "2026-11-04"
+  },
+  "policy": {
+    "today": "2026-11-04"
+  },
+  "indicia_issues": []
+}
