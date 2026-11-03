@@ -97,3 +97,14 @@ def test_offline_cli_runs_without_a_database_or_model():
         check=True,
     )
     assert json.loads(result.stdout)["sample_count"] == 5
+
+
+def test_removed_blocker_is_detected_even_when_other_blockers_mask_verdict_change():
+    base = json.loads(Path("rules/rules_global_v4.json").read_text())
+    relaxed = json.loads(json.dumps(base))
+    relaxed["jurisdictions"]["CN"][0].update(algorithm="REGEX_ONLY", verification_level="FORMAT_ONLY")
+    case = json.loads(Path("assets/mock-data/cases.json").read_text())[1]
+    case["form_data"]["has_signature"] = False
+    report = evaluate(base, relaxed, [case])
+    assert report.cases[0]["before"]["verdict"] == report.cases[0]["after"]["verdict"] == "NEED_USER_FIX"
+    assert "BLOCKER_REMOVED" in report.risks

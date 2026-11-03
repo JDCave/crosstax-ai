@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "TrustedApproval": {
+      "additionalProperties": false,
+      "properties": {
+        "base_version_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Base Version Id",
+          "type": "string"
+        },
+        "candidate_version_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Version Id",
+          "type": "string"
+        },
+        "impact_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Impact Hash",
+          "type": "string"
+        },
+        "evidence_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_version_id",
+        "candidate_version_id",
+        "impact_hash",
+        "evidence_hash"
+      ],
+      "title": "TrustedApproval",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "approvals": {
+      "items": {
+        "$ref": "#/$defs/TrustedApproval"
+      },
+      "maxItems": 1000,
+      "title": "Approvals",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version"
+  ],
+  "title": "PublicationPolicy",
+  "type": "object"
+}

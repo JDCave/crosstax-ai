@@ -153,7 +153,7 @@ class RuleSourceImporter:
                 results.append({"source_id": source.id, "document_id": document.id, "status": state})
             except Exception as exc:
                 results.append(
-                    {"source_id": source.id, "status": "FAILED", "error": type(exc).__name__ + ": " + str(exc)}
+                    {"source_id": source.id, "status": "FAILED", "error": type(exc).__name__}
                 )
         failures = sum(row["status"] == "FAILED" for row in results)
         status = "SUCCEEDED" if not failures else ("FAILED" if failures == len(results) else "PARTIAL")

@@ -148,6 +148,10 @@ def analyze_impact(
         changed = old != new
         transition = before.verdict + "->" + after.verdict
         transitions[transition] = transitions.get(transition, 0) + 1
+        old_blockers = {(issue.code, issue.field) for issue in before.form_issues if issue.severity == "BLOCKER"}
+        new_blockers = {(issue.code, issue.field) for issue in after.form_issues if issue.severity == "BLOCKER"}
+        if old_blockers - new_blockers:
+            risks.add("BLOCKER_REMOVED")
         if rank[after.verdict] < rank[before.verdict]:
             risks.add("VERDICT_RELAXED")
         if before.verdict == "AUTO_PASS" and after.verdict == "NEED_USER_FIX":

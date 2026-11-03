@@ -25,7 +25,7 @@
 当前演示默认使用 Case A–E，这只是所给样本的影响，不等于真实商户总体影响评估。
 既有 TIN 回归门禁独立执行，不能由影响报告替代。
 
-自动发布硬阻断：删除选择器、降低验证深度、出现通过到阻断或更宽松裁决、样本检查深度退化。
+自动发布硬阻断：删除选择器、降低验证深度、移除原有阻断（即使被其他阻断掩盖）、出现通过到阻断或更宽松裁决、样本检查深度退化。
 新增覆盖或其他已知结果变化也必须由可信策略精确批准报告指纹，不能仅因测试通过自动认定税法正确。
 仅资料说明等非执行字段变化时，只保留资料检查记录，不切换活动规则。
 
@@ -45,7 +45,7 @@
 ## 可信发布策略（本地 JSON）
 
 - schema_version：1。
-- approvals：精确批准项列表，每项 base_version_id、candidate_version_id、impact_hash。
+- approvals：精确批准项列表，每项 base_version_id、candidate_version_id、impact_hash、evidence_hash。
 
 策略文件由维护者控制，是部署信任边界，不接受上游规则包内的 trusted=true 等自我声明。
 候选必须已经通过现有 approve CLI 成为 APPROVED，并通过本次回归、证据和影响检查。
@@ -94,3 +94,30 @@ stdout 为 JSON 报告，可重定向到 outputs/；不连接数据库、不调�
 impact_hash 对应报告 report_hash；Case E 展示从规则未覆盖转人工复核，到新规则命中后发现错误。
 样本预期 verdict 仅为兼容已有 fixture，不参与影响报告的裁决；回归断言仍由独立门禁负责。
 报告不会直接输出表单值；请勿把真实个人标识作为 case_id。
+
+
+## 阶段 3：后台编排已实现
+
+服务入口为 `backend.services.rule_updates.RuleUpdateCoordinator.run()`，下一阶段提供定时 CLI 包装。
+候选契约见 [JSON Schema](rule-bundle.schema.json)，独立可信策略见 [JSON Schema](publication-policy.schema.json)。
+
+同一任务内依次检查：资料同步完整成功、有初始活动版本、候选基准匹配、结构编译、影响分析、
+资料 ID 和原文哈希、候选登记、真实回归、风险、批准状态、来源证据、独立可信策略、CAS 激活。
+计划模式不审批或激活，但会保存资料、候选和任务记录。
+整体结果保存在 rule_sync_runs.summary，資料抓取另有自己的同步记录。
+PUBLISHED 表示激活已提交；PLANNED/PENDING_APPROVAL/WAITING_FOR_BUNDLE 是正常等待状态。
+BLOCKED/CONFLICT/FAILED/NO_ACTIVE_RULES 记录为同步失败，便于调度监控。
+
+可信批准除版本和 impact_hash 外，还绑定 evidence_hash，避免批准报告后替换资料引用。
+evidence_hash 对按 document_id 排序的 document_id/content_hash 计算；资料 URL 和地区须匹配变更规则来源。
+引用原文会重新计算 SHA-256；来源须启用，且引用当前同步返回的资料，或唯一可确认的最新存储资料。
+时间戳相同且无法确定最新版本时，不猜测顺序，要求重新同步。
+已批准版本不补写或篡改历史资料关联；本次证据通过任务摘要和发布 reason 中的哈希关联。
+候选包的回归样本用于未审批计划；已批准版本使用其原审批保存的样本，激活时再次执行。
+
+最终摘要与激活不是一个长事务。激活及发布事件已提交后，如最终摘要因数据库故障保存失败，
+不会伪称已回滚，需查询发布历史确认；重复运行活动候选哈希相同时会幂等结束。
+已知 source importer 错误摘要改为异常类型，避免保存原始网络错误内容。
+本阶段 SQLite 与全套验证：217 项通过、3 项 PostgreSQL 按环境跳过；无真实发布操作。
+
+若检测到新资料、上游却仍提供旧活动规则和旧资料引用，结果为 WAITING_FOR_BUNDLE，不会伪称资料已经完成规则转换。
