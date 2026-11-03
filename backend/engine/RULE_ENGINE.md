@@ -450,3 +450,31 @@ AI_MODEL_OR_ENDPOINT_NOT_FOUND、AI_RATE_LIMITED、AI_REQUEST_REJECTED，其他�
 真实 Key 尚未填入，因此未发起真实付费调用，也未声称验证真实模型输出质量或延迟。
 
 百炼接入完成后常规测试为 170 项通过、3 项 PostgreSQL 按环境跳过；本轮未修改持久化模型。
+
+
+## 2026-11-04：通用模型配置与供应商无关错误分类
+
+默认模型使用 DEFAULT_MODEL=qwen-plus，由 RULE_AI_MODEL 覆盖，空白沿用默认值；不硬编码模型白名单，不自动切换其他模型。
+部署可显式指定已开通的具体模型版本，减少别名更新对回放和联调的影响。
+这是一种配置策略，不宣称所有主流项目拥有统一的默认模型。
+
+../core/ai_errors.py 定义统一 AIErrorCategory、公开 AIErrorInfo(category,retryable)、reason_code 和重试建议。
+BailianClient 将 HTTP 状态及已知百炼错误代码映射到通用分类；Agent 补充连接、超时、输出校验、内部及未配置错误。
+外部 guidance.error 在成功或未请求时为 null，失败时返回供应商无关类别；保留 reason_code 便于现有队友使用。
+内部日志仅记录已知白名单代码、状态和分类，不记录原始消息、任意未知供应商代码或请求值。
+
+分类为 configuration、authentication、permission、quota、rate_limit、timeout、connection、invalid_request、
+invalid_response、service_unavailable、internal。
+限流、超时、连接和服务不可用标记可重试；其他类别需要先修正配置、资料或程序，不自动重试。
+HTTP 408/504 映射 timeout，5xx 映射 service_unavailable，401 映射 authentication，
+其余优先识别已知供应商代码，再按 HTTP 状态回退。
+Arrearage、BudgetLimitExceeded、insufficient_quota 等识别为额度／账单错误，避免一律按限流处理。
+Throttling.AllocationQuota 按官方 token 速率限制处理；供应商同类代码也可能存在套餐差异，重试建议不保证实际恢复。
+映射参考 [百炼官方错误码](https://help.aliyun.com/en/model-studio/error-code)。
+
+404 不再单独创造供应商端点错误类型，统一到 invalid_request / AI_REQUEST_REJECTED。
+原 AI_OUTPUT_OR_SERVICE_ERROR 拆分为 AI_CONNECTION_ERROR、AI_INVALID_RESPONSE、AI_INTERNAL_ERROR。
+此调整仅影响可选 guidance 错误，不改变核心规则 issues、verdict 或 HTTP 200。
+测试增加 HTTP／供应商代码矩阵、额度与限流区分、模型环境覆盖、网络与程序错误隔离及敏感诊断不外泄。
+
+通用错误分类完成后：186 项测试通过、3 项 PostgreSQL 按环境跳过，Ruff 与本轮模块 Mypy 通过；真实百炼调用仍待填 Key 联调。

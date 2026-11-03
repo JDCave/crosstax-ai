@@ -12,6 +12,7 @@ from typing import Any, Literal
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.core.ai_errors import REASON_CODES, AIErrorCategory, AIErrorInfo
 from backend.core.bailian import BailianSettings
 from backend.engine.document_validation import DocumentResult
 from backend.engine.reproducibility import canonical_hash
@@ -53,6 +54,7 @@ class GeneratedGuidance(BaseModel):
 class GuidanceResult(BaseModel):
     status: Literal["NOT_REQUESTED", "GENERATED", "FALLBACK"]
     reason_code: str | None = None
+    error: AIErrorInfo | None = None
     summary: str = ""
     actions: list[GuidanceAction] = Field(default_factory=list)
     model: str | None = None
@@ -131,7 +133,7 @@ class RemediationAgent:
             return GuidanceResult(status="NOT_REQUESTED")
         started = time.monotonic()
         if not self.settings.enabled or not self.settings.effective_api_key() or not self.settings.model:
-            return self._fallback(result, "AI_NOT_CONFIGURED", started)
+            return self._fallback(result, AIErrorCategory.CONFIGURATION, started)
         try:
             async with asyncio.timeout(self.settings.timeout_seconds):
                 async with self.semaphore:
@@ -144,14 +146,26 @@ class RemediationAgent:
                 output_fingerprint=canonical_hash(generated.model_dump(mode="json")),
             )
         except (TimeoutError, httpx.TimeoutException):
-            return self._fallback(result, "AI_TIMEOUT", started)
+            return self._fallback(result, AIErrorCategory.TIMEOUT, started)
         except BailianAPIError as exc:
-            return self._fallback(result, exc.reason_code, started)
-        except Exception as exc:  # Isolate optional assistance, including malformed provider envelopes.
+            logger.warning(
+                "remediation_provider_failed",
+                extra={
+                    "error_category": exc.error.category.value,
+                    "provider_status": exc.provider_status,
+                    "provider_code": exc.provider_code,
+                },
+            )
+            return self._fallback(result, exc.error.category, started)
+        except httpx.TransportError:
+            return self._fallback(result, AIErrorCategory.CONNECTION, started)
+        except (ValueError, KeyError, TypeError, IndexError, AttributeError, httpx.DecodingError):
+            return self._fallback(result, AIErrorCategory.INVALID_RESPONSE, started)
+        except Exception as exc:  # Optional AI must not break deterministic validation.
             logger.warning("remediation_failed", extra={"error_type": type(exc).__name__})
-            return self._fallback(result, "AI_OUTPUT_OR_SERVICE_ERROR", started)
+            return self._fallback(result, AIErrorCategory.INTERNAL, started)
 
-    def _fallback(self, result: DocumentResult, reason: str, started: float) -> GuidanceResult:
+    def _fallback(self, result: DocumentResult, category: AIErrorCategory, started: float) -> GuidanceResult:
         actions = []
         hints = {
             "INVALID_TIN": "请核对对应地区及标识类型, 并根据原始证件重新填写号码; 不要猜测或生成号码。",
@@ -173,7 +187,8 @@ class RemediationAgent:
         generated = GeneratedGuidance(summary="已返回固定补正提示; 请以规则检查结果和实际资料为准。", actions=actions)
         return GuidanceResult(
             status="FALLBACK",
-            reason_code=reason,
+            reason_code=REASON_CODES[category],
+            error=AIErrorInfo.for_category(category),
             **generated.model_dump(),
             duration_ms=int((time.monotonic() - started) * 1000),
             output_fingerprint=canonical_hash(generated.model_dump(mode="json")),

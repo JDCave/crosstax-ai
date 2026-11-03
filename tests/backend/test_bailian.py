@@ -87,7 +87,7 @@ async def test_bailian_tool_and_json_stages_send_valid_distinct_parameters():
         (400, "AI_REQUEST_REJECTED"),
         (401, "AI_AUTHENTICATION_FAILED"),
         (403, "AI_PERMISSION_DENIED"),
-        (404, "AI_MODEL_OR_ENDPOINT_NOT_FOUND"),
+        (404, "AI_REQUEST_REJECTED"),
         (429, "AI_RATE_LIMITED"),
         (503, "AI_PROVIDER_UNAVAILABLE"),
     ],
@@ -117,3 +117,36 @@ async def test_workspace_endpoint_is_respected():
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         await BailianClient(settings, client).complete([])
     assert received == [url.rstrip("/") + "/chat/completions"]
+
+
+@pytest.mark.parametrize(
+    "status,body,category,retryable",
+    [
+        (401, {"error": {"code": "InvalidApiKey"}}, "authentication", False),
+        (403, {"code": "Arrearage"}, "quota", False),
+        (429, {"error": {"code": "insufficient_quota"}}, "quota", False),
+        (429, {"error": {"code": "Throttling.RateQuota"}}, "rate_limit", True),
+        (429, {"error": {"code": "Throttling.AllocationQuota"}}, "rate_limit", True),
+        (400, {"error": {"code": "BudgetLimitExceeded"}}, "quota", False),
+        (403, {"error": {"code": "AccessDenied"}}, "permission", False),
+        (404, {"error": {"code": "ModelNotFound"}}, "invalid_request", False),
+        (422, {}, "invalid_request", False),
+        (408, {}, "timeout", True),
+        (504, {}, "timeout", True),
+        (503, {"error": {"code": "InvalidParameter"}}, "service_unavailable", True),
+        (429, {"error": {"code": "PRIVATE SUPPLIER VALUE"}}, "rate_limit", True),
+    ],
+)
+def test_normalized_error_categories_and_retry_policy(status, body, category, retryable):
+    from backend.infrastructure.bailian import classify_bailian_error
+
+    error = classify_bailian_error(httpx.Response(status, json=body))
+    assert error.error.category == category
+    assert error.error.retryable is retryable
+    assert error.provider_status == status
+    assert "PRIVATE" not in str(error) and "PRIVATE" not in str(error.provider_code)
+
+
+def test_model_is_overridable_through_environment(monkeypatch):
+    monkeypatch.setenv("RULE_AI_MODEL", "deployment-model-version")
+    assert BailianSettings(_env_file=None).model == "deployment-model-version"

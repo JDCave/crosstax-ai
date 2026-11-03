@@ -5,6 +5,8 @@ from urllib.parse import urlsplit
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_MODEL = "qwen-plus"
+
 
 class BailianSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="RULE_AI_", env_file=".env", extra="ignore")
@@ -12,7 +14,9 @@ class BailianSettings(BaseSettings):
     base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     api_key: SecretStr = SecretStr("")
     dashscope_api_key: SecretStr = Field(default=SecretStr(""), validation_alias="DASHSCOPE_API_KEY")
-    model: str = "qwen-plus"
+    model: str = Field(
+        default=DEFAULT_MODEL, description="Override with RULE_AI_MODEL; pin a model version for deployment"
+    )
     timeout_seconds: float = Field(default=8.0, gt=0, le=20)
     max_concurrency: int = Field(default=2, ge=1, le=5)
 
@@ -38,7 +42,7 @@ class BailianSettings(BaseSettings):
     @field_validator("model")
     @classmethod
     def default_model(cls, value: str) -> str:
-        return value.strip() or "qwen-plus"
+        return value.strip() or DEFAULT_MODEL
 
     def effective_api_key(self) -> str:
         """A populated engine-specific key wins; empty placeholders do not mask DashScope's standard key."""

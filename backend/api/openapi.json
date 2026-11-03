@@ -80,6 +80,40 @@
   },
   "components": {
     "schemas": {
+      "AIErrorCategory": {
+        "type": "string",
+        "enum": [
+          "configuration",
+          "authentication",
+          "permission",
+          "rate_limit",
+          "quota",
+          "timeout",
+          "connection",
+          "invalid_request",
+          "invalid_response",
+          "service_unavailable",
+          "internal"
+        ],
+        "title": "AIErrorCategory"
+      },
+      "AIErrorInfo": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/AIErrorCategory"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "retryable"
+        ],
+        "title": "AIErrorInfo"
+      },
       "AuditIssue": {
         "properties": {
           "code": {
@@ -446,6 +480,16 @@
               }
             ],
             "title": "Reason Code"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AIErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "summary": {
             "type": "string",

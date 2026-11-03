@@ -137,7 +137,7 @@ async def test_invalid_advice_falls_back_without_changing_result(evaluation, fai
     original = result.model_dump()
     guidance = await RemediationAgent(settings(), httpx.MockTransport(handler)).generate(result, snapshot, True)
     assert guidance.status == "FALLBACK"
-    assert guidance.reason_code == "AI_OUTPUT_OR_SERVICE_ERROR"
+    assert guidance.reason_code == "AI_INVALID_RESPONSE"
     assert guidance.actions[0].evidence_refs == ["issue:0"]
     assert result.model_dump() == original
 
@@ -270,3 +270,40 @@ async def test_no_issues_uses_json_stage_without_tool_round(evaluation):
     assert guidance.status == "GENERATED"
     assert len(requests) == 1 and "tools" not in requests[0]
     assert requests[0]["response_format"] == {"type": "json_object"}
+
+
+async def test_network_and_internal_failures_are_distinct(evaluation):
+    from unittest.mock import AsyncMock, patch
+
+    result, snapshot = evaluation
+
+    def disconnected(request):
+        raise httpx.ConnectError("PRIVATE CONNECTION DETAILS", request=request)
+
+    agent = RemediationAgent(settings(), httpx.MockTransport(disconnected))
+    guidance = await agent.generate(result, snapshot, True)
+    assert guidance.error.category == "connection" and guidance.error.retryable
+    assert guidance.reason_code == "AI_CONNECTION_ERROR"
+    assert "PRIVATE" not in guidance.model_dump_json()
+    with patch.object(agent, "_run", AsyncMock(side_effect=RuntimeError("PRIVATE BUG"))):
+        guidance = await agent.generate(result, snapshot, True)
+    assert guidance.reason_code == "AI_INTERNAL_ERROR"
+    assert guidance.error.category == "internal" and not guidance.error.retryable
+    assert "PRIVATE" not in guidance.model_dump_json()
+
+
+async def test_auth_rate_quota_and_output_have_consistent_public_error_metadata(evaluation):
+    result, snapshot = evaluation
+    responses = [
+        (httpx.Response(401, json={}), "authentication", False),
+        (httpx.Response(429, json={}), "rate_limit", True),
+        (httpx.Response(429, json={"error": {"code": "insufficient_quota"}}), "quota", False),
+        (httpx.Response(200, json={"choices": []}), "invalid_response", False),
+    ]
+    for response, category, retryable in responses:
+        agent = RemediationAgent(settings(), httpx.MockTransport(lambda request, response=response: response))
+        guidance = await agent.generate(result, snapshot, True)
+        assert guidance.status == "FALLBACK"
+        assert guidance.error.category == category
+        assert guidance.error.retryable is retryable
+        assert result.verdict == "NEED_USER_FIX"

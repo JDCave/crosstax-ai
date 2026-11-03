@@ -192,7 +192,7 @@ async def validate_form(body: dict) -> dict:
 | check_items | 姓名、地址、个人／实体日期、签名、签署日期和每项税籍声明的检查状态及问题下标 |
 | issue_origins | 每项 issue_index、source（RULE_ENGINE/UPSTREAM）、evidence_ref（issue:N） |
 | review_scope | 已执行范围、未评估项目及说明，前端应展示，避免把 AUTO_PASS 当成整表合规认证 |
-| guidance | 可选 AI 的状态、补正动作、引用、模型及提示词／输出指纹，见下一节 |
+| guidance | 可选 AI 的状态、通用错误 category/retryable、补正动作、引用、模型及提示词／输出指纹，见下一节 |
 
 TIN checks 包含 status（PASSED/FAILED/NOT_COVERED/NOT_APPLICABLE）、verification_level
 （FORMAT_ONLY/CHECKSUM/NONE）、rule_id、source_url、algorithm_source_url、checks_performed、checks_not_performed、reason_code。
@@ -222,6 +222,7 @@ true 时服务器按配置调用模型；AI 不修改裁决、严重级别、原
 {
   "status": "GENERATED",
   "reason_code": null,
+  "error": null,
   "summary": "请核对原始证件上的号码。",
   "actions": [
     {
@@ -246,6 +247,12 @@ GENERATED 仍仅是辅助文案，需按用户真实资料补正，不能作为�
 未启用／配置模型、超时、服务错误、无效引用或输出不完整时，status=FALLBACK，
 返回固定补正提示；reason_code 区分 AI_NOT_CONFIGURED、AI_TIMEOUT、鉴权／权限／限流／端点错误和输出异常。
 百炼接入与完整错误码见 [百炼配置说明](../agents/BAILIAN.md)。
+guidance.error 在未请求或成功时为 null；降级时含 category 和 retryable。
+category 包含 configuration、authentication、permission、quota、rate_limit、timeout、connection、
+invalid_request、invalid_response、service_unavailable、internal。
+限流、超时、连接和服务不可用标记 retryable=true；鉴权、额度、参数或输出错误标记 false。
+retryable 是后续调用建议，服务端不自动重试；供应商状态与错误码仅保留于内部诊断。
+旧 AI_MODEL_OR_ENDPOINT_NOT_FOUND 统一为 AI_REQUEST_REJECTED；旧 AI_OUTPUT_OR_SERVICE_ERROR 拆分为明确分类。
 不要因 AI 降级而将已完成的规则结果当作失败或通过。
 主后端保存 guidance 的实际输出及元数据，不能假设重新调用模型逐字重现。
 
@@ -265,6 +272,7 @@ RULE_AI_MAX_CONCURRENCY=2
 如组委会提供其他兼容网关，替换 base URL；代码自动追加 `/chat/completions`。
 修改配置后重启服务。配置参考仓库 [.env.example](../../.env.example)。
 服务端默认允许 AI，但默认请求不调用模型；需传 include_guidance=true 并填入有效 Key。
+默认模型 qwen-plus 可通过 RULE_AI_MODEL 覆盖，部署时可指定具体版本。
 也支持标准 DASHSCOPE_API_KEY；非空 RULE_AI_API_KEY 优先，空占位不会遮蔽标准 Key。
 当前官方原文工具明确返回“未安装核实正文”，只可使用已有规则元数据及来源，不会生成官方原文引文。
 

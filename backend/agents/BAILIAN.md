@@ -5,7 +5,7 @@
 
 ## 填入 Key 后使用
 
-项目根目录 `.env` 已预留配置，默认模型为 `qwen-plus`：
+项目根目录 `.env` 已预留配置，默认模型为 `qwen-plus`，允许用 `RULE_AI_MODEL` 指定其他可用模型或具体版本：
 
 ```dotenv
 RULE_AI_ENABLED=true
@@ -72,24 +72,48 @@ API Key、地域和模型权限需要对应；不同地域 Key 不可混用。
 总预算仍为默认 8 秒、最多 4 轮和 12 次工具调用；不自动重试，以免放大耗时和调用费用。
 当前没有核实的官方正文片段，原文工具返回 unavailable；模型只能引用已有规则和问题证据。
 
-## 降级状态
+## 通用错误分类与降级状态
 
 业务 HTTP 状态仍为 200，检查 guidance.status 和 reason_code：
 
-| reason_code | 排查方向 |
-| --- | --- |
-| AI_NOT_CONFIGURED | 未启用、未填入 Key |
-| AI_AUTHENTICATION_FAILED | 百炼返回 401，检查 Key 与地域 |
-| AI_PERMISSION_DENIED | 百炼返回 403，检查业务空间／模型权限 |
-| AI_MODEL_OR_ENDPOINT_NOT_FOUND | 百炼返回 404，检查模型名与 base URL |
-| AI_RATE_LIMITED | 百炼返回 429，检查限流与额度 |
-| AI_REQUEST_REJECTED | 百炼返回 400，检查模型是否支持当前工具与非思考参数 |
-| AI_PROVIDER_UNAVAILABLE | 其他供应商错误，稍后重试或检查控制台 |
-| AI_TIMEOUT | 超过配置预算，包含并发排队时间 |
-| AI_OUTPUT_OR_SERVICE_ERROR | 输出不完整、引用不可信、协议异常或工具预算耗尽 |
+guidance.error 在成功或未请求时为 null；降级时包含供应商无关的 category 和 retryable。
+例如鉴权失败返回：
+
+```json
+{
+  "status": "FALLBACK",
+  "reason_code": "AI_AUTHENTICATION_FAILED",
+  "error": {"category": "authentication", "retryable": false}
+}
+```
+
+该片段省略固定补正 actions 等其他字段，完整结构见接口文档。
+
+| category | reason_code | retryable | 排查方向 |
+| --- | --- | --- | --- |
+| configuration | AI_NOT_CONFIGURED | false | 启用配置、填入 Key |
+| authentication | AI_AUTHENTICATION_FAILED | false | Key 与地域是否匹配 |
+| permission | AI_PERMISSION_DENIED | false | 业务空间或模型权限 |
+| quota | AI_QUOTA_EXCEEDED | false | 欠费、预算或额度，需先处理控制台配置 |
+| rate_limit | AI_RATE_LIMITED | true | 降低并发／请求与 token 速率 |
+| timeout | AI_TIMEOUT | true | 总预算、模型或网络耗时；包含 408/504 |
+| connection | AI_CONNECTION_ERROR | true | DNS、连接或传输错误 |
+| invalid_request | AI_REQUEST_REJECTED | false | 请求参数、模型名或端点路径；包含 400/404/413/422 |
+| invalid_response | AI_INVALID_RESPONSE | false | 非法 JSON、引用错误、动作不完整或工具预算耗尽 |
+| service_unavailable | AI_PROVIDER_UNAVAILABLE | true | 供应商 5xx 或资源拥塞 |
+| internal | AI_INTERNAL_ERROR | false | 应用内部异常，联系维护者 |
+
+retryable 仅为后续请求的处理建议，本接口不会自动重试，也不能保证重试成功。
+根据百炼 HTTP 状态和已知 error.code/error.type 白名单分类，未识别代码回退到 HTTP 状态。
+Arrearage、BudgetLimitExceeded、insufficient_quota 等归入 quota，不与普通 429 限流混为一类。
+Throttling.AllocationQuota 按 token 速率限制处理；同类供应商代码也可能因套餐限制出现，仍需按控制台确认实际原因。
+具体状态码和白名单内供应商代码仅保留于内部诊断，不向调用方暴露原始供应商错误正文。
+映射依据 [百炼官方错误码](https://help.aliyun.com/en/model-studio/error-code)。
+旧的 AI_MODEL_OR_ENDPOINT_NOT_FOUND 统一为 AI_REQUEST_REJECTED，AI_OUTPUT_OR_SERVICE_ERROR 拆分为连接、输出与内部错误。
 
 不回传百炼原始错误正文，避免带出输入、密钥或内部信息。
 主后端应保存实际指导文案、模型名、prompt_version、prompt_fingerprint 和 output_fingerprint。
+生产部署若需要稳定回放，应显式指定可用的具体模型版本；不自动切换或降级到其他模型。
 当前提示词版本为 remediation-v2；规则执行指纹与 AI 文案指纹分别记录。
 
 ## 验证范围
