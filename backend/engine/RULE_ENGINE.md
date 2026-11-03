@@ -515,4 +515,20 @@ Retry-After 支持整数秒及 HTTP 日期。未提供时采用带随机抖动�
 详细方案见 [后台规则更新与发布设计](RULE_UPDATES.md)。
 新增能力将按文档、影响分析、后台编排、定时运行分别交付并 commit；不增加业务 API 或管理 UI。
 官方资料抓取与规则启用分离，只消费上游结构化规则候选。已审批版本还需可信策略精确批准影响报告才能自动激活。
-当前此节为设计，不能据此声称定时任务已安装或更新闭环已实现；各阶段完成后补充验证记录。
+文档、影响分析、后台编排和调度包装已分阶段实现；验证记录见 RULE_UPDATES.md。未安装实际 cron，未执行真实规则发布。
+
+
+## 后台更新交付完成
+
+- impact.py：单／多税籍离线升级影响、规则执行与资料差异、裁决和校验深度退化、被其他问题掩盖的阻断移除。
+- ../services/rule_updates.py：资料同步、上游完整候选包、回归和影响门禁、独立审批策略、证据指纹与 CAS 发布。
+- ../infrastructure/job_lock.py：Linux/macOS 单机非阻塞锁；../cli/rule_updates.py：impact / run、业务日期、脱敏状态和原子报告。
+- scheduling/：每日 cron 与空白可信策略模板；rule-bundle.schema.json / publication-policy.schema.json 为上游契约快照。
+
+没有新增 UI、HTTP API、数据表、顶层依赖或资料提取功能，也没有让 AI Agent 审批规则。
+人工 approve 与自动发布授权分离；可信策略绑定版本、影响报告和原文引用四个指纹。
+source importer 仍只处理已允许的 OECD 来源，当前 manifest 为 CN/HK/SG，自动更新范围与静态全球目录覆盖不同。
+保留旧活动版本，源抓取或门禁失败不会触发自动切换；后置报告失败不撤销已提交发布，需按发布历史核查。
+完整命令、状态和部署限制见 [后台规则更新手册](RULE_UPDATES.md)。
+
+本次后台更新交付的最终全套验证为 227 项通过、3 项 PostgreSQL 跳过；无真实官网任务、生产发布或 crontab 安装操作。

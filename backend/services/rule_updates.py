@@ -162,12 +162,11 @@ class RuleUpdateCoordinator:
         base = await self.loader.refresh()
         candidate_id = canonical_hash(bundle.rules)
         result.base_version_id, result.candidate_version_id = base.version_id, candidate_id
+        if imported_documents and not imported_documents <= {doc.document_id for doc in bundle.documents}:
+            result.status, result.reason_code = "WAITING_FOR_BUNDLE", "NEW_SOURCE_REQUIRES_UPSTREAM_REVIEW"
+            return
         if candidate_id == base.version_id:
             if imported_documents:
-                supplied = {doc.document_id for doc in bundle.documents}
-                if not imported_documents <= supplied:
-                    result.status, result.reason_code = "WAITING_FOR_BUNDLE", "NEW_SOURCE_REQUIRES_UPSTREAM_REVIEW"
-                    return
                 await self._evidence_urls(bundle.documents, synced)
             result.status = "UNCHANGED"
             return

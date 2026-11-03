@@ -104,7 +104,7 @@ impact_hash 对应报告 report_hash；Case E 展示从规则未覆盖转人工�
 同一任务内依次检查：资料同步完整成功、有初始活动版本、候选基准匹配、结构编译、影响分析、
 资料 ID 和原文哈希、候选登记、真实回归、风险、批准状态、来源证据、独立可信策略、CAS 激活。
 计划模式不审批或激活，但会保存资料、候选和任务记录。
-整体结果保存在 rule_sync_runs.summary，資料抓取另有自己的同步记录。
+整体结果保存在 rule_sync_runs.summary，资料抓取另有自己的同步记录。
 PUBLISHED 表示激活已提交；PLANNED/PENDING_APPROVAL/WAITING_FOR_BUNDLE 是正常等待状态。
 BLOCKED/CONFLICT/FAILED/NO_ACTIVE_RULES 记录为同步失败，便于调度监控。
 
@@ -121,3 +121,128 @@ evidence_hash 对按 document_id 排序的 document_id/content_hash 计算；资
 本阶段 SQLite 与全套验证：217 项通过、3 项 PostgreSQL 按环境跳过；无真实发布操作。
 
 若检测到新资料、上游却仍提供旧活动规则和旧资料引用，结果为 WAITING_FOR_BUNDLE，不会伪称资料已经完成规则转换。
+
+
+## 阶段 4：定时 CLI 与运行手册
+
+### 一次性准备
+
+使用现有数据库表；本轮没有迁移或新增依赖。
+确保已有活动规则。若没有，使用已有 register → approve → activate CLI 建立基准，不能由任务自动批准初始版本。
+注册需要检查的官方来源：
+
+```bash
+uv run python -m backend.cli.rule_sources --manifest assets/rule-sources/oecd.json
+```
+
+该 manifest 当前仅配置 CN/HK/SG 的 OECD 资料，不能将本任务描述为全球所有来源的自动更新。
+上游负责把已经提取、核实的资料转换为完整规则包，并提供数据库 document_id/content_hash 引用。
+候选包结构示意如下；占位符和空 rules 必须替换，不能直接执行：
+
+```json
+{
+  "schema_version": 1,
+  "base_version_id": "<当前活动版本 SHA-256>",
+  "rules": {},
+  "documents": [
+    {"document_id": "<已导入资料 ID>", "content_hash": "<原始资料 SHA-256>"}
+  ]
+}
+```
+
+已有资料由其他上游任务导入时，可显式传 --skip-source-sync。
+此模式仅核对最新存储证据，不能声称刚从官网确认了新鲜度。
+
+### 手动触发同一个后台任务
+
+```bash
+uv run python -m backend.cli.rule_updates run \
+  --bundle incoming/rule-bundle.json --cases assets/mock-data/cases.json \
+  --timezone Asia/Shanghai --lock-file outputs/rule-updates.lock \
+  --output outputs/rule-update-latest.json
+```
+
+默认检查资料和登记候选，不激活。
+测试／审核需要精确复现时传 --today YYYY-MM-DD 固定日期；否则按 --timezone 的当前业务日期计算。
+同一报告的批准绑定日期；隔日重算得到不同哈希时需要重新确认，不复用过期批准。
+资料变化但文件未到达，或新资料尚未被上游规则包引用时，返回 WAITING_FOR_BUNDLE。
+源未配置、部分抓取失败、规则风险或门禁失败不会发布。
+
+### 明确审核后允许自动发布
+
+通过现有命令审批候选；全局目录可使用已有回归集，自定义规则需在 review 文件中提供 regression_cases：
+
+```bash
+uv run python -m backend.cli.rule_engine approve <候选版本哈希> --report incoming/review.json
+```
+
+维护者检查计划报告，在独立策略文件中填写：
+
+```json
+{
+  "schema_version": 1,
+  "approvals": [
+    {
+      "base_version_id": "<计划的 base_version_id>",
+      "candidate_version_id": "<计划的 candidate_version_id>",
+      "impact_hash": "<计划的 impact.report_hash>",
+      "evidence_hash": "<计划的 evidence_hash>"
+    }
+  ]
+}
+```
+
+空白安全模板见 [publication-policy.example.json](scheduling/publication-policy.example.json)。
+空 approvals 不会授权任何发布；候选包里的 trusted 字段也不会被接受。
+然后运行：
+
+```bash
+uv run python -m backend.cli.rule_updates run \
+  --bundle incoming/rule-bundle.json --cases assets/mock-data/cases.json \
+  --publish --policy config/rule-publication-policy.json \
+  --timezone Asia/Shanghai --lock-file outputs/rule-updates.lock \
+  --output outputs/rule-update-latest.json
+```
+
+风险被硬阻断时，可信策略不能绕过门禁，需维护者使用现有显式人工发布流程审查处理。
+--publish 未传 --policy 会在解析参数时拒绝；旧版本始终保留，不自动重写／删除历史。
+
+### 每日调度
+
+提供 [cron 模板](scheduling/rule-updates.cron.example)，默认每天机器时区 02:00 检查并生成计划。
+先创建 outputs/、替换所有部署路径，使用服务账户安装；本次开发没有安装或修改任何 crontab。
+默认模板不发布，允许已审核升级时显式增加 --publish --policy。
+--timezone 只控制审核日期，不能改变 cron 自身触发时区；需确认机器时区与预期一致。
+不要同时在 FastAPI 多 worker 或多台服务器重复安装任务。
+
+文件锁覆盖输入读取、资料检查、数据库流程与输出；同一机器所有调用须使用同一个绝对锁路径。
+Linux/macOS flock 非阻塞获取，进程退出由 OS 释放，锁文件保留而不删除，防止 inode 竞争。
+锁路径不能是符号链接；同机重叠返回 SKIPPED_LOCKED，不读取上游输入或覆盖上次报告。
+这不是分布式锁；最终跨进程发布由 CAS revision 防止丢失更新。
+强制终止进程可能留下 RUNNING 同步记录，需要核查；不能仅凭记录存在判断进程仍持锁。
+
+报告以临时文件、fsync、原子替换保存，失败保留旧文件。
+--output 不能指向输入文件或锁；真实发布可能已提交后报告写入失败，stdout 保留实际决策并给出 output_error。
+这类错误应核查发布历史，不能声称活动版本已回滚。
+任务 summary 不含表单明文，但 case_id 仍应使用非敏感标签；日志和报告由部署账户管理。
+
+### 退出码与状态
+
+| 退出码 | 状态 |
+| --- | --- |
+| 0 | PLANNED、PUBLISHED、UNCHANGED、METADATA_ONLY 或 SKIPPED_LOCKED |
+| 2 | WAITING_FOR_BUNDLE、PENDING_APPROVAL；需要上游资料／审批，也用于 CLI 参数错误 |
+| 1 | BLOCKED、FAILED、CONFLICT、NO_ACTIVE_RULES，输入读取／报告保存失败 |
+
+默认只输出脱敏 JSON。输入校验异常不回显 Pydantic 原始值。
+整体更新审计在任务启动后建立；参数或输入解析失败可能尚未进入数据库任务，此时只返回脱敏 CLI 错误。
+当前只提供日志／报告与状态码，不发送邮件或消息，也不新增管理 API。
+
+### 验证记录
+
+自动化使用 SQLite 和模拟 HTTP，覆盖完整资料导入 → 门禁 → CAS 发布 → 同一 loader 热加载流程。
+验证旧快照保持不变、新调用读取新版本；锁通过独立子进程验证，原子报告失败保留旧内容。
+保留 Case A–E、既有 API 和所有回归测试；本轮不需要前端更改。
+真实 PostgreSQL、官网定时抓取、上游规则转换和实际 cron 安装未在本机执行，不能把模拟联调当作生产部署。
+
+最终验证：227 项通过、3 项 PostgreSQL 按环境跳过；Ruff 和新增模块 Mypy 通过，CLI help、契约快照和离线 Case A–E 命令通过。仓库当前没有 frontend/，不执行 npm test。

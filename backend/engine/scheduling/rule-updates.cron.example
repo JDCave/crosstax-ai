@@ -1,0 +1,7 @@
+# Install only after replacing /srv/crosstax-ai and reviewing publication policy.
+# Cron uses the host timezone. --timezone controls the evaluation date, not cron's trigger clock.
+# Create outputs/ with service-account permissions before installing cron.
+# Default: daily checks and planning, never automatic approval or activation.
+0 2 * * * cd /srv/crosstax-ai && .venv/bin/python -m backend.cli.rule_updates run --scheduled --bundle /srv/crosstax-ai/incoming/rule-bundle.json --timezone Asia/Shanghai --lock-file /srv/crosstax-ai/outputs/rule-updates.lock --output /srv/crosstax-ai/outputs/rule-update-latest.json >> /srv/crosstax-ai/outputs/rule-update.log 2>&1
+# To allow reviewed promotion, add --publish --policy /srv/crosstax-ai/config/rule-publication-policy.json.
+# Use one scheduled host. No Redis/Celery/FastAPI worker scheduler is required.

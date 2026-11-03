@@ -245,11 +245,12 @@ async def test_missing_or_stale_document_evidence_cannot_publish(context):
         assert original.content_hash == bundle.documents[0].content_hash
 
 
-async def test_changed_source_is_not_hidden_by_an_old_unchanged_bundle(context):
+@pytest.mark.parametrize("same_rules", [True, False])
+async def test_changed_source_is_not_hidden_by_an_old_unchanged_bundle(context, same_rules):
     sessions, _, bundle, cases, policy, source_id = context
     async with sessions() as session:
         base = await session.get(RuleVersion, bundle.base_version_id)
-        old_bundle = bundle.model_copy(update={"rules": base.rules})
+        old_bundle = bundle.model_copy(update={"rules": base.rules}) if same_rules else bundle
     importer = AsyncMock()
     importer.sync.return_value = {
         "run_id": "source-run",
@@ -261,3 +262,74 @@ async def test_changed_source_is_not_hidden_by_an_old_unchanged_bundle(context):
     result = await RuleUpdateCoordinator(sessions, importer).run(old_bundle, cases, policy)
     assert result.status == "WAITING_FOR_BUNDLE"
     assert result.reason_code == "NEW_SOURCE_REQUIRES_UPSTREAM_REVIEW"
+
+
+async def test_source_import_through_hot_reload_end_to_end(context):
+    import httpx
+
+    from backend.engine.rule_loader import RuleLoader
+    from backend.engine.tin_validator import TINValidatorEngine
+    from backend.services.rule_import import RuleSourceImporter
+
+    sessions, publisher, bundle, cases, policy, _ = context
+    loader = RuleLoader(sessions)
+    original = await loader.refresh()
+    plan = await RuleUpdateCoordinator(sessions).run(bundle, cases, policy, sync_sources=False)
+    await publisher.approve(plan.candidate_version_id, {"regression_cases": regressions()})
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                content=b"%PDF-1.7 synthetic test evidence",
+                headers={"Content-Type": "application/pdf", "ETag": '"v1"'},
+            )
+        )
+    ) as client:
+        job = RuleUpdateCoordinator(sessions, RuleSourceImporter(sessions, client))
+        published = await job.run(bundle, cases, policy, publication_policy=trust(plan), publish=True)
+    assert published.status == "PUBLISHED"
+    assert published.source_sync["unchanged"] == 1
+    current = await loader.refresh()
+    assert current.version_id == plan.candidate_version_id and current.revision == original.revision + 1
+    assert original.version_id == bundle.base_version_id
+    validator = TINValidatorEngine()
+    assert validator.evaluate("AB1234563", "HK", original, "INDIVIDUAL", "HKID")[1].status == "FAILED"
+    assert validator.evaluate("AB1234563", "HK", current, "INDIVIDUAL", "HKID")[1].status == "PASSED"
+
+
+async def test_cli_run_writes_atomic_plan_and_has_no_hidden_approval(context, tmp_path, monkeypatch, capsys):
+    import argparse
+    from types import SimpleNamespace
+
+    import backend.infrastructure.database as database
+    from backend.cli.rule_updates import run_command
+
+    sessions, _, bundle, cases, policy, _ = context
+    path = tmp_path / "bundle.json"
+    path.write_text(bundle.model_dump_json())
+    samples = tmp_path / "cases.json"
+    samples.write_text(json.dumps(cases))
+    output = tmp_path / "output" / "plan.json"
+    monkeypatch.setattr(database, "async_session_factory", sessions)
+    dispose = AsyncMock()
+    monkeypatch.setattr(database, "engine", SimpleNamespace(dispose=dispose))
+    args = argparse.Namespace(
+        bundle=path,
+        policy=None,
+        today=policy.today.isoformat(),
+        timezone="Asia/Shanghai",
+        earliest_date=None,
+        cases=samples,
+        publish=False,
+        skip_source_sync=True,
+        scheduled=True,
+        output=output,
+    )
+    assert await run_command(args) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data == json.loads(output.read_text())
+    assert data["status"] == "PLANNED"
+    dispose.assert_awaited_once()
+    async with sessions() as session:
+        assert (await session.get(RuleEngineState, 1)).revision == 1
+        assert (await session.get(RuleVersion, data["candidate_version_id"])).status == "CANDIDATE"
