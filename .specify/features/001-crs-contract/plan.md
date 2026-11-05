@@ -8,7 +8,7 @@
 
 主要需求：把 `CRSFormData` 的单值 `jurisdiction_code` + `tin` 改为 `tax_residencies[]` 重复组（D3），并把单路 Vision 抽取改为「确定性文本/标签抽取 + Vision」双路并行加一致性 diff（D4）。
 
-技术路径：证据来自 `mapping-matrix.csv`（48 字段位 × 9 列）与四份 IRD 官方 PDF 的取证结果。四份 PDF 的 SHA-256 已于 2026-11-05 从 ird.gov.hk 重新下载并逐字节比对，全部一致，哈希登记在 `assets/crs-templates/README.md`。契约修订落在 `contracts/crs-form-data.schema.json`；抽取路径修订落在 ADR-004 增补；对 PM/设计所有文档的修订以本文件 §变更单 交付（第 1–14 项仍未落笔），已发生的权属越界经设计侧复核接受，见 §Complexity Tracking V2。
+技术路径：证据来自 `mapping-matrix.csv`（48 字段位 × 10 列）与四份 IRD 官方 PDF 的取证结果。四份 PDF 的 SHA-256 已于 2026-11-05 从 ird.gov.hk 重新下载并逐字节比对，全部一致，哈希登记在 `assets/crs-templates/README.md`。契约修订落在 `contracts/crs-form-data.schema.json`；抽取路径修订落在 ADR-004 增补；对 PM/设计所有文档的修订以本文件 §变更单 交付（第 1–14、23–24 项仍未落笔），已发生的权属越界经设计侧复核接受，见 §Complexity Tracking V2。
 
 关键定位修正：`assets/crs-templates/API_INTEGRATION.md:168-170` 已由规则引擎作者自行承认了多税收居民地、实体分类、控权人、邮寄地址、出生地、授权签署人、实体成立日期这七类边界。因此本轮的增量是**量化、可回溯化与给出修订方案**，不是发现。
 
@@ -61,7 +61,7 @@
 
 | 门禁 | 来源 | 判定 |
 |---|---|---|
-| 不得修改 `specs/` `design/` `docs/`（PM/设计所有） | AGENTS.md | **PASS（V2 已消解）** — 原判定为「PASS（有条件）：以 §变更单 交付 PM 裁决，本计划不落笔」。2026-11-05 用户指令调用 pm skill 后该前提失效：实际修改了 `specs/prd.md`（PM 所有，权属内）与 `design/ui-spec.md`、`design/architecture.md`（设计侧所有，PM 角色越权代执行），登记为 V2。同日设计侧复核确认接受这三处改动，未触发回滚。变更单第 1–14 项仍未落笔 |
+| 不得修改 `specs/` `design/` `docs/`（PM/设计所有） | AGENTS.md | **PASS（V2 已消解）** — 原判定为「PASS（有条件）：以 §变更单 交付 PM 裁决，本计划不落笔」。2026-11-05 用户指令调用 pm skill 后该前提失效：实际修改了 `specs/prd.md`（PM 所有，权属内）与 `design/ui-spec.md`、`design/architecture.md`（设计侧所有，PM 角色越权代执行），登记为 V2。同日设计侧复核确认接受这三处改动，未触发回滚。变更单第 1–14、23–24 项仍未落笔 |
 | 不得硬编码 CRS 规则，规则一律来自外部配置 | AGENTS.md | **PASS** — FR-041 把 27 个监管参数全部推向外部配置；§规则表达力 证明现有 §3 结构只能承载 3 个 |
 | 不得引入未经团队同意的顶层依赖 | AGENTS.md | **PASS（V1 已消解）** — 2026-11-05 团队批准新增 PDF 解析顶层依赖。本轮**未改动 `pyproject.toml`**：D4 尚无消费方代码，此刻加依赖会留下半成品，应与消费它的代码同时落地 |
 | 不得拆分为多仓 | AGENTS.md | **PASS** — 规则引擎同仓（用户已确认） |
@@ -78,7 +78,7 @@
 ```text
 .specify/features/001-crs-contract/
 ├── spec.md                        # WHAT/WHY：46 FR + 10 SC，矩阵 48/48 行可回溯
-├── mapping-matrix.csv             # 证据基线：48 字段位 × 9 列，0 空格
+├── mapping-matrix.csv             # 证据基线：48 字段位 × 10 列，0 空格
 ├── plan.md                        # 本文件：HOW + ADR 增补 + M/N 测算 + 处置清单 + 变更单 + 全项目待办
 ├── checklists/requirements.md     # 需求质量清单：28 项，全未勾选（评审人所有）
 └── contracts/
@@ -126,7 +126,7 @@ rules/                             # 当前为空目录；FR-041 要求带 effec
 | 明确 MVP 交付范围 —— 竞赛必演示 vs 加分项 | 待办 | — |
 | 定义目标用户角色（商户 / 合规官 / 系统管理员）及核心场景 | 待办 | — |
 | 编写用户故事，覆盖五步流水线每条主路径 | 部分完成 | 本 feature spec.md 已产出 5 个用户故事（P1–P5），但只覆盖 HK 表单受理与抽取，未覆盖五步流水线全程 |
-| 定义验收标准，每个故事附可测试通过条件 | 部分完成 | 本 feature SC-001–SC-010 为可复算判据；其余流程待补 |
+| 定义验收标准，每个故事附可测试通过条件 | 部分完成 | 本 feature SC-001–SC-012 为可复算判据；其余流程待补 |
 | 确认首批覆盖法域列表（CN/HK/SG）及各国 TIN 规则来源 | 部分完成 | 本 feature 只处理 HK，并已证明 CN/SG 未配置时须走 `MANUAL_TRIAGE` 兜底（FR-042）；法域清单本身待裁定 |
 | 定义 CRS 自证表单的完整字段清单与数据格式 | **本 feature 已完成** | `mapping-matrix.csv` 48 字段位 + `contracts/crs-form-data.schema.json` 62 字段位 |
 | 定义 Mock 商户底表数据结构 | 待办 | `specs/data-spec.md` §2 已有雏形；`assets/mock-data/` 仅 `.gitkeep` |
@@ -159,13 +159,15 @@ rules/                             # 当前为空目录；FR-041 要求带 effec
 | WebSocket 端点 `/ws/audit/{session_id}` | 待办 | — |
 | 媒体预处理 / Vision Parser / TIN 引擎 / 热重载 / 形式完备性 / 跨源研判 / 三态裁决 / 审计留痕（8 个模块） | **已并入** | 见 §Project Structure 的 `backend/agents/` 与 `backend/engine/` 树，不在此重复列举。其中媒体预处理的职责已收窄为「共享层（解密 + 页面枚举）」，Vision Parser 已由单路改为双路 |
 | 新增 `deterministic_extractor.py`、`extraction_aggregator.py` | **本 feature 新增** | 见 §Project Structure 与 §Phase 0 ADR-004 增补 |
+| 逐行核实 `mapping-matrix.csv` 的 `path_capability` 列 | 待办 — **D4 实现期的首个待办** | 当前 43 个 `BOTH` 是默认值而非核实结论（已核实的只有 5 个 `VISION_ONLY`：R21/R22/R26/R35/R36）。核实需解密后读取字形与结构树，即 V1 依赖落地后才能做。核实前 SC-004 的一致率带有乐观偏差，方向与 SC-009 的反作弊意图相反，见 §Phase 0 ADR-004 增补 |
+| 受理层多持有人检测与拒收归因 | 待办 — **本 feature 新增** | FR-005 / FR-047 / SC-012；判据为「持有人身份块出现两次」，MUST NOT 按重复组计数 |
 | 审计报告生成（Jinja2 渲染 HTML/PDF） | 待办 | — |
 
 ### 前端 SPA（11 项全部待办）
 
 Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（audit/rules/cases）｜`useAuditStream` Hook｜文件上传（react-dropzone + AntD Upload）｜样本选择与 Case 切换｜PipelineStatus（AntD Steps + WS 驱动）｜VerdictBanner（Alert，三态语义）｜RemediationCard（Collapse，字段级提示）｜ConflictEvidence（Descriptions + Progress 置信度）｜AuditTrail + 报告下载｜RuleReload 热重载演示
 
-> **与本 feature 的两个接口点**：RemediationCard 须能渲染 `tax_residencies[]` 的多行重复组——原单值契约下修复卡片只需一行；ConflictEvidence 须能展示 clarify Q1 的注册成立地双源并列，以及 clarify Q4 的字段级一致性标记。
+> **与本 feature 的三个接口点**：①RemediationCard 须能渲染 `tax_residencies[]` 的多行重复组——原单值契约下修复卡片只需一行；②RemediationCard 还须能承载 `MULTI_HOLDER_DOCUMENT` 拒收（FR-047 裁决为 `NEED_USER_FIX`，按 `specs/data-spec.md` §1.3 该裁决的定义就是「生成修复卡片」，其修复动作是「改为每位持有人各提交一份」而非改字段值，与既有卡片形态不同）；③ConflictEvidence 须能展示 clarify Q1 的注册成立地双源并列、clarify Q4 的字段级一致性标记，以及 FR-048 / SC-011 的「单路可及字段位数」计数器——该计数器与共享层失败计数器并列展示，缺一即无法复算 SC-004 的分母。
 
 ### 测试
 
@@ -205,7 +207,7 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 | 业务流程设计 | `docs/proposal/business-workflow-design.md` | 团队业务专家输出 |
 | CRS 契约修订规格 | `.specify/features/001-crs-contract/spec.md` | 46 FR + 10 SC + 5 用户故事 + 5 条 clarify 决议 |
 | CRS 契约修订计划 | `.specify/features/001-crs-contract/plan.md` | 本文件；含全项目进度与待办 |
-| 字段位映射矩阵 | `.specify/features/001-crs-contract/mapping-matrix.csv` | 48 字段位 × 9 列证据基线 |
+| 字段位映射矩阵 | `.specify/features/001-crs-contract/mapping-matrix.csv` | 48 字段位 × 10 列证据基线 |
 | 需求质量清单 | `.specify/features/001-crs-contract/checklists/requirements.md` | 28 项，全未勾选（评审人所有） |
 | 修订版数据契约 | `.specify/features/001-crs-contract/contracts/crs-form-data.schema.json` | JSON Schema 2020-12，62 字段位 |
 | IRD 官方样本与接口文档 | `assets/crs-templates/` | 4 份 PDF（含 SHA-256 登记）+ 2 份示例 JSON + README + API_INTEGRATION |
@@ -220,7 +222,8 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 - 确定性路：读取 PDF 文本层与 Tagged PDF 结构树（/Table /TR /TD），零模型推理
 - Vision 路：栅格化后调用 Qwen-VL-Max（原 ADR-004 决策，保留不变）
 - 共享层严格限定于解密 + 页面枚举；两路在字段定位与文本归属逻辑上互不依赖
-- 汇总层逐字段位比对，输出一致 / 不一致清单与字段级一致率；不一致者不采信任一路
+- 汇总层逐字段位比对，按 FR-048 三分：声明 `BOTH` 而结果不同（含一空一有值）记不一致并保留双方原值、不采信任一路；声明单路可及者不进分母、单独计数；路级运行失败按 FR-039。一致率分子分母定义见 SC-004
+- 字段位可及性由 `mapping-matrix.csv` 的 `path_capability` 列静态声明，当前 43 `BOTH` / 5 `VISION_ONLY`（R21、R22、R26、R35、R36）。**这 43 个 `BOTH` 是默认值而非逐行核实结论**——核实需要解密后读取字形与结构树，即 V1 依赖落地后才能做；在核实前 SC-004 的一致率带有「默认乐观」偏差，方向是低估单路盲区、从而高估一致率，与 SC-009 的反作弊意图相反，故列为 D4 实现期的首个待办
 
 ## 否决方案（增补 4 条，原 1 条保留）
 - **单路 Vision（现状）**：官方 PDF 是 Tagged PDF（/Marked true），结构树可无损给出
@@ -242,6 +245,8 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 
 ## 后果（增补）
 - 一致率分母 MUST 排除共享层失败并单独计数（spec.md SC-009），否则指标系统性虚高
+- FR-048 增设第二个独立计数器「单路可及字段位数」，与 SC-009 的共享层失败计数器互不吸收（SC-011）。两个计数器堵住的是同一种虚高的两条不同通道：一条是共享层失败被算作一致，另一条是能力边界被算作不一致后再被排除
+- 多持有人文档在受理层即被拒收（FR-005 / FR-047，归因 `MULTI_HOLDER_DOCUMENT`，裁决 `NEED_USER_FIX`），不进入双路抽取，因此不影响一致率；SC-012 的反向闸保证合法重复组不触发误拒
 - 不一致字段位降级人工（FR-038），人工量上升，但这是把不确定性显式化而非隐藏
 - 额外成本是确定性路的实现与维护；Vision 路 API 成本不变
 - ADR-007 的 SDK / HTTP 裁定不受影响
@@ -268,7 +273,7 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 | 控权人关联 | 新增 | 全新；R23/R25/R26，带链接置信度（FR-045） |
 | 签署声明 | 扩展 | `has_signature`/`signing_date` 保留，新增消解结果 / Capacity（R35–R39） |
 | 监管参数 | `rules/hk/*` | 全新；27 个参数带 `effective_from`（FR-041） |
-| 抽取证据 | `extraction_aggregator.py` 输出 | 全新；FR-036–FR-040 |
+| 抽取证据 | `extraction_aggregator.py` 输出 | 全新；FR-036–FR-040、FR-048 |
 
 ## 规则表达力测算（M/N）
 
@@ -310,7 +315,7 @@ R10 / R12 的**字段位**归 IN（FR-019 要求分别保留 HKID 与商业登�
 |---|---|---|---|---|---|
 | 1 | `specs/prd.md:171` | 边界：「不支持加密 PDF」 | 「支持空用户密码加密的 PDF（IRD 官方样本即为 AES-128 /V4 /R4 /CFM AESV2）；无法解密或损坏时给出与『加密』可区分的归因并转人工」 | R47；SC-001 当前为 4/4 拒收 | PM |
 | 2 | `specs/prd.md:169` | 处理：「PDF → pdf2image 栅格化（300 DPI RGB）」 | 「PDF → 共享层（解密 + 页面枚举）后分两路：① 确定性路读文本层与 Tagged PDF 结构树；② Vision 路栅格化 300 DPI。图片仅走 Vision 路」 | R48（/Marked true，含 /Table /TR /TD） | PM |
-| 3 | `specs/prd.md:178-180` | F2「Vision Parser Agent」 | 更名「双路抽取与一致性汇总」；输出字段改为指向 `contracts/crs-form-data.schema.json`；置信度行补「两路不一致字段位不采信任一路」 | FR-036–FR-040 | PM |
+| 3 | `specs/prd.md:178-180` | F2「Vision Parser Agent」 | 更名「双路抽取与一致性汇总」；输出字段改为指向 `contracts/crs-form-data.schema.json`；置信度行补「两路不一致字段位不采信任一路」 | FR-036–FR-040、FR-048 | PM |
 | 4 | `specs/prd.md:288` | 存储加密：「敏感字段（TIN、商户信息）」 | 增列 HK 身份证号 / 护照号、出生日期、出生地 | FR-046 | PM |
 | 5 | `specs/data-spec.md:15-24` | §1.1 列 10 个字段 | 与实际接口的 13 字段对齐（补 `holder_type`、`tin_type`），并以 `tax_residencies[]` 替换 `jurisdiction_code` + `tin` | `API_INTEGRATION.md:77-92`；D3 | PM |
 | 6 | `specs/data-spec.md:16` | `holder_dob` 必填，说明「出生日期 / 成立日」 | 拆为 `birth_date`（个人/控权人，必填）与 `incorporation_date`（实体，条件必填且**当前无表单来源**） | 实体版 PDF Part 1 逐字段核对无成立日；`assets/crs-templates/README.md` 与 `API_INTEGRATION.md:80,170` 已承认 | PM |
@@ -330,8 +335,10 @@ R10 / R12 的**字段位**归 IN（FR-019 要求分别保留 HKID 与商业登�
 | 20 | §项目级待办 设计阶段 | 规划产出 `design/openapi.yaml`（OpenAPI 3.0，前后端接口契约），文件至今不存在 | 裁定它与 `contracts/crs-form-data.schema.json`（JSON Schema 2020-12）的关系：①`CRSFormData` 只在 JSON Schema 中定义，`openapi.yaml` 以 `$ref` 外链引用；或 ②两份各自独立、接受漂移 | 两者都声称是「结构化契约」的权威落点。OpenAPI 3.0 内嵌的 Schema Object 是 JSON Schema 的受限子集（不支持 `$defs` 全量语义），若各写一份，D3 的 `tax_residencies[]` 必然只改到一处 | **已裁定 2026-11-05（PM 角色）**：选 ①。`CRSFormData` 只在 `contracts/crs-form-data.schema.json` 中定义，`openapi.yaml` 产出时以 `$ref` 外链引用。已落入 `design/ui-spec.md:503` |
 | 21 | `AGENTS.md:95` | 「Scaffold it first (ROADMAP §3.1)」 | 改指本文件 §项目级待办 实现阶段，或直接删除该括注 | 指向已删除文件的入站引用，仓库内仅此一处。AGENTS.md 不在保护目录内，但它是本项目事实上的 constitution（`.specify/memory/constitution.md` ABSENT），改动建议经团队确认 | **已执行 2026-11-05（团队确认）** — 改为 `(see §项目级待办 实现阶段 in \`.specify/features/001-crs-contract/plan.md\`)`。仓库内指向已删除文件的入站引用归零 |
 | 22 | `.gitignore`「# uv」段 vs `AGENTS.md:61` vs `design/architecture.md:426` | `.gitignore` 含 `uv.lock` 一条；`AGENTS.md:61` 写「uv.lock # uv lockfile — **commit it**, never hand-edit」；Dockerfile 用 `COPY pyproject.toml uv.lock* ./`（星号使其可选） | 从 `.gitignore` 删除 `uv.lock` 一行，并把已存在的锁文件纳入版本控制 | **三方矛盾，且失败是静默的**。已核验：`uv.lock` 在磁盘上存在（417,678 字节，2026-10-26），但 `git ls-files --error-unmatch uv.lock` 返回未跟踪，`git check-ignore` 确认被 `.gitignore` 排除。后果：任何新克隆都拿不到锁文件 ⟹ `uv sync` 现场重新解析 ⟹ 构建不可复现；而 Dockerfile 的 `uv.lock*` 通配符会静默容忍其缺失，镜像照样构建成功，只是依赖未锁定——**没有任何环节会报错**。AGENTS.md:61 表述的是正确意图，缺陷在 `.gitignore` | **已执行 2026-11-05（用户授权，含推送远端）** — 提交 `e489a83`（`.gitignore` −3 行、`uv.lock` +1858 行）已推送 `origin/master`。`AGENTS.md:61` 一字未改：改动它等于改团队约定，而根因修好后它的表述重新成立。此前临时加在 `AGENTS.md` 的 `.gitignore` 树条目上的矛盾限定说明，已随修复一并撤除 |
+| 23 | `specs/prd.md` 全文（已 grep 验证：「持有人基数」「多持有人」「联名」「拒收」均无命中；`:179` 输出字段为单持有人形态） | PRD 未规定收到多持有人文档时的受理行为 | F1/F2 增补受理约束：一份文档对应一个持有人；检出第二个持有人身份块时拒收，归因码 `MULTI_HOLDER_DOCUMENT`，裁决 `NEED_USER_FIX`；并明文说明合法重复组（多税收居民地、控权人槽位 (1)–(8)、11×3 类型矩阵）**不**触发拒收 | CHK021 已裁定（FR-005 / FR-047 / SC-012）。PRD 是需求的权威落点，规格新增的受理行为若不回写，两边会各自演化；且「不触发拒收」那半句是 SC-012 反向闸的需求侧表达，缺了它实现方极易按重复组计数而误拒 D3 的核心场景 | PM |
+| 24 | `specs/prd.md:58`、`:347`、`:399` | `:58`「表单字段抽取准确率 ≥ 90%（结构化 JSON 字段级）｜5 个典型 Case 测试」；`:347`「Vision 抽取｜5 个 Case 的字段抽取准确率 ≥ 90%」；`:399`「低置信度字段自动标记为需人工复核，**不阻断流程**」 | ①`:58`/`:347` 的指标改为指向 SC-004 的字段级一致率，并写明分母排除「单路可及」与「共享层失败」两类字段位（两个互不吸收的独立计数器）；②`:347`「Vision 抽取」措辞隐含单路，改为双路并行；③`:399`「不阻断流程」须删除或改写 | **同一个 KPI 现在有两套互不相同的算法**：PRD 说用 5 个 Case 测准确率，spec 说按全字段位算一致率——两套都能「达标」，但测的不是同一件事，≥90% 因此不可判定。且 `:399`「不阻断流程」与 FR-038（不一致 MUST 降级人工）+ FR-047（`NEED_USER_FIX`）直接矛盾：按 `specs/data-spec.md` §1.3，`NEED_USER_FIX` 的定义就是「存在 BLOCKER」，BLOCKER 即阻断 | PM |
 
-第 19 项是本轮新发现的冲突，此前未在任何文档中登记；第 20 项已于 2026-11-05 以 PM 角色裁定；第 15–18、21、22 项位于 `assets/` 与仓库根，不属保护目录，已于同日经用户授权与团队确认执行完毕。
+第 19 项是本轮新发现的冲突，此前未在任何文档中登记；第 20 项已于 2026-11-05 以 PM 角色裁定；第 15–18、21、22 项位于 `assets/` 与仓库根，不属保护目录，已于同日经用户授权与团队确认执行完毕。第 23–24 项由 CHK021 / CHK024 的裁定派生，均属 `specs/`（PM 所有），本轮未落笔。
 
 **断链已归零**：原 5 处（`specs/prd.md:426`、`design/ui-spec.md:503`、`design/architecture.md` 目录树与历史说明 2 处、`AGENTS.md:95`）全部修复。前三处属设计侧所有，经设计侧复核接受；最后一处经团队确认修复。
 
@@ -342,7 +349,7 @@ R10 / R12 的**字段位**归 IN（FR-019 要求分别保留 HKID 与商业登�
 - **`research.md` 未单独产出**：其规定格式为 Decision / Rationale / Alternatives considered，已完整内联于 §Phase 0 研究（ADR-004 增补草案含 5 条被否决方案，超过模板要求）。技术栈无未知项——ADR-001/003/004/006/007/008/010 已裁定，Technical Context 无 NEEDS CLARIFICATION，故 Phase 0 的「resolve all NEEDS CLARIFICATION」为空集。
 - **`data-model.md` 未单独产出**：`spec.md §Key Entities` 已定义 10 个实体，重复一遍只会产生两处需同步维护的事实来源，违反「一个事实一个权威落点」。本文件 §Phase 1 数据模型 只补落点与修订性质。
 - **`contracts/` 已产出**：`contracts/crs-form-data.schema.json`，即 D3 的机器可消费交付物。
-- **`quickstart.md` 未产出**：其规定内容为「可运行的端到端验证场景 + 前置条件 + 运行命令 + 预期结果」。本轮明确不产出实现代码（用户设定的 C5 默认，未被推翻），无可运行物，写出来只能是虚构命令。SC-001–SC-010 已承担验收判据职责。
+- **`quickstart.md` 未产出**：其规定内容为「可运行的端到端验证场景 + 前置条件 + 运行命令 + 预期结果」。本轮明确不产出实现代码（用户设定的 C5 默认，未被推翻），无可运行物，写出来只能是虚构命令。SC-001–SC-012 已承担验收判据职责。
 - **`tasks.md` 未产出**：由 `commands/tasks.md` 负责，不属 plan 阶段；且本轮不实现。
 - **新增了模板没有的章节 §项目级待办（偏离最大的一项）**：官方 `templates/plan-template.md` 的章节集为 Summary / Technical Context / Constitution Check / Project Structure / Phase 0 / Phase 1 / Complexity Tracking，**没有任何承载项目级任务台账的位置**——spec-kit 的模型是「一个 feature 一份 plan.md」，项目级路线图不在其工件集内。本文件因此额外承载了前端脚手架、阿里云资源开通、HTTPS/TLS、竞赛演示脚本等与 CRS 数据契约无关的内容，代价是 feature plan 被项目级任务污染，且后续 `002-*` / `003-*` feature 无法复用这个落点。此为**用户明确裁决**而非本 Agent 的判断。若日后需要恢复分离，最小代价是把 §实现现状 与 §项目级待办 两节整体迁出为独立文件并重建根目录索引。
 
