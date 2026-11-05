@@ -12,7 +12,7 @@ Content-Type: application/json
 
 本地 Base URL：`http://localhost:8000`。其他机器调用时替换为规则引擎服务的可达地址。
 服务运行后可访问 `http://localhost:8000/docs` 查看交互文档。
-需要先配置数据库并发布活动规则，否则返回 503。
+需要先加载 `rules/` 下的活动规则（ADR-003：JSON 文件 + 内存原子替换，规则不经数据库），否则返回 503 `NO_ACTIVE_RULES`。
 当前接口面向内部服务，未新增认证；主后端负责用户权限及结果保存。
 
 ## 个人版请求
@@ -158,7 +158,7 @@ BLOCKER 优先于 WARNING；上游 indicia_issues 也参与裁决。
 | 413 | REQUEST_TOO_LARGE | 请求体超过 1 MiB，缩小请求 |
 | 422 | VALIDATION_ERROR | 检查 JSON、未知字段、字段类型和日期策略 |
 | 503 | NO_ACTIVE_RULES | 联系规则引擎维护者发布活动规则 |
-| 503 | RULE_ENGINE_UNAVAILABLE | 数据库或规则不可用，按主后端策略重试 |
+| 503 | RULE_ENGINE_UNAVAILABLE | 规则文件不可读或引擎未就绪，按主后端策略重试 |
 | 500 | INTERNAL_ERROR | 记录错误并联系维护者 |
 
 表单缺签、TIN 格式错误等业务问题通常是 HTTP 200 + NEED_USER_FIX，区别于请求结构错误。
