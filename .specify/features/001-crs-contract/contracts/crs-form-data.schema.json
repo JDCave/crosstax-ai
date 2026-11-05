@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "crosstax-ai/contracts/crs-form-data.schema.json",
+  "title": "CRSFormData v2 (D3)",
+  "description": "破坏性变更：单值 jurisdiction_code + tin → tax_residencies[] 重复组。已发布接口对未知字段零容忍（API_INTEGRATION.md:97），旧请求体会被 422 拒绝，迁移见 x-migration。防膨胀硬闸：每个字段的 description 必须携带 mapping-matrix.csv 的 row_id，未登记者不得出现；例外仅限 x-migration.not_matrix_registered 显式声明者。行数硬闸 ≤120 已按结构下限达成：62 个字段位 + 13 个对象包装，无冗余容量——新增任何字段位都会突破闸门，须先取得例外授权。",
+  "type": "object", "additionalProperties": false, "required": ["form_data", "policy"],
+  "properties": {
+    "form_data": { "$ref": "#/$defs/FormData", "description": "信封根，见 x-migration.not_matrix_registered" },
+    "policy": { "type": "object", "additionalProperties": false, "required": ["today"], "description": "见 x-migration.not_matrix_registered", "properties": {
+      "today": { "type": "string", "format": "date", "description": "R40 签署日期上界；R27 门槛 effective_from 的求值基准。主后端传入，非 PDF 抽取字段" } } },
+    "indicia_issues": { "type": "array", "default": [], "items": { "type": "object" }, "description": "上游跨源核查问题，见 x-migration.not_matrix_registered；结构属 specs/data-spec.md §1.2 AuditIssue，不在此重复定义" }
+  },
+  "$defs": {
+    "FormData": { "type": "object", "additionalProperties": false, "required": ["document", "holder_type", "name", "addresses", "tax_residencies", "declaration"], "properties": {
+      "document": { "$ref": "#/$defs/Document" },
+        "holder_type": { "enum": ["INDIVIDUAL", "ENTITY", "CONTROLLING_PERSON"], "description": "对应矩阵 forms 列，见 x-migration.not_matrix_registered。既有字段，取值由 2 扩为 3 以纳入控权人版" },
+        "name": { "$ref": "#/$defs/Name" },
+        "birth_date": { "type": ["string", "null"], "format": "date", "description": "R19 出生日期（星号须报送）。仅个人/控权人适用；dd/mm/yyyy 须转 ISO（API_INTEGRATION.md:94）" },
+        "birth_place": { "type": ["string", "null"], "description": "R20 出生地。原文 Not compulsory，为空 MUST NOT 判缺失（FR-011）" },
+        "hk_identity": { "$ref": "#/$defs/HkIdentity" },
+        "entity": { "$ref": "#/$defs/Entity" },
+        "addresses": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/Address" }, "description": "R13-R18。现居/营业地址必填；邮寄地址仅在与前者不同时存在（FR-010）" },
+        "tax_residencies": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/TaxResidency" }, "description": "R28-R31 R33 —— D3 核心。原文『all, not restricted to five』故无 maxItems；实际上界由 1 MiB 请求体上限推导（API_INTEGRATION.md:158，FR-013）" },
+        "controlling_person": { "$ref": "#/$defs/ControllingPerson" },
+        "declaration": { "$ref": "#/$defs/Declaration" } } },
+    "Document": { "type": "object", "additionalProperties": false, "required": ["is_encrypted", "structure_tree_available", "holders_declared"], "description": "文档层属性。R04 R43 R47 R48", "properties": {
+        "is_encrypted": { "type": "boolean", "description": "R47。四份官方样本均为 AES-128（/V4 /R4 /CFM AESV2，空用户密码）；加密 MUST NOT 单独构成拒收理由（FR-001）" },
+        "structure_tree_available": { "type": "boolean", "description": "R48。Tagged PDF（/Marked true，含 /Table /TR /TD）；false 时字段归属可信度下降，MUST 记录该降级（FR-003）" },
+        "holders_declared": { "type": "integer", "minimum": 1, "description": "R04。三份表单 Part 1 均要求联名/多持有人各填一份；>1 时 MUST 要求多份文档（FR-005）" },
+        "has_continuation_sheets": { "type": "boolean", "default": false, "description": "R43。总则允许续页；抽取 MUST NOT 以固定页数上限截断（FR-004）" },
+        "fingerprint": { "type": "string", "description": "R47 共享层正确性的独立验证依据（FR-036），见 x-migration.not_matrix_registered；算法不在契约中约束" } } },
+    "Name": { "type": "object", "additionalProperties": false, "description": "R05-R09。取代既有单值 holder_name —— 合并会丢失星号字段位（FR-006）", "properties": {
+        "title": { "type": ["string", "null"], "description": "R05 称谓 Mr/Mrs/Ms/Miss" },
+        "last_name": { "type": ["string", "null"], "description": "R06 姓（星号须报送）。缺失为 BLOCKER（FR-007）" },
+        "first_name": { "type": ["string", "null"], "description": "R07 名（星号须报送）。缺失为 BLOCKER（FR-007）" },
+        "middle_names": { "type": "array", "items": { "type": "string" }, "description": "R08 中间名" },
+        "entity_legal_name": { "type": ["string", "null"], "description": "R09 实体或分支机构法定名称（星号须报送）" },
+        "is_branch": { "type": "boolean", "default": false, "description": "R09。原文『Legal Name of Entity or Branch』；分行与实体本身在申报上是不同账户持有人（FR-006）" } } },
+    "HkIdentity": { "type": "object", "additionalProperties": false, "description": "R10 R12。取代既有 tin_type 塌缩：类型标记留存了但来源值丢失，致 R32 等值校验无法执行（FR-019）", "properties": {
+        "hkid_or_passport": { "type": ["string", "null"], "description": "R10 个人/控权人 HK 身份证或护照号；R32 派生等值的左值" },
+        "business_registration_number": { "type": ["string", "null"], "description": "R12 实体商业登记号；R32 派生等值的左值" } } },
+    "Entity": { "type": "object", "additionalProperties": false, "description": "R11 R21 R22 R23 R24 R33。holder_type=ENTITY 时适用；既有 holder_type 不能替代三分类（API_INTEGRATION.md:83）", "properties": {
+        "incorporation_jurisdiction": { "type": ["string", "null"], "description": "R11 表单自述注册成立地（ISO 2 字码）。与商户底表 KYC 值并列保留，MUST NOT 互相覆写；不一致记 WARNING → MANUAL_TRIAGE（FR-016）" },
+        "incorporation_jurisdiction_source": { "enum": ["FORM", "MERCHANT_KYC", "BOTH_AGREE", "BOTH_CONFLICT"], "description": "R11 来源标记，FR-016 并列保留机制" },
+        "entity_type": { "enum": ["FINANCIAL_INSTITUTION", "ACTIVE_NFE", "PASSIVE_NFE", null], "description": "R21 Part 2 三分类，MUST 恰好命中一类（FR-021）；判据来自 crs-terms-ird.pdf 受控词条" },
+        "entity_type_subitem": { "type": ["object", "null"], "additionalProperties": false, "description": "R22 —— PART 处置：填空纳入，但原文为 Word Textbox，线性抽取会丢失归属，记为已知抽取限制", "properties": {
+          "regularly_traded_on": { "type": ["string", "null"], "description": "R22 子项填空『regularly traded on ___』" },
+          "related_entity_of": { "type": ["string", "null"], "description": "R22 子项填空『Related entity of ___』" },
+          "specify": { "type": ["string", "null"], "description": "R22 子项填空『Please specify ___』" } } },
+        "controlling_person_names": { "type": "array", "items": { "type": "string" }, "description": "R23 —— PART 处置：Passive NFE ⟹ ≥1 的条件必填规则纳入（存 rules/），8 槽全展开排除，故为无槽位语义数组（FR-023）" },
+        "no_natural_person_control": { "type": "boolean", "default": false, "description": "R24。true 时控权人 = 高级管理人员，MUST NOT 把空值当合法（FR-024）" },
+        "poe_jurisdiction": { "type": ["string", "null"], "description": "R33 实际管理地。与税收居民地语义不同，MUST NOT 作为居民地替代值静默接受（FR-017）" } } },
+    "Address": { "type": "object", "additionalProperties": false, "required": ["type", "country"], "description": "R13-R18。取代既有单值 residence_address —— 拼接后不可逆且国家码无法独立校验（FR-008）", "properties": {
+        "type": { "enum": ["RESIDENCE", "MAILING"], "description": "R13-R17 现居/营业地址；R18 邮寄地址，仅在与前者不同时填写（FR-010）" },
+        "line1": { "type": ["string", "null"], "description": "R13 Suite/Floor/Building/Street/District" },
+        "city": { "type": ["string", "null"], "description": "R14 城市（星号须报送）。缺失为 BLOCKER（FR-009）" },
+        "subentity": { "type": ["string", "null"], "description": "R15 Province/State" },
+        "country": { "type": "string", "description": "R16 国家（星号须报送）。ISO 2 字码，缺失为 BLOCKER；拼接存储时无法校验（FR-008/FR-009）" },
+        "post_code": { "type": ["string", "null"], "description": "R17 Post Code/ZIP" },
+        "source_layout_anomaly": { "type": ["string", "null"], "description": "R18。个人版 Part 1(4) 邮寄地址块印刷上出现两个 Line 2；MUST 暴露而非静默择一（FR-043）" } } },
+    "TaxResidency": { "type": "object", "additionalProperties": false, "required": ["jurisdiction", "basis"], "description": "R28-R31 R33 R34 —— D3 重复组元素。取代 jurisdiction_code + tin + has_no_tin + tin_reason_code + tin_reason_explanation 五个平铺字段", "properties": {
+        "jurisdiction": { "type": "string", "description": "R28 税收居民地（星号须报送）。ISO 2 字码；不是注册地或地址所在地区（API_INTEGRATION.md:82）" },
+        "basis": { "enum": ["RESIDENCE", "POEM"], "description": "R33。POEM = 非任何地区税收居民（如财政透明体）时填实际管理地；两者申报含义不同（FR-017）" },
+        "tin": { "type": ["string", "null"], "description": "R29 该法域 TIN（星号须报送）。MUST 为字符串以保留前导零；引擎去空白/括号/连字符并转大写（API_INTEGRATION.md:96）" },
+        "no_tin_reason": { "enum": ["A", "B", "C", null], "description": "R30 无 TIN 理由。与 tin 互斥，同时存在 MUST 报冲突（FR-015）" },
+        "reason_b_explanation": { "type": ["string", "null"], "description": "R31 理由 B 解释，去空白后须达最小长度（阈值存 rules/，见 plan.md M/N 表）" },
+        "reason_c_applicability_unverified": { "type": "boolean", "default": true, "description": "R34。理由 C 的跨法域适用前提 MUST NOT 自动判定，沿用既有『只查完整性、适用性人工复核』，但 MUST 显式标记而非沉默（FR-020）" } } },
+    "ControllingPerson": { "type": "object", "additionalProperties": false, "description": "R03 R25 R26。仅 holder_type=CONTROLLING_PERSON 时适用", "properties": {
+      "controlled_entities": { "type": "array", "minItems": 1, "maxItems": 3, "description": "R25 CP-P2 所控实体槽位 (1)-(3)。每项 MUST 能回指某份 ENTITY 文档（FR-027）", "items": { "type": "object", "additionalProperties": false, "required": ["entity_name", "link_confidence"], "properties": {
+        "entity_name": { "type": "string", "description": "R25 所控实体名称" },
+        "linked_document_ref": { "type": ["string", "null"], "description": "R03 跨文档链接主键（机构参考号 Ref. No.），FR-045" },
+        "link_confidence": { "enum": ["HIGH", "LOW", "NAME_DOB_ONLY", "UNLINKED", null], "description": "R03 R25。Ref. No. 为主键、姓名+出生日期兜底印证；LOW/NAME_DOB_ONLY/UNLINKED MUST 降级 MANUAL_TRIAGE，MUST NOT 视为已确认（FR-045、SC-010）" },
+        "cp_types": { "type": "array", "items": { "type": "string" }, "description": "R26 CP-P4 的 11 类控权人类型，按本实体列独立勾选。二维矩阵 MUST NOT 压成一维（FR-026）" } } } } } },
+    "Declaration": { "type": "object", "additionalProperties": false, "required": ["holder_or_authorized_resolved", "has_signature"], "description": "R35-R40", "properties": {
+        "holder_or_authorized_resolved": { "type": "boolean", "description": "R35 个人/控权人版『I am the account holder / I am authorized to sign』（# Delete as appropriate）二选一 MUST 已消解；未消解即声明无效（FR-029）" },
+        "signatory_name": { "type": ["string", "null"], "description": "R38 签署人姓名。与 Part 1 持有人姓名不一致时 capacity MUST 必填（FR-031）" },
+        "capacity": { "type": ["string", "null"], "description": "R36 R39。签署人≠持有人时必填；实体版无『本人』选项故恒必填（FR-030）" },
+        "power_of_attorney_attached": { "type": "boolean", "default": false, "description": "R39 Part 5 脚注：以授权书签署须附经核证副本（FR-031）" },
+        "has_signature": { "type": "boolean", "description": "R37 既有字段。存在性由上游判定，本系统不验笔迹（FR-032、API_INTEGRATION.md:89）" },
+        "signing_date": { "type": ["string", "null"], "format": "date", "description": "R40 既有字段。MUST ≤ policy.today（FR-032）" } } }
+  },
+  "x-migration": {
+    "breaking": true,
+    "cost": "规则引擎尚无实现（rules/ 空、backend/engine/ 不存在、alembic/versions/ 空），无在运行的客户端、无数据库迁移。实际迁移面为 assets/crs-templates/ 下两个示例 JSON 与两份 markdown。",
+    "field_map": {
+      "holder_name": "→ name.*（按 holder_type 分流至 last_name/first_name 或 entity_legal_name）",
+      "holder_dob": "→ birth_date；实体成立日在表单上无字段位（plan.md 变更单第 6 项），MUST NOT 编造",
+      "residence_address": "→ addresses[type=RESIDENCE].*",
+      "jurisdiction_code|tin|has_no_tin|tin_reason_code|tin_reason_explanation": "→ tax_residencies[]（五个平铺字段收敛为一个重复组）",
+      "tin_type": "→ hk_identity.*（HKID → hkid_or_passport，HK_BR → business_registration_number）",
+      "holder_type": "保留，取值扩为 3（新增 CONTROLLING_PERSON）",
+      "has_signature|signing_date|policy.today|indicia_issues": "保留不变" },
+    "not_matrix_registered": [
+      "form_data —— 信封根，承载 FormData，本身不是字段位",
+      "policy.today —— 业务日期，主后端传入；矩阵中以 R40/R27 的 executable_check 引用",
+      "indicia_issues —— 上游跨源核查问题，既有已发布字段；结构属 specs/data-spec.md §1.2",
+      "holder_type —— 文档类型判别式，对应矩阵 forms 列而非某个字段位行",
+      "document.fingerprint —— FR-036 共享层正确性的验证依据，非表单字段位" ] }
+}

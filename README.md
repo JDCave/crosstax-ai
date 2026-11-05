@@ -65,7 +65,7 @@
 
 仓库中已落地的代码是后端工程底座：FastAPI 应用工厂与 lifespan（`backend/main.py`）、pydantic-settings 配置（`backend/core/config.py`）、console/json 双格式结构化日志与 `RequestIdMiddleware`、全局异常处理、`/health` 存活与 `/ready` 就绪探针（后者执行 `SELECT 1` 校验数据库连通性）、SQLAlchemy 2.0 异步引擎与 `get_session()` 依赖、Alembic 初始化、uv 多阶段构建的非 root Docker 镜像、ruff + mypy(strict) + pytest + pre-commit 门禁。
 
-尚未落地的是全部业务逻辑：审核流水线各 Agent、TIN 规则引擎与热重载、跨源研判与三态裁决、审计留痕与报告渲染、业务 ORM 模型与首个 Alembic 迁移脚本、规则 JSON 与 Mock 数据，以及整个前端 SPA——仓库内不存在 `frontend/` 目录。任务级明细、依赖顺序与进度快照见 `ROADMAP.md`。
+尚未落地的是全部业务逻辑：审核流水线各 Agent、TIN 规则引擎与热重载、跨源研判与三态裁决、审计留痕与报告渲染、业务 ORM 模型与首个 Alembic 迁移脚本、规则 JSON 与 Mock 数据，以及整个前端 SPA——仓库内不存在 `frontend/` 目录。任务级明细、依赖顺序与进度快照见 `.specify/features/001-crs-contract/plan.md` 的 §实现现状 与 §项目级待办。
 
 技术栈选型的逐条依据记录在 `specs/adr/`（10 个 ADR）。其中 ADR-007 有一项待团队裁定的冲突：决策写 `dashscope` SDK，但该依赖未列入 `pyproject.toml`，而现有依赖已含 `httpx`，且 `design/architecture.md` §2.4 将 Vision/LLM 描述为外部 HTTP 调用——按 `AGENTS.md` 约定，新增顶层依赖需团队同意。
 
@@ -110,7 +110,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 
 三层分类，每层只回答一类问题：**`docs/`（WHY）** 原始提案与业务流程设计，其中 `business-workflow-design.md` 是全仓信息密度最高的权威逻辑描述，本 README 的裁决逻辑即源于此；**`specs/`（WHAT）** 需求与验收标准、前后端共享数据契约、10 个架构决策记录；**`design/`（HOW）** 分层架构与 Agent 接口、UI 规范、可视化蓝图与可交互原型。
 
-逐份文档的位置与用途见 `ROADMAP.md` 的归档索引；编码约定与仓库结构约定见 `AGENTS.md`。`specs/` `design/` `docs/` 由 PM 与设计侧维护，编码 Agent 不得修改。
+逐份文档的位置与用途见 `.specify/features/001-crs-contract/plan.md` 的 §文档归档索引；编码约定与仓库结构约定见 `AGENTS.md`。`specs/` `design/` `docs/` 由 PM 与设计侧维护，编码 Agent 不得修改。
 
 ## 团队与许可
 

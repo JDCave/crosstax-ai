@@ -50,12 +50,13 @@ crosstax-ai/
 │       ├── stores/   # Zustand stores
 │       ├── types/    # TypeScript type definitions
 │       └── styles/   # Theme tokens, global CSS
-├── assets/           # Shared: Mock data + Jinja2 report templates (placeholders only)
+├── assets/           # Shared: crs-templates/ (IRD official CRS PDFs + sample requests — real, not planned); mock-data/ + templates/ (placeholders only)
 ├── rules/            # CRS rule JSON configs, backend consumes (planned, dir empty)
 ├── tests/            # Mirrors backend/ (tests/backend/); tests/frontend/ planned
 ├── design/           # Design documents (DO NOT edit from code agent)
 ├── docs/             # Supporting docs — proposal/ only (DO NOT edit from code agent)
 ├── specs/            # Requirements: PRD, data spec, ADRs (DO NOT edit from code agent)
+├── .specify/         # spec-kit feature artifacts — features/001-crs-contract/ (spec + plan + JSON Schema contract + mapping matrix)
 ├── pyproject.toml    # Backend dependencies + ruff/mypy/pytest/coverage config (uv)
 ├── uv.lock           # uv lockfile — commit it, never hand-edit
 ├── alembic.ini       # Alembic configuration
@@ -63,6 +64,8 @@ crosstax-ai/
 ├── Dockerfile        # uv multi-stage backend image, non-root (frontend stage planned)
 ├── docker-compose.yml # backend + postgres:16 + redis:7
 ├── .env.example      # Env var template — copy to root .env
+├── .gitignore        # Ignore rules
+├── .dockerignore     # Image build exclusions
 └── .pre-commit-config.yaml
 ```
 
@@ -89,7 +92,7 @@ uv run mypy backend/
 
 ### Frontend (Node / npm)
 
-> **Not yet created** — `frontend/` does not exist. Scaffold it first (ROADMAP §3.1) before using these commands.
+> **Not yet created** — `frontend/` does not exist. Scaffold it first (see §项目级待办 实现阶段 in `.specify/features/001-crs-contract/plan.md`) before using these commands.
 
 ```bash
 cd frontend/

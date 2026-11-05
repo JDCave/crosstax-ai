@@ -597,6 +597,7 @@ crosstax-ai/
 │       ├── types/                      # TS 类型定义
 │       └── styles/                     # 主题 token + 全局样式
 ├── assets/
+│   ├── crs-templates/                  # IRD 官方 CRS 取证资产（实有）：4 份官方 PDF（个人/实体/控权人/总则）+ 2 份示例请求 JSON + README.md + API_INTEGRATION.md
 │   ├── mock-data/                      # 商户底表 + 5 个 CRS 样本 (规划中，仅占位)
 │   └── templates/                      # Jinja2 审计报告模板      (规划中，仅占位)
 ├── rules/                              # CRS 规则配置（后端消费）  (规划中，目录为空)
@@ -617,6 +618,7 @@ crosstax-ai/
 │   └── adr/                            # 架构决策记录（10 个独立文件）
 ├── docs/
 │   └── proposal/                       # 原始提案归档
+├── .specify/                           # spec-kit 特性工件（features/001-crs-contract/：spec + plan + 契约 + 映射矩阵）
 ├── pyproject.toml                      # 依赖 + ruff/mypy/pytest/coverage 配置
 ├── uv.lock                             # uv 依赖锁文件
 ├── alembic.ini                         # Alembic 配置
@@ -624,13 +626,16 @@ crosstax-ai/
 ├── Dockerfile                          # uv 多阶段后端镜像（前端阶段待接入）
 ├── docker-compose.yml                  # backend + postgres:16 + redis:7
 ├── .env.example                        # 环境变量模板
+├── .gitignore                          # 忽略规则
+├── .dockerignore                       # 镜像构建排除清单
 ├── .pre-commit-config.yaml             # 提交前钩子
 ├── AGENTS.md                           # AI 编码助手规范
-├── ROADMAP.md                          # 项目路线图 / 任务清单
 └── README.md                           # 项目说明 + 文档导航
 ```
 
 > 原稿将文档索引与路线图放在 `docs/README.md`、`docs/roadmap.md`，现已分别迁移至仓库根目录的 `README.md` 与 `ROADMAP.md`，`docs/` 仅保留 `proposal/` 原始提案归档。
+>
+> **2026-11-05 追加**：根目录 `ROADMAP.md`（183 行 / 97 条勾选项）已全文并入 `.specify/features/001-crs-contract/plan.md` 的 §实现现状 与 §项目级待办 后删除，仓库根目录不再保留独立路线图，上述目录树已同步。上一条记录中「迁移至 `ROADMAP.md`」的部分已被此次变更取代——原文保留不改写，以维持决策历史可追溯。
 
 ---
 

@@ -423,7 +423,7 @@ flowchart TD
 
 - [方案原始需求（PPT 摘要）](../docs/proposal/crosstax-ai-solution%20(from%20ppt).md)
 - [业务流程架构](../docs/proposal/business-workflow-design.md)
-- [项目路线图](../ROADMAP.md)
+- [项目路线图与任务台账](../.specify/features/001-crs-contract/plan.md) — 全项目进度与待办的唯一权威落点（§实现现状、§项目级待办）
 
 ### C. 文档修订历史
 
@@ -431,3 +431,4 @@ flowchart TD
 |------|------|--------|----------|
 | v1.0 | 2026-10-22 | PM | 初始草案，整合两份输入文档 |
 | v1.1 | 2026-10-22 | PM | 技术选型确认：前端 React + 后端 FastAPI 前后端分离 |
+| v1.2 | 2026-11-05 | PM | 附录 B：根目录 `ROADMAP.md` 全文并入 `.specify/features/001-crs-contract/plan.md` 后删除，参考文档链接改指该文件 |
