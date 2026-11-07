@@ -68,8 +68,5 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# uv
-uv.lock
-
 # Config (generated from .env.example)
 config.json

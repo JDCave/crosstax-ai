@@ -18,5 +18,7 @@ CrossTax AI 需要快速集成 LLM、OCR 等 AI 能力，竞赛周期紧张。
 - FastAPI 原生 async 支持，性能满足竞赛需求
 
 ## 后果
-- 后端依赖通过 `pyproject.toml` + `uv` 管理
+- 后端依赖通过 `pyproject.toml` + `uv` 管理（锁文件 `uv.lock`，安装命令 `uv sync`）
+- 不采用 `pip install -r requirements.txt`：仓库内不存在 `backend/requirements.txt`
 - 需确保 Python 3.11+ 环境一致性
+- 前端为 React + TypeScript，依赖由 npm 管理（见 ADR-002）

@@ -23,3 +23,7 @@
 - Vision API 使用 `qwen-vl-max` 模型
 - LLM 推理使用 `qwen-max` 模型（主力）
 - 通过 `dashscope` Python SDK 调用
+
+## 实现状态
+- 尚未接入：`backend/` 中无 Vision/LLM 客户端代码，`DASHSCOPE_API_KEY`、`VISION_API_MODEL`、`LLM_API_MODEL` 也还未在 `backend/core/config.py` 中定义。
+- **待团队裁定（调用方式冲突）**：本决策写 `dashscope` SDK，但 `dashscope` 未列入 `pyproject.toml` 依赖，而现有依赖已含 `httpx`，且 `design/architecture.md` §2.4 将 Vision/LLM 描述为「外部 HTTP 调用」。二者需统一——按 AGENTS.md 约定，新增顶层依赖需团队同意。

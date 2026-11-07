@@ -7,11 +7,28 @@
 | --- | --- | --- |
 | [crs-individual-ird.pdf](crs-individual-ird.pdf) | 个人账户持有人自我证明表格 | https://www.ird.gov.hk/eng/pdf/2016/scf_ind.pdf |
 | [crs-entity-ird.pdf](crs-entity-ird.pdf) | 实体账户持有人自我证明表格 | https://www.ird.gov.hk/eng/pdf/2016/scf_entity.pdf |
+| [crs-controlling-person-ird.pdf](crs-controlling-person-ird.pdf) | 控权人自我证明表格。实体版 Part 3 明文要求 Passive NFE 另附此表 | https://www.ird.gov.hk/eng/pdf/2016/scf_cp.pdf |
+| [crs-terms-ird.pdf](crs-terms-ird.pdf) | 表格术语的定义与解释（FI / Active NFE / Passive NFE / 控权人 / 税收居民身份等） | https://www.ird.gov.hk/eng/pdf/2016/terms.pdf |
 
 官方来源页面：https://www.ird.gov.hk/eng/tax/aeoi/self_cert.htm
 
+四份 PDF 的 SHA-256 已于 2026-11-05 从上述官方地址重新下载并逐字节比对，全部一致：
+
+| 文件 | SHA-256 | 字节数 |
+| --- | --- | --- |
+| crs-individual-ird.pdf | `2a1294d624f9fdcfdfb75c57e3cbc37898587abe9449973ba084b1f06a6d444c` | 419,045 |
+| crs-entity-ird.pdf | `4e4fcd4679bf0c10e35b143ad9447639be44d3f76ce8e970e48c415fb5966263` | 426,104 |
+| crs-controlling-person-ird.pdf | `be5bd468cf2afd89fa821bbfe00093066c7b85ef8374e0c76907bb6f278c53c5` | 457,162 |
+| crs-terms-ird.pdf | `d535aa4c144fc515dd04ff151e6753e0c357132ec671429447a55cfdc6c168ea` | 459,498 |
+
+复现：`sha256sum assets/crs-templates/*.pdf`。四份均为 AES-128 加密（空用户密码）的 Tagged PDF，
+`/MarkInfo /Marked true`，含 `/StructTreeRoot` 表格结构树。
+
 用于项目表单、数据提取及演示的模板参考；表格字段不代表当前规则引擎已全部支持。
-两份表格均支持多个税收居民地区及对应 TIN；实体版还包含实体分类和控权人信息。
+个人版与实体版两份表格均支持多个税收居民地区及对应 TIN；实体版还包含实体分类，
+Passive NFE 的控权人信息须另附控权人表格填写，术语以术语表为准。
+
+当前实现已支持最多 20 个不同税籍；实体不再强制提供成立日期。上游新契约规划仍需与当前实现逐项对齐。
 
 ## API 请求示例
 

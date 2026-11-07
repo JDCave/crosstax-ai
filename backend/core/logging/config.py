@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import logging.config
 import sys
+from typing import Any
 
 
 def setup_logging(level: str = "INFO", log_format: str = "json") -> None:
@@ -20,7 +21,7 @@ def setup_logging(level: str = "INFO", log_format: str = "json") -> None:
     logging.captureWarnings(True)
 
 
-def _json_logging_config(level: str) -> dict:
+def _json_logging_config(level: str) -> dict[str, Any]:
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -55,7 +56,7 @@ def _json_logging_config(level: str) -> dict:
     }
 
 
-def _console_logging_config(level: str) -> dict:
+def _console_logging_config(level: str) -> dict[str, Any]:
     return {
         "version": 1,
         "disable_existing_loggers": False,

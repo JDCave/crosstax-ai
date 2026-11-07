@@ -1,0 +1,49 @@
+row_id,form_part,field_position,forms,asterisk_must_report_to_IRD,current_contract_field,crs_xsd_element__UNVERIFIED,executable_check,gap_level,path_capability
+R01,Header,To: Name of Financial Institution,IND+ENT+CP,no,(none),ReportingFI/Name,存在性；与机构注册名一致,中,BOTH
+R02,Header,To: Address of Financial Institution,IND+ENT+CP,no,(none),ReportingFI/Address,存在性,低,BOTH
+R03,Header,Ref. No. (Reference Number with the FI),IND+ENT+CP,no,(none),机构内部键,存在性；作为文档链接键,中,BOTH
+R04,Part1 note,joint/multiple holders → complete a separate form for EACH holder,IND+ENT+CP,n/a,(none),文档基数约束,一份文档=一个持有人；多持有人必须多文档,严重,BOTH
+R05,P1(1),Title (Mr/Mrs/Ms/Miss),IND+CP,no,holder_name(合并),Name/Title,枚举；合并会丢失,中,BOTH
+R06,P1(1),Last Name or Surname,IND+CP,YES,holder_name(合并),Name/LastName,必填；合并会丢失,严重,BOTH
+R07,P1(1),First or Given Name,IND+CP,YES,holder_name(合并),Name/FirstName,必填；合并会丢失,严重,BOTH
+R08,P1(1),Middle Name(s),IND+CP,no,holder_name(合并),Name/MiddleName,可选；合并会丢失,中,BOTH
+R09,P1(1),Legal Name of Entity or Branch,ENT,YES,holder_name,Organisation/Name,必填,已覆盖,BOTH
+R10,P1(2),Hong Kong Identity Card or Passport Number,IND+CP,no,(与 tin 混淆),—,跨字段一致性：HK 税收居民的 TIN 必须等于此 HKID,严重,BOTH
+R11,P1(2),Jurisdiction of Incorporation or Organisation,ENT,no,(契约明确排除：jurisdiction_code「不是注册地」),Organisation/IncorporationJurisdiction,ISO 码；与税收居民地独立存在,严重,BOTH
+R12,P1(3),Hong Kong Business Registration Number,ENT,no,(与 tin 混淆),—,跨字段一致性：Part4 若有 HK 行则其 TIN 必须等于此 BR Number,严重,BOTH
+R13,P1(3/4),Address Line 1 (Suite/Floor/Building/Street/District),IND+ENT+CP,no,residence_address(拼接),AddressFix/Street,结构保真；拼接后不可逆,中,BOTH
+R14,P1(3/4),Address Line 2 (City),IND+ENT+CP,YES,residence_address(拼接),AddressFix/City,必填+结构保真,严重,BOTH
+R15,P1(3/4),Address Line 3 (Province/State),IND+ENT+CP,no,residence_address(拼接),AddressFix/CountrySubentity,结构保真,中,BOTH
+R16,P1(3/4),Address Country,IND+ENT+CP,YES,residence_address(拼接),AddressFix/Country,必填+ISO 码校验；拼接后无法校验,严重,BOTH
+R17,P1(3/4),Address Post Code/ZIP,IND+ENT+CP,no,residence_address(拼接),AddressFix/PostCode,结构保真,低,BOTH
+R18,P1(4/5),Mailing Address 整块 5 字段（条件：与现居/营业地址不同时填写）,IND+ENT+CP,no,(契约明确排除),Address@type=Mailing,条件必填；原文个人版此处有排版错误（两个 Line 2）,中,BOTH
+R19,P1(5),Date of Birth (dd/mm/yyyy),IND+CP,YES,holder_dob,Individual/BirthDate,必填；dd/mm/yyyy→ISO 转换,已覆盖,BOTH
+R20,P1(6),Place of Birth 整块 3 字段（Not compulsory）,IND+CP,no,(none),Individual/BirthPlace,可选；不填不得判 BLOCKER,低,BOTH
+R21,ENT-P2,Entity Type 三分类勾选（Financial Institution / Active NFE / Passive NFE）,ENT,n/a,(契约明确排除：holder_type「不是 Active/Passive NFE 分类」),Organisation/Entity_Type,必须恰好命中一类；terms.pdf 提供受控判据,严重,VISION_ONLY
+R22,ENT-P2,Entity Type 子项填空 3 处（regularly traded on ___ / Related entity of ___ / Please specify ___）,ENT,n/a,(none),—,勾了含填空的子项则填空必填；原文为 Word Textbox，线性抽取会丢失归属,严重,VISION_ONLY
+R23,ENT-P3,Controlling Persons 姓名槽位 (1)-(8),ENT,n/a,(none),ControllingPerson（可重复）,条件必填：Entity Type=Passive NFE ⟹ 至少 1 个；每个须另附一份 CP 表,严重,BOTH
+R24,ENT-P3 note,无自然人控制时 → controlling person = senior managing official,ENT,n/a,(none),—,兜底规则；防止「查无控权人」被当成合法空值,中,BOTH
+R25,CP-P2,本控权人所控实体名称槽位 (1)-(3),CP,n/a,(none),跨文档外键,基数 1..3；必须能回指到某份 ENT 文档,严重,BOTH
+R26,CP-P4,控权人类型矩阵（11 类 × Entity(1)(2)(3) 三列）,CP,n/a,(none),ControllingPerson/Type,二维：每个实体列独立勾选；不能压成一维,严重,VISION_ONLY
+R27,CP-P4 note,"脚注 ^：With effect from 1 January 2021, 25% (corporation) / 0% (partnership)",CP,n/a,(none),监管参数,带 effective_from 的参数；合伙 0% ⟹ 每个合伙人都是控权人；2025-12-09 咨询拟修订,严重,BOTH
+R28,P2/P3/P4,"TIN 表 [重复组] Jurisdiction of Residence（5 行，原文：all, not restricted to five）",IND+ENT+CP,YES,jurisdiction_code（单值）,Residency/CountryCode（可重复）,基数 ≥1 且无上限；单值契约无法表达多重税收居民,严重,BOTH
+R29,P2/P3/P4,TIN 表 [重复组] TIN,IND+ENT+CP,YES,tin（单值）,Residency/TIN,每个税收居民地各一个 TIN,严重,BOTH
+R30,P2/P3/P4,TIN 表 [重复组] Reason A/B/C（无 TIN 时）,IND+ENT+CP,条件,tin_reason_code,Residency/TIN@notProvidedReason,枚举 A/B/C；与 TIN 互斥,已覆盖,BOTH
+R31,P2/P3/P4,TIN 表 [重复组] Reason B 解释,IND+ENT+CP,条件,tin_reason_explanation,Residency/TIN@…,必填且去空白后 ≥5 字符,已覆盖,BOTH
+R32,P2/P3/P4,派生规则：HK 税收居民 → TIN 即 HKID（个人/控权人）或 Business Registration Number（实体）,IND+ENT+CP,n/a,(不可表达：两个来源字段塌缩为同一 tin),—,跨字段等值校验；确定性、零幻觉,严重,BOTH
+R33,ENT-P4 note,非任何地区税收居民（如 fiscally transparent）→ 填 place of effective management 所在地,ENT,n/a,(不可表达),Residency@…POEM,语义区分「居民地」与「实际管理地」；两者申报含义不同,严重,BOTH
+R34,P2 note,Reason C 仅当该地区当局不要求披露 TIN 时方可选用,IND+ENT+CP,n/a,(不可表达),—,跨法域条件有效性；当前只查完整性不查适用性,中,BOTH
+R35,P3/P5,声明勾选「I am the account holder / I am authorized to sign」（# Delete as appropriate）,IND+CP,n/a,(none),—,二选一必须已消解；未消解即为无效声明,严重,VISION_ONLY
+R36,P3/P5,声明勾选「I certify that I am authorized to sign for the account holder」（实体版无「本人」选项）,ENT,n/a,(none),—,实体版签署人必然非持有人 ⟹ Capacity 必填,中,VISION_ONLY
+R37,P3/P5,Signature,IND+ENT+CP,n/a,has_signature,—,存在性（由上游判定，本接口不验笔迹）,已覆盖,BOTH
+R38,P3/P5,Name（签署人姓名）,IND+ENT+CP,n/a,(none),—,与 Part1 持有人姓名一致性；不一致 ⟹ Capacity 必填,严重,BOTH
+R39,P3/P5,Capacity,IND+ENT+CP,n/a,(none),—,条件必填：签署人≠持有人时必填；POA 签署须附证明副本,严重,BOTH
+R40,P3/P5,Date (dd/mm/yyyy),IND+ENT+CP,n/a,signing_date,—,≤ policy.today；dd/mm/yyyy→ISO 转换,已覆盖,BOTH
+R41,Important Notes,asterisk (*) = 须由申报财务机构报送 IRD 的字段,IND+ENT+CP,n/a,(契约无此概念),—,本矩阵 asterisk 列的判据来源；决定哪些缺字段是 BLOCKER 而非 WARNING,严重,BOTH
+R42,Important Notes,All parts must be completed (unless not applicable or otherwise specified),IND+ENT+CP,n/a,(none),—,完备性总则；「not applicable」是合法空值，不得判缺,中,BOTH
+R43,Important Notes,"If space provided is insufficient, continue on additional sheet(s)",IND+ENT+CP,n/a,(none),—,续页存在 ⟹ 任何按页数上限的抽取都会漏数据,中,BOTH
+R44,Important Notes,An account holder should report all changes in tax residency status,IND+ENT+CP,n/a,(none),—,持续监控义务；与 R45 联动,低,BOTH
+R45,P3/P5 声明,变更情形后 30 天内提供更新表格,IND+ENT+CP,n/a,(none),监管期限参数,带 effective_from 的硬期限；是「reason to know」重取逻辑的依据,中,BOTH
+R46,WARNING,"s.80(2E) IRO：要项上具误导性/虚假/不正确陈述属违法，第三级罚款 $10,000",IND+ENT+CP,n/a,(none),法律引用,金额硬印在表格上；2025-12-09 咨询拟提高罚则 ⟹ 不得硬编码,中,BOTH
+R47,文档层,PDF 为 AES-128 加密（/V 4 /R 4 /CFM /AESV2，空用户密码，/P -1340）,IND+ENT+CP,n/a,(PRD §4.2 F1「不支持加密 PDF」直接冲突),—,入口必须能解密；pypdf 无 cryptography 时抛 DependencyError,严重,BOTH
+R48,文档层,PDF 为 Tagged PDF（/Marked true），含 /Table /TR /TD /H1 结构树,IND+ENT+CP,n/a,(PRD §4.2 F1 强制栅格化 300DPI → Vision),—,结构树可无损取得表格布局；栅格化主动丢弃它,严重,BOTH

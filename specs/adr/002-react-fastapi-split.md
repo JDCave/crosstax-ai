@@ -22,4 +22,10 @@
 ## 后果
 - 需额外开发 FastAPI API 层（约 350 行）
 - 前端开发周期约 6.5 人天
-- 通过 Dockerfile 多阶段构建实现单容器部署
+- 目标部署形态：Dockerfile 多阶段构建，前端编译产物由 FastAPI 静态托管，实现单容器部署
+- 依赖管理：后端 `pyproject.toml` + `uv`（见 ADR-001），前端 `frontend/package.json` + npm
+
+## 实现状态
+- 后端已落地：`backend/`（FastAPI 应用工厂 + lifespan + CORS + 全局异常处理 + `/health`、`/ready` 探针）
+- `Dockerfile` 现为 uv 多阶段构建的**后端单服务**镜像（非 root 运行 + 健康检查），前端构建阶段待 `frontend/` 落地后接入
+- 前端尚未创建：仓库内无 `frontend/` 目录，本决策的前端部分仍待实施

@@ -22,3 +22,6 @@ TIN 校验规则需要支持热重载，需选择规则存储方式。
 - 规则文件存放于 `rules/` 目录
 - 基准规则：`rules_v1_base.json`
 - 增量补丁：`rules_v2_patch.json`（演示热重载用）
+
+## 实现状态
+- `rules/` 目录已创建但为空，两份规则 JSON 与 `engine.load_rules()` 热重载引擎均待实现。

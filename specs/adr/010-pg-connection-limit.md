@@ -18,6 +18,11 @@
 - 竞赛场景并发低，3 连接足够
 
 ## 后果
-- `backend/core/database.py` 中 `pool_size=3, max_overflow=0`
+- 配置项位于 `backend/core/config.py` 的 `DatabaseSettings`：`pool_size=3, max_overflow=0`
+- 引擎在 `backend/infrastructure/database.py` 由上述配置构建
+- 环境变量 `DATABASE_POOL_SIZE` / `DATABASE_MAX_OVERFLOW` 可覆盖，`.env.example` 已按本决策给出缺省值
 - 禁止溢出连接（`max_overflow=0`），避免超限
 - 本地 SQLite 开发不受此限制影响
+
+## 实现状态
+- 2026-11-02：初始脚手架曾按通用缺省值实现为 `pool_size=5, max_overflow=10`（单人可开 15 连接，4 人 60 连接，超组委会上限一倍），已回归本决策的 3/0，并由 `tests/backend/test_config.py` 断言锁定。
