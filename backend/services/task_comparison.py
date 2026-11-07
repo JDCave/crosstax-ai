@@ -4,7 +4,7 @@ from collections import Counter
 from typing import Any
 
 from backend.api.schemas.presentation import FindingSummary, TaskComparison
-from backend.api.schemas.rule_engine import ValidationResponse
+from backend.api.schemas.rule_engine import ValidationResponse, form_kind
 from backend.api.schemas.rule_tasks import TaskResponse
 
 
@@ -45,8 +45,11 @@ def compare_tasks(
                 changes.append(path)
 
     walk(old, new, "")
-    contexts = []
+    contexts = (
+        ["EXECUTION_CONTEXT_MISSING"] if before.result.execution is None or after.result.execution is None else []
+    )
     for name, left, right in [
+        ("FORM_CONTRACT", form_kind(old.get("form_data")), form_kind(new.get("form_data"))),
         ("RULE_VERSION", before.rule_version_id, after.rule_version_id),
         ("RULE_REVISION", before.rule_revision, after.rule_revision),
         ("TASK_BUILD", before.engine_build_id, after.engine_build_id),

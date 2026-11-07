@@ -137,9 +137,18 @@ class TaskService:
         if any(row is None or not row.payload_ciphertext for row in rows):
             raise AppException(503, "COMPARE_DATA_UNAVAILABLE", "Stored input is unavailable")
         cipher = self.cipher()
-        inputs = [
-            cipher.decrypt(row.payload_ciphertext)["validation"] for row in rows if row and row.payload_ciphertext
-        ]
+        from backend.api.schemas.rule_engine import ValidationRequest
+
+        try:
+            inputs = [
+                ValidationRequest.model_validate_json(
+                    TaskCipher.canonical(cipher.decrypt(row.payload_ciphertext)["validation"])
+                ).model_dump(mode="json", exclude_none=True)
+                for row in rows
+                if row and row.payload_ciphertext
+            ]
+        except Exception as exc:
+            raise AppException(503, "COMPARE_DATA_UNAVAILABLE", "Stored input cannot be validated") from exc
         after.comparison = await asyncio.to_thread(compare_tasks, before, after, inputs[0], inputs[1])
         if any(aware(row.expires_at) <= utcnow() for row in rows if row):
             raise AppException(410, "TASK_EXPIRED", "Validation task content has expired")

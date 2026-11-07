@@ -282,3 +282,14 @@ async def test_initialization_keeps_teammate_business_table(empty_setup):
     await setup.initialize()
     async with setup.database.connect() as connection:
         assert await connection.scalar(select(table.c.username)) == "teammate-fixture"
+
+
+async def test_unknown_execution_context_is_not_presented_as_a_clean_correction(task_api):
+    client, service, worker = task_api
+    request = task_fixtures.payload()
+    _, first = await finish(client, worker, request)
+    _, second = await finish(client, worker, request)
+    before, after = await service.get(first["task_id"]), await service.get(second["task_id"])
+    before.result.execution = None
+    summary = compare_tasks(before, after, request["validation"], request["validation"])
+    assert summary.context == "DIFFERENT_CONTEXT" and "EXECUTION_CONTEXT_MISSING" in summary.context_changes
