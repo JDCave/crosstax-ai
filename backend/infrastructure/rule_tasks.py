@@ -11,7 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from backend.core.rule_tasks import RuleTaskSettings
 from backend.infrastructure.exceptions import AppException
-from backend.models import RuleTaskQueueState, RuleValidationTask
+from backend.models import RulePDFReport, RuleTaskQueueState, RuleValidationTask
 
 
 def utcnow() -> datetime:
@@ -65,8 +65,15 @@ class TaskRepository:
                         select(func.count())
                         .select_from(RuleValidationTask)
                         .where(
-                            RuleValidationTask.status.in_(ACTIVE),
-                            RuleValidationTask.deadline_at > now,
+                            or_(
+                                and_(RuleValidationTask.status.in_(ACTIVE), RuleValidationTask.deadline_at > now),
+                                select(RulePDFReport.task_id)
+                                .where(
+                                    RulePDFReport.task_id == RuleValidationTask.task_id,
+                                    RulePDFReport.status.in_(("PENDING", "RUNNING")),
+                                )
+                                .exists(),
+                            ),
                             RuleValidationTask.expires_at > now,
                         )
                     )
@@ -223,4 +230,9 @@ class TaskRepository:
                 )
                 .returning(RuleValidationTask.task_id)
             )
+            if value is not None and error is None:
+                from backend.repositories.pdf_reports import pending_report
+
+                if await session.get(RulePDFReport, task_id) is None:
+                    session.add(pending_report(task_id, now))
             return value is not None

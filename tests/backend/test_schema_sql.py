@@ -25,7 +25,7 @@ def test_all_sql_artifacts_are_current_and_transactional():
 def test_full_snapshot_includes_all_rules_and_excludes_scaffold():
     sql = render_sql_files()["validation_engine.sql"]
     assert set(table_names(sql)) == {table.name for table in rule_tables()}
-    assert len(table_names(sql)) == 10
+    assert len(table_names(sql)) == 11
     assert "users" not in sql and "alembic_version" not in sql
     assert "INSERT INTO crosstax.rule_engine_state (id) VALUES (1);" in sql
     assert "INSERT INTO crosstax.rule_task_queue_state (id, generation) VALUES (1, 0);" in sql

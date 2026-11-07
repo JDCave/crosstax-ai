@@ -48,3 +48,13 @@ class TaskCipher:
     def digests(self, value: Any) -> list[str]:
         data = b"crosstax-task-request-v1\x00" + self.canonical(value)
         return [hmac.new(base64.urlsafe_b64decode(key), data, hashlib.sha256).hexdigest() for key in self._keys]
+
+    def encrypt_pdf(self, value: bytes) -> str:
+        return self._cipher.encrypt(b"crosstax-pdf-v1\x00" + value).decode("ascii")
+
+    def decrypt_pdf(self, value: str) -> bytes:
+        data = self._cipher.decrypt(value.encode("ascii"))
+        prefix = b"crosstax-pdf-v1\x00"
+        if not data.startswith(prefix):
+            raise ValueError("Invalid report encryption domain")
+        return data[len(prefix) :]

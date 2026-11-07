@@ -1747,6 +1747,33 @@
             "type": "integer",
             "title": "Poll After Ms"
           },
+          "report_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "PENDING",
+                  "RUNNING",
+                  "READY",
+                  "FAILED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Status"
+          },
+          "report_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "report_url": {
             "anyOf": [
               {

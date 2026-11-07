@@ -7,6 +7,7 @@ import json
 import threading
 from dataclasses import dataclass
 from functools import lru_cache
+from importlib.metadata import version
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -50,6 +51,14 @@ CHECK_LABELS = {
     "tax_residence": "税籍及标识规则",
 }
 CHECK_STATUSES = {"PASSED": "通过", "FAILED": "未通过", "REVIEW_REQUIRED": "待复核", "NOT_APPLICABLE": "不适用"}
+
+
+@lru_cache(maxsize=1)
+def report_build_id() -> str:
+    digest = hashlib.sha256(Path(__file__).read_bytes())
+    digest.update((Path(__file__).parent / "fonts/CrossTaxSansSC-Regular.ttf").read_bytes())
+    digest.update(version("reportlab").encode())
+    return digest.hexdigest()
 
 
 class ReportTooLarge(Exception):
@@ -96,7 +105,9 @@ def render_report(data: ReportData) -> bytes:
         raise ValueError("Completed report requires a result")
     registered_font()
     snapshot = {
-        "task": task.model_dump(mode="json", exclude={"result", "poll_after_ms"}),
+        "task": task.model_dump(
+            mode="json", exclude={"result", "poll_after_ms", "report_status", "report_error", "report_url"}
+        ),
         "validation": validation,
         "result": result.model_dump(mode="json"),
     }

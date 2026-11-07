@@ -18,6 +18,7 @@ from backend.engine.structured_validation import load_form_policy
 from backend.infrastructure.exceptions import AppException, NotFoundException
 from backend.infrastructure.rule_tasks import TaskRepository, aware, utcnow
 from backend.models import RuleValidationTask, RuleVersion
+from backend.repositories.pdf_reports import PDFReportRepository
 from backend.services.rule_api import RuleAPIService, get_rule_api_service
 
 
@@ -70,7 +71,7 @@ class TaskService:
         existing = await self.repository.by_key(key)
         if existing:
             self._same_request(existing, digests)
-            return self.response(existing, cipher)
+            return await self.view(existing, cipher)
         now = utcnow()
         deadline = min(
             request.deadline_at or now + timedelta(seconds=self.settings.timeout_seconds),
@@ -111,7 +112,7 @@ class TaskService:
         )
         saved = await self.repository.enqueue(task)
         self._same_request(saved, digests)
-        return self.response(saved, cipher)
+        return await self.view(saved, cipher)
 
     async def get(self, task_id: str) -> TaskResponse:
         row = await self.repository.get(task_id)
@@ -120,7 +121,23 @@ class TaskService:
         # Expiry remains observable even if encryption keys have been removed after retention.
         if aware(row.expires_at) <= utcnow():
             raise AppException(410, "TASK_EXPIRED", "Validation task content has expired")
-        return self.response(row, self.cipher())
+        return await self.view(row, self.cipher())
+
+    async def view(self, row: RuleValidationTask, cipher: TaskCipher) -> TaskResponse:
+        response = self.response(row, cipher)
+        if row.status != "SUCCEEDED":
+            return response
+        report = await PDFReportRepository(self.repository.sessions).get(row.task_id)
+        if report is not None:
+            response.report_status = cast("Literal['PENDING','RUNNING','READY','FAILED']", report.status)
+            response.report_url = (
+                f"/api/v1/rule-engine/tasks/{row.task_id}/report" if report.status == "READY" else None
+            )
+            if report.status == "FAILED":
+                response.report_error = TaskError(
+                    code=report.error_code or "REPORT_GENERATION_FAILED", message="报告生成失败,请联系服务方处理"
+                )
+        return response
 
     @staticmethod
     def response(row: RuleValidationTask, cipher: TaskCipher) -> TaskResponse:
@@ -149,7 +166,7 @@ class TaskService:
             rule_revision=row.rule_revision,
             engine_build_id=row.engine_build_id,
             poll_after_ms=500 if row.status in ("PENDING", "RUNNING") else 0,
-            report_url=f"/api/v1/rule-engine/tasks/{row.task_id}/report" if result else None,
+            report_status="PENDING" if result else None,
             result=result,
             error=error,
         )

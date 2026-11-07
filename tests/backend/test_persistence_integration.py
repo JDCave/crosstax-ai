@@ -36,7 +36,7 @@ async def persistence(request):
                 await conn.execute(CreateSchema(schema))
             await conn.run_sync(
                 lambda c: Base.metadata.create_all(
-                    c, tables=[t for t in tables if t.name not in {"rule_publications", "rule_audit_records", "rule_validation_tasks", "rule_task_queue_state"}]
+                    c, tables=[t for t in tables if t.name not in {"rule_publications", "rule_audit_records", "rule_validation_tasks", "rule_task_queue_state", "rule_pdf_reports"}]
                 )
             )
 
@@ -49,6 +49,8 @@ async def persistence(request):
                     migration["upgrade"]()
                     tasks = runpy.run_path(str(next(Path("alembic/versions").glob("20261108_rule_tasks*.py"))))
                     tasks["upgrade"]()
+                    reports = runpy.run_path(str(next(Path("alembic/versions").glob("20261108_pdf_reports*.py"))))
+                    reports["upgrade"]()
 
             await conn.run_sync(migrate)
         sessions = async_sessionmaker(engine, expire_on_commit=False)
@@ -169,5 +171,7 @@ async def test_encrypted_tasks_use_migrated_tables_on_both_backends(persistence)
     complete = await service.get(str(task.task_id))
     assert complete.status == "SUCCEEDED" and complete.result.verdict == "AUTO_PASS"
     from backend.services.pdf_reports import PDFReportService
+    from backend.workers.pdf_reports import PDFReportWorker
+    await PDFReportWorker(service).run_once()
     report = await PDFReportService(service).export(str(task.task_id))
     assert report.content.startswith(b"%PDF-") and report.filename.endswith(".pdf")

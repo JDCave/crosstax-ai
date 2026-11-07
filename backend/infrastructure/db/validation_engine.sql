@@ -4,7 +4,7 @@
 
 -- FULL current rule-engine schema; use only for an empty schema or review.
 
--- ORM snapshot at Alembic revision 20261108_rule_tasks; review README.md before applying.
+-- ORM snapshot at Alembic revision 20261108_pdf_reports; review README.md before applying.
 
 -- PostgreSQL database: devdb; schema: crosstax. No existing tables are dropped or altered.
 
@@ -158,6 +158,31 @@ CREATE INDEX ix_rule_task_claim ON crosstax.rule_validation_tasks (status, lease
 CREATE INDEX ix_rule_task_expiry ON crosstax.rule_validation_tasks (expires_at);
 
 CREATE INDEX ix_rule_task_session ON crosstax.rule_validation_tasks (session_id, created_at);
+
+CREATE TABLE crosstax.rule_pdf_reports (
+	task_id VARCHAR(36) NOT NULL,
+	status VARCHAR(16) NOT NULL,
+	template_version VARCHAR(64) NOT NULL,
+	render_build_id VARCHAR(64) NOT NULL,
+	content_ciphertext TEXT,
+	sha256 VARCHAR(64),
+	byte_length INTEGER,
+	error_code VARCHAR(64),
+	attempts INTEGER NOT NULL,
+	claim_token VARCHAR(36),
+	lease_until TIMESTAMP WITH TIME ZONE,
+	next_attempt_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	started_at TIMESTAMP WITH TIME ZONE,
+	completed_at TIMESTAMP WITH TIME ZONE,
+	PRIMARY KEY (task_id),
+	CONSTRAINT ck_pdf_report_status CHECK (status IN ('PENDING','RUNNING','READY','FAILED')),
+	CONSTRAINT ck_pdf_report_attempts CHECK (attempts >= 0),
+	CONSTRAINT ck_pdf_report_length CHECK (byte_length IS NULL OR byte_length > 0),
+	FOREIGN KEY(task_id) REFERENCES crosstax.rule_validation_tasks (task_id) ON DELETE RESTRICT
+);
+
+CREATE INDEX ix_pdf_report_claim ON crosstax.rule_pdf_reports (status, next_attempt_at, lease_until);
 
 CREATE TABLE crosstax.rule_version_documents (
 	version_id VARCHAR(64) NOT NULL,

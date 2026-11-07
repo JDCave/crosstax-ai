@@ -48,7 +48,13 @@ class RuleAPIRoute(APIRoute):
                         content={"code": exc.code, "message": exc.message},
                         headers={
                             "Cache-Control": "no-store",
-                            **({"Retry-After": "1"} if exc.status_code == 503 else {}),
+                            **(
+                                {"Retry-After": "2"}
+                                if exc.code == "REPORT_GENERATING"
+                                else {"Retry-After": "1"}
+                                if exc.status_code == 503 and exc.code != "REPORT_GENERATION_FAILED"
+                                else {}
+                            ),
                         },
                     )
                 raise

@@ -4,7 +4,7 @@
 
 -- Six-table legacy baseline ONLY; follow with alembic upgrade head on a new database.
 
--- ORM snapshot at Alembic revision 20261108_rule_tasks; review README.md before applying.
+-- ORM snapshot at Alembic revision 20261108_pdf_reports; review README.md before applying.
 
 -- PostgreSQL database: devdb; schema: crosstax. No existing tables are dropped or altered.
 

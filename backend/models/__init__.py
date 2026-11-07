@@ -4,6 +4,7 @@ from backend.models.base import Base, TimestampMixin
 from backend.models.rule_audit_record import RuleAuditRecord
 from backend.models.rule_document import RuleDocument
 from backend.models.rule_engine_state import RuleEngineState
+from backend.models.rule_pdf_report import RulePDFReport
 from backend.models.rule_publication import RulePublication
 from backend.models.rule_source import RuleSource
 from backend.models.rule_sync_run import RuleSyncRun
@@ -17,6 +18,7 @@ __all__ = [
     "RuleAuditRecord",
     "RuleDocument",
     "RuleEngineState",
+    "RulePDFReport",
     "RulePublication",
     "RuleSource",
     "RuleSyncRun",

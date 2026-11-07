@@ -5,6 +5,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -98,42 +99,66 @@ class RuleTaskWorker:
         return True
 
 
-async def run(cleanup_only: bool = False, once: bool = False) -> None:
+async def run(cleanup_only: bool = False, once: bool = False, retry_report: str | None = None) -> None:
     from backend.infrastructure.database import create_worker_database
 
     engine, sessions = create_worker_database()
     try:
         service = TaskService(RuleAPIService(ValidationEngine(RuleLoader(sessions))), RuleTaskSettings())
         service.cipher()
+        from backend.workers.pdf_reports import PDFReportWorker
+
+        worker = RuleTaskWorker(service)
+        reports = PDFReportWorker(service)
+        if retry_report:
+            if not await reports.repository.retry_failed(retry_report):
+                raise ValueError("Only retained failed reports can be retried")
+            return
         if cleanup_only:
             while await service.repository.cleanup():
                 pass
+            while await reports.repository.cleanup():
+                pass
             return
-        worker = RuleTaskWorker(service)
-        while True:
-            try:
-                worked = await worker.run_once()
-            except SQLAlchemyError:
-                if once:
-                    raise
-                logging.getLogger(__name__).warning("Task storage unavailable; worker will retry")
-                await asyncio.sleep(1)
-                continue
-            if once:
-                return
-            if not worked:
-                await asyncio.sleep(0.25)
+        if once:
+            await worker.run_once()
+            await reports.run_once()
+            return
+
+        async def loop(report_loop: bool) -> None:
+            while True:
+                try:
+                    worked = await reports.run_once() if report_loop else await worker.run_once()
+                except SQLAlchemyError:
+                    logging.getLogger(__name__).warning("Task storage unavailable; worker will retry")
+                    await asyncio.sleep(1)
+                    continue
+                if not worked:
+                    await asyncio.sleep(0.25)
+
+        async with asyncio.TaskGroup() as group:
+            group.create_task(loop(False))
+            group.create_task(loop(True))
     finally:
         await engine.dispose()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the encrypted rule-validation worker")
-    parser.add_argument("--once", action="store_true", help="Claim at most one task and exit")
+    parser.add_argument("--once", action="store_true", help="Try one validation and one report task, then exit")
     parser.add_argument("--cleanup", action="store_true", help="Purge all expired ciphertext batches and exit")
+    parser.add_argument(
+        "--retry-report", type=UUID, help="Requeue a retained failed report without rerunning validation"
+    )
     args = parser.parse_args()
     try:
-        asyncio.run(run(cleanup_only=args.cleanup, once=args.once))
+        asyncio.run(
+            run(
+                cleanup_only=args.cleanup,
+                once=args.once,
+                retry_report=str(args.retry_report) if args.retry_report else None,
+            )
+        )
     except KeyboardInterrupt:
         pass
     except Exception:
