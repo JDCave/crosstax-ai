@@ -44,11 +44,13 @@ policy_revision_date 表示项目策略修订日期，不限制所提供的业�
 | FR-025/027/045：实际跨文档回指 | 对应 ENTITY/CP 原始文档、机构参考号和关联结果 | 检查关联字段与置信标记；低置信／无引用复核，HIGH 加引用按上游确认声明处理；实际对方文档验证仍列为未执行范围 |
 | FR-028：按实体形式／生效日判断控制门槛 | 现 schema 没有实体形式、持股／表决权事实或实际关系证据 | 不编造 25%/0% 或法定起始日，不宣称已验证控制关系；需上游／契约所有者补齐输入 |
 | FR-044/045：收件机构与表头 Ref. No. | 当前 source schema 的 Document 缺少这些字段 | 不私自增加受矩阵限制的字段；review_scope 明确未核实，交主流程／契约维护者处理 |
-| FR-046：加密留存 | 主 AuditSession／文件留存系统、密钥配置与授权策略 | HTTP 无表单持久化写入；不能据此宣称内部归档或全系统已完成加密存储 |
+| FR-046：加密留存 | 主 AuditSession／文件留存系统、密钥配置与授权策略 | 异步任务输入／依据／结果已认证加密且支持过期清理；主会话、旧内部归档和原文件的全系统加密不在本次范围 |
 
 ## 调用与返回
 
-仍仅 POST /api/v1/rule-engine/validate，不新增步骤或管理 API。
+公开 POST tasks + GET tasks/{task_id}，旧 validate 隐藏并保留。
+任务只管理规则执行状态，主流程仍通过 run_audit_pipeline() 编排并维护 AuditSession／WebSocket。
+持久化队列替代请求内后台线程，接口和 Worker 契约见 [异步设计](ASYNC_TASKS.md)。
 推荐使用 assets/crs-templates/crs-structured-*-request.json 的个人、实体、控权人样例。
 原有请求继续有效；这是为已开发调用方保留的兼容扩展，不将 source schema 的“旧实现不存在”前提带入运行环境。
 基于 document/name/addresses/declaration 等新字段识别新结构；未知字段仍被拒绝。
@@ -60,4 +62,4 @@ AUTO_PASS 表示当前检查通过，主流程仍须汇总抽取、跨源核验�
 真实文件／Vision、前端全流程、跨文档数据、云数据库、百炼真实 Key、Docker 构建及 cron 部署未在本轮验收。
 不宣称整个项目已完全符合所有 FR；本次修复的是可以根据上游结构化输入执行的规则接口缺口。
 
-实现验证：244 项测试通过、3 项 PostgreSQL 按环境跳过；Ruff 和全量 backend Mypy 通过。新契约样例已通过真实 ASGI HTTP 测试，未进行真实 Vision／百炼调用。
+实现验证：267 项测试通过、4 项 PostgreSQL 按环境跳过；Ruff 和全量 backend Mypy 通过。新契约样例已通过真实 ASGI HTTP 测试，未进行真实 Vision／百炼调用。

@@ -64,7 +64,7 @@
 进度更新于 2026-11-08；当前权威台账见 [实施计划的实现现状](.specify/features/001-crs-contract/plan.md)。本地同步合并提交为 `258be94`，远程 push 尚待 GitHub 登录凭据。
 
 
-队友主线提供工程底座、规范和新契约规划；本 fork 另已实现数据库版本化规则引擎、单接口校验、多税籍、补正 Agent、影响分析与受控后台更新。完整文件上传审核流水线与前端尚未完成。
+队友主线提供工程底座、规范和新契约规划；本 fork 另已实现数据库版本化规则引擎、异步提交／查询校验、多税籍、补正 Agent、影响分析与受控后台更新。完整文件上传审核流水线与前端尚未完成。
 
 当前 fork 对未覆盖地区／类型转人工复核，业务日期由调用方提供；TIN 规则来源和验证深度以实际响应为准。上述主线流程描述不替代当前运行契约。
 
@@ -122,7 +122,12 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外部使用。
 
 
-当前验证：锁定依赖下 **244 项测试通过、3 项 PostgreSQL 集成测试跳过**，Ruff 与全量 backend Mypy 通过。
+当前验证：锁定依赖下 **267 项测试通过、4 项 PostgreSQL 集成测试跳过**，Ruff 与全量 backend Mypy 通过。
 真实百炼调用、云数据库、完整上传审核链路和 cron 安装仍待验收；当前结果不代表完整契约或全部税法条件已覆盖。
 
 结构化个人／实体／控权人接口及架构审查见 [新契约接入](backend/api/STRUCTURED_CRS_API.md)和[差距矩阵](backend/engine/ARCHITECTURE_REVIEW.md)。存储保留当前实现；外部事实不足的要求没有标记为已完成。
+
+
+规则引擎已支持持久化异步任务：先提交表单获取 task_id，再查询状态及完整结果。
+[队友接入与 Worker 启动](backend/api/RULE_TASKS_API.md)包含共享加密密钥、迁移、连接预算和三份请求样例。
+旧同步 validate 兼容保留，Swagger 只展示两个任务接口；尚未自动启动 Worker 或迁移真实数据库。

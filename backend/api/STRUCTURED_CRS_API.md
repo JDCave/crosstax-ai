@@ -1,6 +1,7 @@
 # 上游结构化 CRS 接入与流程边界
 
-现有 `POST /api/v1/rule-engine/validate` 已支持同步后的 D3 嵌套字段。
+[异步任务接口](RULE_TASKS_API.md)已支持 D3 嵌套字段：本页请求整体放入提交 body.validation，附加 session_id 与可选 deadline_at。
+旧同步 `POST /api/v1/rule-engine/validate` 保留兼容、从 Swagger 隐藏。
 上游把抽取完成的单持有人 JSON 交给本接口，获得规则问题与检查结论；现有存储实现对调用方透明。
 旧平铺／简化多税籍请求仍兼容；新接入优先采用本页格式。实体不要补造出生／成立日期。
 
@@ -9,16 +10,17 @@
 ```mermaid
 flowchart LR
     A[主流程接收和解析文件] --> B[结构化事实与抽取状态]
-    B --> C[一次调用 validate]
-    C --> D[规则问题与执行范围]
+    B --> C[POST tasks 返回 task_id]
+    C --> W[独立 Worker 固定快照校验]
+    W --> D[GET task 查询状态和完整规则结果]
     D --> E[主流程汇总跨源结果及最终裁决]
     E --> F[会话保存和前端展示]
 ```
 
 跨源问题若调用前已知，可通过 indicia_issues 一并传入；若在规则校验后生成，由主流程合并严重度。
 不需要为了最终裁决再调用规则引擎。最终任意 BLOCKER → NEED_USER_FIX，仅 WARNING → MANUAL_TRIAGE，无问题 → AUTO_PASS。
-HTTP 200 只表示执行成功。规则 AUTO_PASS 不等于抽取、实际跨文档核验和整份法律条件全部通过。
-此接口不读 PDF、不调用 Vision、不保存表单或替代主 AuditSession。
+GET HTTP 200 只表示查询成功，需检查 status；SUCCEEDED 才表示执行成功。规则 AUTO_PASS 不等于抽取、实际跨文档核验和整份法律条件全部通过。
+此接口不读 PDF、不调用 Vision。异步任务加密保存输入、依据与结果，不替代主 AuditSession。
 
 ## 三类请求
 
@@ -240,6 +242,9 @@ guidance.omitted_action_count 给出未展开动作数。完整 issues 仍返回
 不由模型填补真实事实，也不将未知门槛或法律生效日写成通过结果。
 
 ## 调用
+
+新接入提交 [任务样例](../../assets/crs-templates/crs-individual-task-request.json)，步骤见[异步接口文档](RULE_TASKS_API.md)。
+下方仅为同步兼容调用：
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/rule-engine/validate \

@@ -37,7 +37,7 @@ Passive NFE 的控权人信息须另附控权人表格填写，术语以术语�
 - [个人版请求](crs-individual-request.json)
 - [实体版请求](crs-entity-request.json)
 
-用于 `POST /api/v1/rule-engine/validate`，姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
+以下旧样例用于同步兼容 `/validate`；异步调用时放入 body.validation。姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
 示例业务日期为 2026-11-04，实际调用时由主后端传入业务日期。
 
 另提供 [多税籍及 AI 补正请求](crs-multi-residence-request.json)，用于演示一次校验多个地区和请求补正建议。
@@ -61,3 +61,10 @@ curl -X POST http://localhost:8000/api/v1/rule-engine/validate \
 - [控权人](crs-structured-controlling-person-request.json)
 
 主流程调用方式、预期裁决及未核实事实见 [结构化接入文档](../../backend/api/STRUCTURED_CRS_API.md)。
+
+## 异步任务样例
+
+新接入使用 [个人任务](crs-individual-task-request.json)、[实体任务](crs-entity-task-request.json)、[控权人任务](crs-controlling-person-task-request.json)。
+包含 session_id 和完整 validation，可直接 POST `/api/v1/rule-engine/tasks`；必须另传 Idempotency-Key。
+样例使用合成数据；实际替换 session_id／业务日期，并传主审核剩余 deadline_at。
+提交、轮询和独立 Worker 启动见 [异步 API 文档](../../backend/api/RULE_TASKS_API.md)。

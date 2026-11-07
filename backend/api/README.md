@@ -1,19 +1,20 @@
 # API 接口文档
 
-队友只调用 **POST /api/v1/rule-engine/validate**：传入数据，同步返回校验结果。
-无需 session_id、结果查询、规则查询或重放 API，接口不强制保存审核数据。
+新接入采用两个接口：
 
-- [接口字段、响应与调用示例](RULE_ENGINE_API.md)
-- [OpenAPI JSON 快照](openapi.json)
-- 运行服务后访问 `/docs` 和 `/openapi.json`
+1. `POST /api/v1/rule-engine/tasks`：接收表单并持久化，返回 task_id。
+2. `GET /api/v1/rule-engine/tasks/{task_id}`：查询状态，完成时返回完整校验结果。
 
-接口文档只展示一个校验接口；`/health`、`/ready` 仅作为内部探针保留，不出现在 OpenAPI 中。重复的 `/redoc` 文档入口和未使用的 OAuth2 回调入口已关闭。规则维护和历史重放仍是内部 Python/CLI 能力。
+- [异步接入、错误、重试及 Worker 启动](RULE_TASKS_API.md)
+- [结构化表单字段与主流程职责](STRUCTURED_CRS_API.md)
+- [旧同步格式兼容说明](RULE_ENGINE_API.md)
+- [OpenAPI 快照](openapi.json)，运行服务后访问 `/docs`、`/openapi.json`
 
-支持兼容单税籍请求与 1–20 项多税籍请求；`include_guidance=true` 可选请求补正 Agent，失败自动降级。
-[队友接入指南与表格样例](../../assets/crs-templates/API_INTEGRATION.md)包含实体日期处理、逐项结果、字段映射和 AI 配置说明。
+Swagger 只展示两条任务接口。旧同步 `/validate` 和健康探针保留且隐藏。
+规则维护、资料同步和历史重放仍为内部 Python/CLI 能力，不增加管理 API。
 
-[百炼 Agent 配置与联调](../agents/BAILIAN.md)：默认 qwen-plus，填入 Key 并重启后，在请求中传 include_guidance=true。
+任务输入、固定规则/表单策略快照及结果加密保存，默认保留 24 小时。
+主后端继续负责用户鉴权、AuditSession、抽取、跨源汇总和最终会话状态，不需要直接轮询数据库。
 
-[后台规则更新与每日调度](../engine/RULE_UPDATES.md)为内部 CLI 能力，不增加队友需要调用的 API。
-
-新接入优先阅读 [结构化 CRS 契约与主流程衔接](STRUCTURED_CRS_API.md)，支持三种主体及完整嵌套字段；旧格式继续兼容。
+[百炼 Agent 配置](../agents/BAILIAN.md)：默认 qwen-plus，设置 Key 后传 include_guidance=true。
+[后台规则更新](../engine/RULE_UPDATES.md)与规则验证 Worker 是两个独立职责，不能互相替代。

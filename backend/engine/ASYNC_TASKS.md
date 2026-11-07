@@ -56,3 +56,22 @@ GET 不返回过期内容，即使清理 Worker 尚未运行。清理需要持�
 
 结构错误不回显原始输入；Worker 错误只保存固定错误码，不保存异常正文或模型原文。
 新结果和任务数据的保存策略与旧可选归档表不同，不能据本功能宣称旧归档已加密。
+
+## 已交付实现（2026-11-08）
+
+- models/rule_validation_task.py、models/rule_task_queue_state.py：新增两表和领取／保留／会话索引。
+- core/rule_tasks.py：认证加密、HMAC、环境配置；infrastructure/rule_tasks.py：短事务入队、claim、renew、finish、cleanup。
+- services/rule_tasks.py：幂等与截止控制、规则／策略／构建固定；services/rule_api.py：共用固定快照执行适配器。
+- api/routes/rule_tasks.py 与 api/schemas/rule_tasks.py：提交 202、查询状态和原完整结果；旧 validate 隐藏但保留。
+- workers/rule_tasks.py：独立进程、核心线程池、异步 Agent、心跳、恢复和安全错误；连接池固定 1。
+- 迁移 20261108_rule_tasks 由 Alembic 比较元数据自动生成，接续 20261103_rule_history；SQLite CLI 升降级已验证。
+
+结构化保存省略原契约禁止的显式 null，并从 JSON 重新校验，避免序列化默认值破坏回放。
+结构化任务缺失冻结策略时直接失败，不允许悄悄读取当前策略补齐。
+提交等待同样受总时间预算约束；提交超时无法承诺未提交，应保留原键重试。
+常驻 Worker 遇存储异常固定提示后重试；失去租约时停止当前等待，不允许旧执行写入。
+清理 Worker 每轮最多 100 行，显式 --cleanup 循环清理所有过期批次，保留元数据 tombstone。
+模型补正保存实际输出与调用统计，模型文本不承诺逐字可复现；固定快照保障确定性规则依据。
+
+[API、配置与运行命令](../api/RULE_TASKS_API.md)；自动化验证覆盖并发容量、幂等、Case A–E、三份结构化任务、加密轮换、失租恢复、超时与脱敏。
+未部署生产 Worker、未更改本地真实数据库，也未验收真实 PG 或百炼请求。

@@ -542,3 +542,15 @@ source importer 仍只处理已允许的 OECD 来源，当前 manifest 为 CN/HK
 上游事实缺失不伪造通过。双路抽取、实际跨文档、持股依据、KYC 双值及机构 Ref. No. 的依赖见审查矩阵。
 新样例及调用接口见 [结构化接入文档](../api/STRUCTURED_CRS_API.md)。
 Docker 补入规则及默认合成 Case，供非 root 用户使用的工作与输出路径准备就绪；未实际构建镜像。
+
+
+## 持久化异步验证（2026-11-08）
+
+按用户确认的两阶段调用，新增 POST tasks 与 GET tasks/{task_id}，公开 OpenAPI 只展示这两条。
+旧同步 validate 保留兼容。主会话 session_id 与规则 task_id 分开，主流程轮询 API 后合并完整结果。
+输入、冻结规则／策略与结果认证加密保存，HMAC 幂等，默认保留 24 小时；到期 410 并清理密文。
+独立 Worker 使用租约、心跳与 claim token，结果与 SUCCEEDED 原子写入；业务 NEED_USER_FIX 仍是执行成功。
+固定截止预算包含排队与执行，不借异步绕过主链路 30 秒要求。
+本次增加 cryptography 依赖及两张 ORM 表，SQLite Alembic 升降级已验证；与前述后台规则更新任务独立。
+详细设计以 [异步任务设计](ASYNC_TASKS.md)为准，调用／启动见 [任务 API](../api/RULE_TASKS_API.md)。
+需要实际配置密钥、升级目标数据库和启动 Worker 才能使用，未代替主系统全量加密／鉴权／抽取。

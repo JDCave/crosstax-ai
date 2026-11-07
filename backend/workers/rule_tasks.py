@@ -130,7 +130,7 @@ async def run(cleanup_only: bool = False, once: bool = False) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the encrypted rule-validation worker")
     parser.add_argument("--once", action="store_true", help="Claim at most one task and exit")
-    parser.add_argument("--cleanup", action="store_true", help="Purge one batch of expired ciphertexts and exit")
+    parser.add_argument("--cleanup", action="store_true", help="Purge all expired ciphertext batches and exit")
     args = parser.parse_args()
     try:
         asyncio.run(run(cleanup_only=args.cleanup, once=args.once))

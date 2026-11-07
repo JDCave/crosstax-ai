@@ -43,18 +43,18 @@
 | 能力 | 当前状态 | 代码与证据 |
 | --- | --- | --- |
 | 工程底座 | 已实现 | 应用工厂、配置、日志、异常、健康探针、异步 SQLAlchemy、Alembic、Docker |
-| 规则持久化 | 已实现，SQLite 已验证 | `backend/models/rule_*.py`、`backend/repositories/rules.py`；六张基础表和两张历史表，已有迁移脚本 |
+| 规则持久化 | 已实现，SQLite 已验证 | `backend/models/rule_*.py`、`backend/repositories/rules.py`；六张基础表、两张历史表与两张异步任务表，已有迁移脚本 |
 | TIN 规则与算法 | 已实现，有明确覆盖范围 | `rules/rules_global_v4.json`：22 法域、66 选择器；格式与校验位区分，未覆盖转人工；不是完整税法覆盖 |
 | 完备性与裁决 | 已实现 | 日期、签名声明、TIN／豁免一致性；BLOCKER 优先的三态裁决 |
-| 单接口校验 | 已实现、自动化验证 | `POST /api/v1/rule-engine/validate`；个人／实体／控权人新结构、单／多税籍旧格式兼容、逐项结果、问题来源、范围和执行指纹 |
+| 异步校验 API | 已实现、自动化验证 | `POST /api/v1/rule-engine/tasks` + `GET /api/v1/rule-engine/tasks/{task_id}`；同步 validate 隐藏并保留；个人／实体／控权人新结构、单／多税籍旧格式兼容、逐项结果、问题来源、范围和执行指纹 |
 | 实体日期 | 已实现 | 实体不再强制补造成立日期；个人出生日期、可选实体成立日期各自检查 |
 | 发布与热加载 | 已实现 | 候选注册、显式批准、回归门禁、CAS 激活、发布历史、固定旧快照与新调用热加载 |
 | 升级影响分析 | 已实现 | 离线比较、裁决／覆盖／验证深度变化、资料与执行差异、报告哈希；不调用 AI 或 DB |
 | 后台规则更新 | 已实现，模拟联调通过 | 来源检查→上游结构化包→回归／影响／证据门禁→可信策略→CAS 发布；文件锁、原子报告和 cron 模板 |
 | 百炼补正 Agent | 已实现，真实调用待联调 | 默认 qwen-plus；只读工具、证据引用、降级、有限重试与调用统计；未填有效 Key，未验收真实模型质量／耗时 |
-| 内部历史归档／重放 | 已实现，有边界 | 单税籍 Python 服务；HTTP 不强制归档，不代表主 AuditSession 或多税籍 HTTP 历史重放已完成 |
+| 内部历史归档／重放 | 已实现，有边界 | 单税籍 Python 服务；旧同步 HTTP 不强制归档；异步任务加密保存完整结果，不替代主 AuditSession 或完整历史重放 |
 | 官方模板与测试数据 | 已提交 | 4 份 IRD PDF、个人／实体／多税籍 JSON、Case A–E 和商户 mock 数据 |
-| 测试与类型检查 | 已验证 | 合并后锁定依赖下 244 passed、3 PG skipped；Ruff 与全量 backend Mypy 通过 |
+| 测试与类型检查 | 已验证 | 合并后锁定依赖下 267 passed、4 PG skipped；Ruff 与全量 backend Mypy 通过 |
 
 **尚未完成或未验收**：
 
@@ -63,7 +63,7 @@
 - 新 schema 的字段结构已由运行接口承接；阈值所需的实体形式／持股事实、机构表头和实际跨文档证据仍有输入缺口。新结构税籍行数由 1 MiB 约束，不再受 20 行上限限制；旧格式保留原上限。
 - 监管参数尚未全部声明式化；现有完备性部分仍在 Python 中，不得把 66 个 TIN 选择器等同于 27 个监管参数已经实现。
 - 当前用户要求的 DB 版本存储／受控来源检查，与上游 ADR-003 的 JSON 文件规则载体仍有架构差异，尚未形成团队统一裁定；本次仅更新事实，不改 ADR。
-- 当前 3 个 PostgreSQL 集成用例未运行；云数据库、真实百炼 API、官网任务及前后端完整链路均未验收。
+- 当前 4 个 PostgreSQL 集成用例未运行；云数据库、真实百炼 API、官网任务及前后端完整链路均未验收。
 - cron 仅提供模板，未安装；未执行真实规则发布。资料导入 manifest 当前仅 CN/HK/SG OECD 来源，资料提取及结构化包由上游提供。
 - 未出具覆盖率 ≥80% 报告，未验证端到端 ≤30s、真实抽取准确率或字段一致率指标。
 - 本地合并已完成；GitHub 推送因 HTTPS 凭据缺失失败，尚不能标记远程同步完成。
@@ -172,7 +172,7 @@ rules/                             # 已有 TIN 配置；FR-041 的完整生效�
 | 规则补丁 `rules/rules_v2_patch.json`（热重载演示） | 已实现 | 完整 CN/HK/SG 快照；Case E 与后台更新热加载测试通过 |
 | OpenAPI 契约文件编写 | 部分完成 | `backend/api/openapi.json` 与运行时快照一致；仅规则校验，完整 audit/rules/cases 契约未实现 |
 | Pydantic 请求/响应模型（`backend/api/schemas/`） | 部分完成 | `structured_contracts.py` / `structured_validation.py` 已承接新字段和确定性检查；跨源证据及完整 feature 验收仍待完成 |
-| REST 路由 `/api/v1/audit`、`/api/v1/rules`、`/api/v1/cases` | 待办 | 当前已有单接口 `/api/v1/rule-engine/validate`；管理能力为内部 CLI，不增加公开路由 |
+| REST 路由 `/api/v1/audit`、`/api/v1/rules`、`/api/v1/cases` | 待办 | 当前已有任务提交／查询接口，旧同步 `/api/v1/rule-engine/validate` 隐藏保留；管理能力为内部 CLI，不增加公开路由 |
 | WebSocket 端点 `/ws/audit/{session_id}` | 待办 | — |
 | 媒体预处理 / Vision / TIN / 热加载 / 完备性 / 跨源研判 / 裁决 / 审计 | 部分完成 | TIN、热加载、完备性、裁决和内部归档已实现；抽取、跨源研判和主流水线待办 |
 | 新增 `deterministic_extractor.py`、`extraction_aggregator.py` | **本 feature 新增** | 见 §Project Structure 与 §Phase 0 ADR-004 增补 |
@@ -198,7 +198,7 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 | 热重载验证（加载 v2 补丁后即时生效） | 已实现 — 自动测试涵盖版本切换、旧快照隔离、下一调用读取新版本；真实部署时延未验收 |
 | WebSocket 实时推送验证 | 待办 |
 | 审计完整性验证（穿透溯源至原始文件 + 规则版本） | 部分完成 — 规则版本、指纹、发布历史与内部重放已测试；原始文件／主会话穿透待办 |
-| 覆盖率达标（`fail_under = 80`） | 待验证 — 已有 244 项通过、3 项 PG 跳过，不以测试数量代替覆盖率报告 |
+| 覆盖率达标（`fail_under = 80`） | 待验证 — 已有 267 项通过、4 项 PG 跳过，不以测试数量代替覆盖率报告 |
 
 ### 部署阶段（13 项全部待办）
 
@@ -390,6 +390,16 @@ R10 / R12 的**字段位**归 IN（FR-019 要求分别保留 HKID 与商业登�
 架构差距与职责划分见 [审查矩阵](../../../backend/engine/ARCHITECTURE_REVIEW.md)，调用方式见 [结构化接口](../../../backend/api/STRUCTURED_CRS_API.md)。
 新增姓名／地址／文档／实体／控权人／声明全字段接收；香港派生等值、授权签署、ISO 代码与独立 POEM 语义检查。
 表单日期规范化，表单策略独立哈希，升级影响分析支持同一新结构。
-三份新的 JSON 样例通过真实 HTTP 集成测试；旧调用仍兼容，仍只有一个校验端点。
+三份新的 JSON 样例通过真实 HTTP 集成测试；旧调用仍兼容，当前公开异步提交／查询两个端点。
 真实双路抽取、跨文档原件对照、缺失的 KYC／持股输入和全系统加密留存不标为完成。
-最新验证为 244 项通过、3 项 PG 跳过；Ruff 与全量 Mypy 通过，Docker 构建和真实模型未验收。
+最新验证为 267 项通过、4 项 PG 跳过；Ruff 与全量 Mypy 通过，Docker 构建和真实模型未验收。
+
+
+## 2026-11-08：异步规则验证交付
+
+已完成：[详细设计](../../../backend/engine/ASYNC_TASKS.md)、[两步 API](../../../backend/api/RULE_TASKS_API.md)、三份任务样例、OpenAPI、两表迁移、认证加密及 HMAC、容量限制与幂等、冻结快照、独立 Worker、租约心跳／失租恢复、截止时间、过期清理。
+提交成功才返回 202；SUCCEEDED 与业务 verdict 分开。主流程无需直查 DB，仍管理自己的会话状态与前端事件。
+SQLite 真实 Alembic 命令升降级与并发队列测试通过；可选 PG 用例包含新迁移和任务 Worker 链路。
+需要目标环境升级迁移、配置共享密钥并启动 API／Worker；未部署这些进程，未执行目标 PG 迁移。
+保留 24 小时后 GET 410；密文实际清理由运行中的 Worker 或手动 cleanup 完成，不宣称旧归档全量加密。
+API 两连接加 Worker 一连接，禁止额外进程使团队连接预算超限。Docker、真实模型、云数据库与完整主流程指标仍未验收。
