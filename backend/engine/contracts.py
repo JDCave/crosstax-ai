@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AuditIssue(BaseModel):
@@ -44,6 +44,17 @@ class ValidationPolicy(BaseModel):
     earliest_signing_date: date | None = None
     strict_coverage: bool = True
 
+    @field_validator("today", "earliest_signing_date", mode="before")
+    @classmethod
+    def require_canonical_date(cls, value: Any) -> Any:
+        if value is None or type(value) is date:
+            return value
+        if isinstance(value, str):
+            parsed = date.fromisoformat(value)
+            if parsed.isoformat() == value:
+                return value
+        raise ValueError("Policy date must be YYYY-MM-DD")
+
 
 class TINCheck(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -60,6 +71,7 @@ class TINCheck(BaseModel):
 class ExecutionContext(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     engine_build_id: str
+    form_policy_id: str | None = None
     input_fingerprint: str
     policy: ValidationPolicy
 

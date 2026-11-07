@@ -28,7 +28,9 @@ Thumbs.db
 docs/
 specs/
 design/
-assets/
+assets/**
+!assets/mock-data/
+!assets/mock-data/cases.json
 
 # Tests
 tests/

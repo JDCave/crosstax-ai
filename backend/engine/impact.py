@@ -11,13 +11,15 @@ from backend.engine.document_contracts import MultiResidenceForm
 from backend.engine.document_validation import DocumentResult, validate_document
 from backend.engine.reproducibility import canonical_hash, engine_build_id
 from backend.engine.rule_loader import CompiledRule, RuleSnapshot
+from backend.engine.structured_contracts import FormData
+from backend.engine.structured_validation import load_form_policy, validate_structured
 from backend.engine.validation import ValidationEngine
 
 
 class ImpactCase(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     case_id: str = Field(pattern=r"^[A-Za-z0-9_.-]{1,100}$")
-    form_data: CRSFormData | MultiResidenceForm
+    form_data: CRSFormData | MultiResidenceForm | FormData
     indicia_issues: list[AuditIssue] = Field(default_factory=list, max_length=100)
     # Explicitly support existing demo wrappers; these are not expected-result assertions.
     synthetic: bool | None = None
@@ -47,6 +49,7 @@ class ImpactReport(BaseModel):
     cases: list[dict[str, Any]]
     risks: list[str]
     report_hash: str
+    form_policy_id: str | None = None
 
 
 def selectors(snapshot: RuleSnapshot) -> dict[tuple[str, str, str], CompiledRule]:
@@ -138,12 +141,19 @@ def analyze_impact(
             < levels[old_rules[change.selector].verification_level]
         ):
             risks.add("VERIFICATION_DOWNGRADED")
+    form_policy = (
+        load_form_policy(policy.today) if any(isinstance(case.form_data, FormData) for case in cases) else None
+    )
     rows = []
     transitions: dict[str, int] = {}
     rank = {"AUTO_PASS": 0, "MANUAL_TRIAGE": 1, "NEED_USER_FIX": 2}
     for case in cases:
-        before = validate_document(engine, case.form_data, policy, base, case.indicia_issues)
-        after = validate_document(engine, case.form_data, policy, candidate, case.indicia_issues)
+        if isinstance(case.form_data, FormData):
+            before = validate_structured(case.form_data, policy, base, case.indicia_issues, form_policy)
+            after = validate_structured(case.form_data, policy, candidate, case.indicia_issues, form_policy)
+        else:
+            before = validate_document(engine, case.form_data, policy, base, case.indicia_issues)
+            after = validate_document(engine, case.form_data, policy, candidate, case.indicia_issues)
         old, new = summarize(before), summarize(after)
         changed = old != new
         transition = before.verdict + "->" + after.verdict
@@ -161,6 +171,7 @@ def analyze_impact(
                 risks.add("SAMPLE_VERIFICATION_DOWNGRADED")
         rows.append({"case_id": case.case_id, "changed": changed, "before": old, "after": new})
     data = {
+        "form_policy_id": form_policy[1] if form_policy is not None else None,
         "base_version_id": base.version_id,
         "candidate_version_id": candidate.version_id,
         "base_revision": base.revision,

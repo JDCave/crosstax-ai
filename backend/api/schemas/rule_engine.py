@@ -14,16 +14,23 @@ from backend.engine.document_contracts import (
     ResidenceResult,
     ReviewScope,
 )
+from backend.engine.structured_contracts import FormData, StructuredModel
 
 
 def form_kind(value: Any) -> str:
+    if isinstance(value, FormData) or (
+        isinstance(value, dict) and bool({"document", "name", "declaration", "addresses"} & value.keys())
+    ):
+        return "structured"
     if isinstance(value, MultiResidenceForm) or (isinstance(value, dict) and "tax_residencies" in value):
         return "multi"
     return "single"
 
 
 FormInput = Annotated[
-    Annotated[CRSFormData, Tag("single")] | Annotated[MultiResidenceForm, Tag("multi")],
+    Annotated[CRSFormData, Tag("single")]
+    | Annotated[MultiResidenceForm, Tag("multi")]
+    | Annotated[FormData, Tag("structured")],
     Discriminator(form_kind),
 ]
 
@@ -72,19 +79,17 @@ def field_errors(errors: Sequence[dict[str, Any]]) -> list[dict[str, str]]:
     """Keep safe schema paths, never input values, validator context or arbitrary field names."""
     from backend.engine.document_contracts import TaxResidence
 
-    known = set().union(
-        *(
-            set(model.model_fields)
-            for model in (
-                ValidationRequest,
-                CRSFormData,
-                MultiResidenceForm,
-                TaxResidence,
-                ValidationPolicy,
-                AuditIssue,
-            )
-        )
-    )
+    models: list[type[BaseModel]] = [
+        ValidationRequest,
+        CRSFormData,
+        MultiResidenceForm,
+        TaxResidence,
+        ValidationPolicy,
+        AuditIssue,
+        FormData,
+        *StructuredModel.__subclasses__(),
+    ]
+    known = {name for model in models for name in model.model_fields}
     messages = {
         "missing": "Required field is missing",
         "extra_forbidden": "Unknown field is not accepted",
@@ -97,7 +102,7 @@ def field_errors(errors: Sequence[dict[str, Any]]) -> list[dict[str, str]]:
         parts = [
             str(part) if isinstance(part, int) or part in known else "<unknown>"
             for part in error["loc"]
-            if part not in ("body", "single", "multi")
+            if part not in ("body", "single", "multi", "structured")
         ]
         code = error["type"]
         detail = {

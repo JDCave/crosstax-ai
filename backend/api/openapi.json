@@ -167,6 +167,84 @@
         ],
         "title": "AIErrorInfo"
       },
+      "Address": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "RESIDENCE",
+              "MAILING"
+            ],
+            "title": "Type"
+          },
+          "line1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line1"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "subentity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subentity"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "post_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Code"
+          },
+          "source_layout_anomaly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Layout Anomaly"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "country"
+        ],
+        "title": "Address"
+      },
       "AuditIssue": {
         "properties": {
           "code": {
@@ -391,6 +469,294 @@
         ],
         "title": "CheckItem"
       },
+      "ControlledEntity": {
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "linked_document_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Document Ref"
+          },
+          "link_confidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "LOW",
+                  "NAME_DOB_ONLY",
+                  "UNLINKED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Confidence"
+          },
+          "cp_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cp Types"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_name",
+          "link_confidence"
+        ],
+        "title": "ControlledEntity"
+      },
+      "ControllingPerson": {
+        "properties": {
+          "controlled_entities": {
+            "items": {
+              "$ref": "#/components/schemas/ControlledEntity"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Controlled Entities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ControllingPerson"
+      },
+      "Declaration": {
+        "properties": {
+          "holder_or_authorized_resolved": {
+            "type": "boolean",
+            "title": "Holder Or Authorized Resolved"
+          },
+          "signatory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signatory Name"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "power_of_attorney_attached": {
+            "type": "boolean",
+            "title": "Power Of Attorney Attached",
+            "default": false
+          },
+          "has_signature": {
+            "type": "boolean",
+            "title": "Has Signature"
+          },
+          "signing_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holder_or_authorized_resolved",
+          "has_signature"
+        ],
+        "title": "Declaration"
+      },
+      "Document": {
+        "properties": {
+          "is_encrypted": {
+            "type": "boolean",
+            "title": "Is Encrypted"
+          },
+          "structure_tree_available": {
+            "type": "boolean",
+            "title": "Structure Tree Available"
+          },
+          "holders_declared": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Holders Declared"
+          },
+          "has_continuation_sheets": {
+            "type": "boolean",
+            "title": "Has Continuation Sheets",
+            "default": false
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "is_encrypted",
+          "structure_tree_available",
+          "holders_declared"
+        ],
+        "title": "Document"
+      },
+      "Entity": {
+        "properties": {
+          "incorporation_jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Jurisdiction"
+          },
+          "incorporation_jurisdiction_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "FORM",
+                  "MERCHANT_KYC",
+                  "BOTH_AGREE",
+                  "BOTH_CONFLICT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Jurisdiction Source"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "FINANCIAL_INSTITUTION",
+                  "ACTIVE_NFE",
+                  "PASSIVE_NFE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_type_subitem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntitySubitem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "controlling_person_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Controlling Person Names"
+          },
+          "no_natural_person_control": {
+            "type": "boolean",
+            "title": "No Natural Person Control",
+            "default": false
+          },
+          "poe_jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poe Jurisdiction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Entity"
+      },
+      "EntitySubitem": {
+        "properties": {
+          "regularly_traded_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regularly Traded On"
+          },
+          "related_entity_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Entity Of"
+          },
+          "specify": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specify"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EntitySubitem"
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -428,6 +794,17 @@
           "engine_build_id": {
             "type": "string",
             "title": "Engine Build Id"
+          },
+          "form_policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Form Policy Id"
           },
           "input_fingerprint": {
             "type": "string",
@@ -468,6 +845,108 @@
           "message"
         ],
         "title": "FieldError"
+      },
+      "FormData": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "holder_type": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "ENTITY",
+              "CONTROLLING_PERSON"
+            ],
+            "title": "Holder Type"
+          },
+          "name": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "birth_place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Place"
+          },
+          "hk_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HkIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Entity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "addresses": {
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Addresses"
+          },
+          "tax_residencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaxResidency"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Tax Residencies"
+          },
+          "controlling_person": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ControllingPerson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "declaration": {
+            "$ref": "#/components/schemas/Declaration"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document",
+          "holder_type",
+          "name",
+          "addresses",
+          "tax_residencies",
+          "declaration"
+        ],
+        "title": "FormData"
       },
       "GuidanceAction": {
         "properties": {
@@ -544,6 +1023,11 @@
               }
             ]
           },
+          "omitted_action_count": {
+            "type": "integer",
+            "title": "Omitted Action Count",
+            "default": 0
+          },
           "summary": {
             "type": "string",
             "title": "Summary",
@@ -601,6 +1085,35 @@
           "status"
         ],
         "title": "GuidanceResult"
+      },
+      "HkIdentity": {
+        "properties": {
+          "hkid_or_passport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hkid Or Passport"
+          },
+          "business_registration_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Registration Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HkIdentity"
       },
       "IssueOrigin": {
         "properties": {
@@ -711,6 +1224,69 @@
           "tax_residencies"
         ],
         "title": "MultiResidenceForm"
+      },
+      "Name": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "middle_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Middle Names"
+          },
+          "entity_legal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Legal Name"
+          },
+          "is_branch": {
+            "type": "boolean",
+            "title": "Is Branch",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Name"
       },
       "ResidenceResult": {
         "properties": {
@@ -928,6 +1504,72 @@
         ],
         "title": "TaxResidence"
       },
+      "TaxResidency": {
+        "properties": {
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "RESIDENCE",
+              "POEM"
+            ],
+            "title": "Basis"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin"
+          },
+          "no_tin_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Tin Reason"
+          },
+          "reason_b_explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason B Explanation"
+          },
+          "reason_c_applicability_unverified": {
+            "type": "boolean",
+            "title": "Reason C Applicability Unverified",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jurisdiction",
+          "basis"
+        ],
+        "title": "TaxResidency"
+      },
       "ValidationPolicy": {
         "properties": {
           "today": {
@@ -970,6 +1612,9 @@
               },
               {
                 "$ref": "#/components/schemas/MultiResidenceForm"
+              },
+              {
+                "$ref": "#/components/schemas/FormData"
               }
             ],
             "title": "Form Data"

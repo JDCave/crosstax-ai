@@ -56,6 +56,7 @@ class GuidanceResult(BaseModel):
     status: Literal["NOT_REQUESTED", "GENERATED", "FALLBACK"]
     reason_code: str | None = None
     error: AIErrorInfo | None = None
+    omitted_action_count: int = 0
     summary: str = ""
     actions: list[GuidanceAction] = Field(default_factory=list)
     model: str | None = None
@@ -137,6 +138,8 @@ class RemediationAgent:
         metrics = AICallMetrics()
         if not self.settings.enabled or not self.settings.effective_api_key() or not self.settings.model:
             return self._fallback(result, AIErrorCategory.CONFIGURATION, started, metrics)
+        if len(result.form_issues) + len(result.indicia_issues) > 12:
+            return self._fallback(result, AIErrorCategory.INVALID_REQUEST, started, metrics)
         acquired = False
         try:
             async with asyncio.timeout(self.settings.timeout_seconds):
@@ -188,7 +191,7 @@ class RemediationAgent:
             "NO_SIGNATURE": "请由适当的签署人补充签名后重新提交。",
             "INVALID_DATE": "请核对原始资料, 将日期填写为有效的 YYYY-MM-DD, 并检查签署日期限制。",
         }
-        for i, issue in enumerate([*result.form_issues, *result.indicia_issues]):
+        for i, issue in enumerate([*result.form_issues, *result.indicia_issues][:300]):
             actions.append(
                 GuidanceAction(
                     issue_index=i,
@@ -204,6 +207,7 @@ class RemediationAgent:
             status="FALLBACK",
             reason_code=REASON_CODES[category],
             error=AIErrorInfo.for_category(category),
+            omitted_action_count=max(0, len(result.form_issues) + len(result.indicia_issues) - len(actions)),
             metrics=metrics,
             **generated.model_dump(),
             duration_ms=int((time.monotonic() - started) * 1000),

@@ -8,6 +8,8 @@ from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy
 from backend.engine.document_contracts import MultiResidenceForm
 from backend.engine.document_validation import validate_document
 from backend.engine.rule_loader import RuleLoader
+from backend.engine.structured_contracts import FormData
+from backend.engine.structured_validation import validate_structured
 from backend.engine.validation import ValidationEngine
 from backend.infrastructure.database import async_session_factory
 from backend.infrastructure.exceptions import AppException, NotFoundException
@@ -20,7 +22,7 @@ class RuleAPIService:
 
     async def validate(
         self,
-        form: CRSFormData | MultiResidenceForm,
+        form: CRSFormData | MultiResidenceForm | FormData,
         policy: ValidationPolicy,
         issues: list[AuditIssue],
         include_guidance: bool = False,
@@ -29,7 +31,11 @@ class RuleAPIService:
             snapshot = await self.engine.loader.refresh()
         except NotFoundException as exc:
             raise AppException(503, "NO_ACTIVE_RULES", "No active rule version is available") from exc
-        result = validate_document(self.engine, form, policy, snapshot, issues)
+        result = (
+            validate_structured(form, policy, snapshot, issues)
+            if isinstance(form, FormData)
+            else (validate_document(self.engine, form, policy, snapshot, issues))
+        )
         guidance = await self.agent.generate(result, snapshot, include_guidance)
         return ValidationResponse(
             verdict=result.verdict,

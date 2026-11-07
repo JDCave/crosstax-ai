@@ -1,0 +1,55 @@
+{
+  "form_data": {
+    "document": {
+      "is_encrypted": true,
+      "structure_tree_available": true,
+      "holders_declared": 1,
+      "fingerprint": "synthetic-document-hash"
+    },
+    "holder_type": "CONTROLLING_PERSON",
+    "name": {
+      "last_name": "CHAN",
+      "first_name": "DEMO"
+    },
+    "birth_date": "20/05/1990",
+    "hk_identity": {
+      "hkid_or_passport": "A123456(3)"
+    },
+    "addresses": [
+      {
+        "type": "RESIDENCE",
+        "line1": "Demo Building",
+        "city": "Hong Kong",
+        "country": "HK"
+      }
+    ],
+    "tax_residencies": [
+      {
+        "jurisdiction": "HK",
+        "basis": "RESIDENCE",
+        "tin": "A123456(3)"
+      }
+    ],
+    "declaration": {
+      "holder_or_authorized_resolved": true,
+      "has_signature": true,
+      "signing_date": "04/11/2026"
+    },
+    "controlling_person": {
+      "controlled_entities": [
+        {
+          "entity_name": "DEMO CROSS BORDER LIMITED",
+          "linked_document_ref": "SYNTHETIC_ENTITY_REF",
+          "link_confidence": "NAME_DOB_ONLY",
+          "cp_types": [
+            "ownership"
+          ]
+        }
+      ]
+    }
+  },
+  "policy": {
+    "today": "2026-11-08"
+  },
+  "indicia_issues": []
+}
