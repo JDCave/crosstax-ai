@@ -36,7 +36,7 @@ def normalized_date(value: str | None) -> str | None:
 class FormPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     schema_version: Literal[1]
-    effective_from: str
+    policy_revision_date: str
     source_kind: Literal["PROJECT_REQUIREMENT"]
     source_reference: str = Field(min_length=1)
     reason_b_min_length: int = Field(ge=1, le=4000)
@@ -59,15 +59,14 @@ class FormPolicy(BaseModel):
         return self
 
 
-def load_form_policy(today: date) -> tuple[dict[str, Any], str]:
+def load_form_policy() -> tuple[dict[str, Any], str]:
     path = Path(__file__).resolve().parents[2] / "rules/hk/form_policy.json"
     with path.open("rb") as stream:
         content = stream.read(65537)
     if len(content) > 65536:
         raise ValueError("Form policy exceeds size limit")
     config = FormPolicy.model_validate_json(content)
-    if date.fromisoformat(config.effective_from) > today:
-        raise ValueError("No applicable structured form policy")
+    date.fromisoformat(config.policy_revision_date)  # Software policy revision, not a legal effective date.
     data = config.model_dump(mode="json")
     return data, canonical_hash(data)
 
@@ -87,7 +86,7 @@ def validate_structured(
     if signing_date is not None:
         updates["declaration"] = form.declaration.model_copy(update={"signing_date": signing_date})
     form = form.model_copy(update=updates)
-    config, policy_id = form_policy if form_policy is not None else load_form_policy(policy.today)
+    config, policy_id = form_policy if form_policy is not None else load_form_policy()
     issues: list[AuditIssue] = []
     items: list[CheckItem] = []
     residences: list[ResidenceResult] = []
@@ -402,7 +401,12 @@ def validate_structured(
                 )
         indexes = list(range(start, len(issues)))
         residences.append(
-            ResidenceResult(index=index, jurisdiction_code=residence.jurisdiction, checks=trace, issue_indexes=indexes)
+            ResidenceResult(
+                index=index,
+                jurisdiction_code=residence.jurisdiction if valid_country else "",
+                checks=trace,
+                issue_indexes=indexes,
+            )
         )
         items.append(
             CheckItem(
@@ -431,17 +435,33 @@ def finish(
 ) -> DocumentResult:
     all_issues = [*issues, *upstream]
     scope = ReviewScope()
+    scope.evaluated = ["document_holder_cardinality"]
     if form.document.holders_declared != 1:
-        scope.evaluated = ["document_holder_cardinality"]
         scope.not_evaluated.append("remaining_checks_after_document_rejection")
-    if form.document.holders_declared == 1:
-        scope.evaluated.extend(["structured_identity_and_address_fields", "declaration_capacity"])
-        if any("hk_identity_equality" in r.checks.checks_performed for r in residences):
-            scope.evaluated.append("hk_identity_equality")
+    else:
+        scope.evaluated.extend(
+            [
+                "structured_identity_and_address_fields",
+                "signature_presence_declaration",
+                "date_format",
+                "signing_date_policy",
+                "tin_declaration_consistency",
+                "declaration_capacity",
+            ]
+        )
+        for operation in (
+            "rule_selection",
+            "hk_identity_equality",
+            "exemption_declaration_completeness",
+            "declaration_basis",
+        ):
+            if any(operation in r.checks.checks_performed for r in residences):
+                scope.evaluated.append(operation)
     scope.not_evaluated.extend(
         [
             "cross_document_counterpart_verification",
             "ownership_threshold_applicability",
+            "regulatory_effective_date_applicability",
             "power_of_attorney_applicability",
             "controlled_person_type_legal_classification",
             "financial_institution_addressee_verification",

@@ -532,3 +532,13 @@ source importer 仍只处理已允许的 OECD 来源，当前 manifest 为 CN/HK
 完整命令、状态和部署限制见 [后台规则更新手册](RULE_UPDATES.md)。
 
 本次后台更新交付的最终全套验证为 227 项通过、3 项 PostgreSQL 跳过；无真实官网任务、生产发布或 crontab 安装操作。
+
+
+## 同步后对外流程适配（2026-11-08）
+
+用户确认按上游黑盒 API 边界审查，存储方式保留。审查见 [职责与差距矩阵](ARCHITECTURE_REVIEW.md)。
+新增 structured_contracts.py 与 structured_validation.py，接收 D3 全部字段和三类主体，保持旧请求。
+执行字段／声明／香港派生等值检查，日期规范后绑定输入指纹；外部项目策略绑定 form_policy_id。
+上游事实缺失不伪造通过。双路抽取、实际跨文档、持股依据、KYC 双值及机构 Ref. No. 的依赖见审查矩阵。
+新样例及调用接口见 [结构化接入文档](../api/STRUCTURED_CRS_API.md)。
+Docker 补入规则及默认合成 Case，供非 root 用户使用的工作与输出路径准备就绪；未实际构建镜像。

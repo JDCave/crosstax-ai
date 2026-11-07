@@ -141,9 +141,7 @@ def analyze_impact(
             < levels[old_rules[change.selector].verification_level]
         ):
             risks.add("VERIFICATION_DOWNGRADED")
-    form_policy = (
-        load_form_policy(policy.today) if any(isinstance(case.form_data, FormData) for case in cases) else None
-    )
+    form_policy = load_form_policy() if any(isinstance(case.form_data, FormData) for case in cases) else None
     rows = []
     transitions: dict[str, int] = {}
     rank = {"AUTO_PASS": 0, "MANUAL_TRIAGE": 1, "NEED_USER_FIX": 2}

@@ -613,14 +613,7 @@
             "default": false
           },
           "fingerprint": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Fingerprint"
           }
         },
@@ -647,19 +640,12 @@
             "title": "Incorporation Jurisdiction"
           },
           "incorporation_jurisdiction_source": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "FORM",
-                  "MERCHANT_KYC",
-                  "BOTH_AGREE",
-                  "BOTH_CONFLICT"
-                ]
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "FORM",
+              "MERCHANT_KYC",
+              "BOTH_AGREE",
+              "BOTH_CONFLICT"
             ],
             "title": "Incorporation Jurisdiction Source"
           },
@@ -886,24 +872,10 @@
             "title": "Birth Place"
           },
           "hk_identity": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/HkIdentity"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/HkIdentity"
           },
           "entity": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Entity"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/Entity"
           },
           "addresses": {
             "items": {
@@ -923,14 +895,7 @@
             "title": "Tax Residencies"
           },
           "controlling_person": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ControllingPerson"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ControllingPerson"
           },
           "declaration": {
             "$ref": "#/components/schemas/Declaration"

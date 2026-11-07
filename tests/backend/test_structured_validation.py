@@ -193,3 +193,37 @@ def test_upgrade_impact_accepts_structured_samples_and_pins_form_policy():
     assert report.form_policy_id
     assert not report.changed_case_count
     assert report.cases[0]["after"]["verdict"] == "AUTO_PASS"
+
+
+def test_schema_and_runtime_agree_on_absent_versus_explicit_null_objects():
+    import pytest
+
+    from backend.engine.structured_contracts import FormData
+
+    body = request()["form_data"]
+    FormData.model_validate(body)
+    with pytest.raises(ValueError):
+        FormData.model_validate(body | {"entity": None})
+    prop = FormData.model_json_schema()["properties"]["entity"]
+    assert "anyOf" not in prop and "$ref" in prop
+
+
+async def test_invalid_country_value_is_not_echoed_as_a_response_identifier(api_client):
+    client, _ = api_client
+    body = request()
+    body["form_data"]["tax_residencies"][0]["jurisdiction"] = "PRIVATE-IDENTIFIER"
+    response = await client.post(URL, json=body)
+    assert response.status_code == 200
+    assert response.json()["verdict"] == "NEED_USER_FIX"
+    assert "PRIVATE-IDENTIFIER" not in response.text
+    assert response.json()["residence_results"][0]["jurisdiction_code"] == ""
+
+
+async def test_software_policy_revision_does_not_reject_historical_business_dates(api_client):
+    client, _ = api_client
+    body = request()
+    body["policy"]["today"] = "2020-12-31"
+    body["form_data"]["declaration"]["signing_date"] = "2020-12-30"
+    result = await client.post(URL, json=body)
+    assert result.status_code == 200, result.text
+    assert "regulatory_effective_date_applicability" in result.json()["review_scope"]["not_evaluated"]

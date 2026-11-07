@@ -53,3 +53,11 @@ curl -X POST http://localhost:8000/api/v1/rule-engine/validate \
 ```
 
 完整接口说明见 [规则引擎 API 文档](../../backend/api/RULE_ENGINE_API.md)。
+
+## 新契约请求样例（2026-11-08）
+
+- [个人](crs-structured-individual-request.json)
+- [实体](crs-structured-entity-request.json)
+- [控权人](crs-structured-controlling-person-request.json)
+
+主流程调用方式、预期裁决及未核实事实见 [结构化接入文档](../../backend/api/STRUCTURED_CRS_API.md)。

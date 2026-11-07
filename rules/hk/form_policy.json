@@ -1,6 +1,5 @@
 {
   "schema_version": 1,
-  "effective_from": "2026-10-22",
   "source_kind": "PROJECT_REQUIREMENT",
   "source_reference": ".specify/features/001-crs-contract/spec.md",
   "reason_b_min_length": 5,
@@ -297,5 +296,6 @@
     "url": "https://raw.githubusercontent.com/pycountry/pycountry/main/src/pycountry/databases/iso3166-1.json",
     "content_sha256": "f01b812b57fba9f31ff621bf33e7c7570a01964dbeb5be2167e94decf538c89f",
     "retrieved_on": "2026-11-08"
-  }
+  },
+  "policy_revision_date": "2026-11-08"
 }

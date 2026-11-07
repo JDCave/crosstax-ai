@@ -4,12 +4,27 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, GetJsonSchemaHandler, model_validator
+from pydantic.json_schema import JsonSchemaValue
 
 
 class StructuredModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     non_nullable: ClassVar[set[str]] = set()
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema: Any, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        schema = handler.resolve_ref_schema(handler(core_schema))
+        for key in cls.non_nullable:
+            prop = schema.get("properties", {}).get(key, {})
+            if "anyOf" in prop:
+                alternatives = [item for item in prop["anyOf"] if item.get("type") != "null"]
+                if len(alternatives) == 1:
+                    prop.pop("anyOf")
+                    prop.update(alternatives[0])
+            if prop.get("default", "missing") is None:
+                prop.pop("default")
+        return schema
 
     @model_validator(mode="before")
     @classmethod

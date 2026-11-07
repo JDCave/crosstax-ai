@@ -15,3 +15,5 @@
 [百炼 Agent 配置与联调](../agents/BAILIAN.md)：默认 qwen-plus，填入 Key 并重启后，在请求中传 include_guidance=true。
 
 [后台规则更新与每日调度](../engine/RULE_UPDATES.md)为内部 CLI 能力，不增加队友需要调用的 API。
+
+新接入优先阅读 [结构化 CRS 契约与主流程衔接](STRUCTURED_CRS_API.md)，支持三种主体及完整嵌套字段；旧格式继续兼容。

@@ -122,5 +122,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外部使用。
 
 
-当前验证：锁定依赖下 **227 项测试通过、3 项 PostgreSQL 集成测试跳过**，Ruff 与全量 backend Mypy 通过。
+当前验证：锁定依赖下 **244 项测试通过、3 项 PostgreSQL 集成测试跳过**，Ruff 与全量 backend Mypy 通过。
 真实百炼调用、云数据库、完整上传审核链路和 cron 安装仍待验收；当前结果不代表完整契约或全部税法条件已覆盖。
+
+结构化个人／实体／控权人接口及架构审查见 [新契约接入](backend/api/STRUCTURED_CRS_API.md)和[差距矩阵](backend/engine/ARCHITECTURE_REVIEW.md)。存储保留当前实现；外部事实不足的要求没有标记为已完成。
