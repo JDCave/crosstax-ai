@@ -1,19 +1,20 @@
 # API 接口文档
 
-当前共三条接口，按调用方区分：
+默认业务接口仍为三条，按调用方区分：
 
 1. 上游后端：`POST /api/v1/rule-engine/tasks`：接收表单并持久化，返回 task_id。
 2. 上游后端：`GET /api/v1/rule-engine/tasks/{task_id}`：查询状态，完成时返回完整校验结果与 report_url。
 3. 前端：`GET /api/v1/rule-engine/tasks/{task_id}/report`：仅下载 SUCCEEDED 且报告 READY 的持久化 PDF。
 
+- [解释卡片、补正对比、模拟升级和初始化](COMPETITION_API.md)
 - [前端 PDF 下载、错误与阿里云对接](PDF_REPORT_API.md)
 - [异步接入、错误、重试及 Worker 启动](RULE_TASKS_API.md)
 - [结构化表单字段与主流程职责](STRUCTURED_CRS_API.md)
 - [旧同步格式兼容说明](RULE_ENGINE_API.md)
 - [OpenAPI 快照](openapi.json)，运行服务后访问 `/docs`、`/openapi.json`
 
-Swagger 只展示上述三条接口。旧同步 `/validate` 和健康探针保留且隐藏。
-规则维护、资料同步和历史重放仍为内部 Python/CLI 能力，不增加管理 API。
+默认 Swagger 只展示上述三条接口；RULE_DEMO_ENABLED=true 时额外展示仅读演示。初始化始终隐藏且默认禁用,开启后须独立口令。旧同步 `/validate` 和健康探针保留且隐藏。
+规则维护、资料同步和历史重放仍为内部 Python/CLI 能力，现另有受控初始化 API,不提供任意 SQL 或规则发布管理 API。
 
 任务输入、固定规则/表单策略快照及结果加密保存，默认保留 24 小时。
 主后端继续负责用户鉴权、AuditSession、抽取、跨源汇总和最终会话状态，不需要直接轮询数据库。

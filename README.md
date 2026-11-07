@@ -122,7 +122,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外部使用。
 
 
-当前验证：锁定依赖下 **294 项测试通过（含真实本地 PostgreSQL 集成，无跳过）**，Ruff 与全量 backend Mypy 通过。
+当前验证：锁定依赖下 **316 项测试通过（含真实本地 PostgreSQL 集成，无跳过）**，Ruff 与全量 backend Mypy 通过。
 真实百炼调用、云数据库、完整上传审核链路和 cron 安装仍待验收；当前结果不代表完整契约或全部税法条件已覆盖。
 
 结构化个人／实体／控权人接口及架构审查见 [新契约接入](backend/api/STRUCTURED_CRS_API.md)和[差距矩阵](backend/engine/ARCHITECTURE_REVIEW.md)。存储保留当前实现；外部事实不足的要求没有标记为已完成。
@@ -141,3 +141,8 @@ AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外�
 规则校验成功后会自动排队生成 PDF，并加密保存到 PostgreSQL；前端下载只读取已保存报告，生成中按 REPORT_GENERATING 重试。
 [报告 API 与阿里云接入](backend/api/PDF_REPORT_API.md)包含三条接口分工、状态、前端重试示例及故障恢复。
 本地已升级至 `20261108_pdf_reports`，原十表数据保留；云端需升级迁移并启动更新后的 Worker。
+
+
+新增竞赛展示能力：解释卡片、同会话补正对比及显式模拟的规则升级影响。
+[竞赛功能与初始化接口](backend/api/COMPETITION_API.md)包含受控的快速建表／种子初始化 API，默认关闭，重复调用不覆盖活动规则。
+本轮无新增表／列，本地十一表及初始数据已同步，主会话／前端组件仍由队友接入。

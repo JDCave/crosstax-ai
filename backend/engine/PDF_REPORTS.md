@@ -80,3 +80,9 @@ rule_pdf_reports 已由自动生成迁移 20261108_pdf_reports 创建；SQL 快�
 本地 devdb 已仅应用增量迁移；原十表数据保留。未启动生产常驻进程、未部署阿里云网关／用户授权。
 内部 CLI --retry-report 任务UUID 可在故障修复后重排未过期的 FAILED 报告，不覆盖 READY，不重跑规则。
 完整命令和前端有界重试示例见接口文档。
+
+## 竞赛解释卡片扩展
+
+经用户新增授权，报告模板 v2 将已保存的 explanation_cards 中的补正动作及来源加入问题区。
+展示层不修改 verdict,不重新请求 Agent；旧 READY 文件不自动重写。任务 compare_to 为临时展示,不混入固定 PDF 快照。
+表结构仍十一表,初始化 API 和本地种子同步见 [竞赛设计](COMPETITION_FEATURES.md)。

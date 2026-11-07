@@ -203,3 +203,10 @@ Worker 不持有连接等待规则计算或模型响应。数据库暂时不可�
 
 新接入的 Swagger 展示提交、查询及 PDF 导出三条接口；旧同步 `/validate` 保留兼容、从 OpenAPI 隐藏。
 本地 PostgreSQL 迁移及 Worker 隔离集成已验证；云端数据库、百炼联调和生产进程部署仍需在目标环境验收。
+
+
+## 竞赛解释与补正对比
+
+result 新增 explanation_cards，复用规则／已保存 Agent 证据生成可展示的原因及补正动作，不改变 verdict。
+GET task 可附加 compare_to=旧任务UUID，同会话且均成功时返回 comparison；不传时为 null。
+完整字段、错误及初始化调用见 [竞赛能力文档](COMPETITION_API.md)。新 PDF 使用模板 v2，已保存旧 PDF 不自动改写。

@@ -49,3 +49,16 @@ POST /api/v1/rule-engine/setup/initialize，固定空请求体 {}，不接受数
 现有三条业务接口默认仍保持三条；初始化入口始终不进业务 Swagger，模拟演示只有开启后额外展示。
 无新业务表或列，卡片保存在现有加密结果中，对比仅临时计算。同步完整 SQL、数据库设计和本地 PG，最后更新进度表。
 验证涵盖卡片不改裁决、AI 证据选择、重复问题对比、上下文变化、跨会话/过期/未完成错误、初始化默认禁用/口令/重复调用/保护活动版本/空库迁移、PG 与 Worker 到 PDF 链路。
+
+## 实现落点与交付
+
+- services/presentation.py 和 schemas/presentation.py：确定性卡片及证据，services/rule_api.py 保存进现有加密结果。
+- services/task_comparison.py：问题多重集合与输入路径差异；GET task 通过 compare_to 触发，不新增业务查询路由。
+- services/competition.py / api/routes/competition.py：显式模拟升级与默认关闭的口令初始化。
+- infrastructure/schema_setup.py：ORM 六表基线与 Alembic 已有连接迁移；不自动 stamp；隔离 schema 支持真实 PG 测试。
+- Dockerfile 与 dockerignore：补齐来源 manifest 供初始化，保留原规则／Case／字体打包。
+
+本轮不新增数据表或列，完整 SQL 已重新生成并检查一致。新展示信息进入现有结果密文，对比不落库。
+本地初始化服务已复核并同步，活动版本/revision=3 保留，仅补齐缺失的队列协调行。
+316 项测试全部通过，包含 PG 初始化、队友表保护及初始化后的 PDF 链路；Ruff/Mypy 通过。
+接口使用与开关示例见 [竞赛能力文档](../api/COMPETITION_API.md)。未启用本地常驻初始化入口或启动云端服务。

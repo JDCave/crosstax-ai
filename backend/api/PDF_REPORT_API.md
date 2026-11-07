@@ -57,7 +57,7 @@ SUCCEEDED 的三种业务 verdict 均可导出：AUTO_PASS、NEED_USER_FIX、MAN
 | Cache-Control: no-store | 不允许代理／浏览器缓存敏感报告 |
 | X-Content-Type-Options: nosniff | 不根据内容猜测其他类型 |
 | X-Report-SHA256 | PDF 原始字节 SHA-256，供客户端校验下载完整性 |
-| X-Report-Template-Version | 当前 crs-rule-report-v1 |
+| X-Report-Template-Version | 当前 crs-rule-report-v2 |
 
 上述下载及摘要头已通过 CORS expose_headers 暴露。配置 CORS_ORIGINS 为实际前端 HTTPS 域名；不能只保留本地开发域名。
 PDF 由后台从保存的请求与 ValidationResponse 自动生成，并加密保存在 PostgreSQL。下载只读存储，不刷新规则、不调用模型、不重新渲染。
@@ -209,3 +209,5 @@ curl --fail-with-body -D /tmp/report-headers.txt \
 该内部 CLI 不提供新管理 API，不修改规则结果或覆盖已有 READY 文件。
 默认预算配置见 RULE_REPORT_TIMEOUT_SECONDS=15、LEASE_SECONDS=20、HEARTBEAT_SECONDS=3、MAX_ATTEMPTS=3（均带 RULE_REPORT_ 前缀）。
 本地十一表迁移与 PostgreSQL 任务到报告链路已验证；云端迁移、网关会话授权和队友主流程仍需部署接入。
+
+新报告模板 v2 增加解释卡片建议，PDF 来源仍是保存的结果。comparison 只属于临时查询展示，不写入已生成 PDF；旧 READY 文件继续返回原字节和原模板版本。
