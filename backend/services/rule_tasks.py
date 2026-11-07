@@ -149,6 +149,7 @@ class TaskService:
             rule_revision=row.rule_revision,
             engine_build_id=row.engine_build_id,
             poll_after_ms=500 if row.status in ("PENDING", "RUNNING") else 0,
+            report_url=f"/api/v1/rule-engine/tasks/{row.task_id}/report" if result else None,
             result=result,
             error=error,
         )

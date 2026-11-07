@@ -34,5 +34,6 @@ class TaskResponse(BaseModel):
     rule_revision: int
     engine_build_id: str
     poll_after_ms: int
+    report_url: str | None = None
     result: ValidationResponse | None = None
     error: TaskError | None = None

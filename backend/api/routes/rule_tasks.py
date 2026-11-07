@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, Response
 from backend.api.routes.rule_engine import RuleAPIRoute
 from backend.api.schemas.rule_engine import ErrorResponse
 from backend.api.schemas.rule_tasks import TaskRequest, TaskResponse
+from backend.services.pdf_reports import PDFReportService, get_pdf_report_service
 from backend.services.rule_tasks import TaskService, get_task_service
 
 router = APIRouter(
@@ -45,3 +46,32 @@ async def get_task(task_id: UUID, response: Response, service: Service) -> TaskR
     if result.poll_after_ms:
         response.headers["Retry-After"] = "1"
     return result
+
+
+@router.get(
+    "/{task_id}/report",
+    response_class=Response,
+    summary="Download the completed rule-validation report as PDF",
+    responses={
+        200: {
+            "description": "PDF attachment",
+            "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}},
+        }
+    },
+)
+async def download_report(
+    task_id: UUID,
+    service: Annotated[PDFReportService, Depends(get_pdf_report_service)],
+) -> Response:
+    report = await service.export(str(task_id))
+    return Response(
+        report.content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{report.filename}"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Report-SHA256": report.sha256,
+            "X-Report-Template-Version": report.template_version,
+        },
+    )

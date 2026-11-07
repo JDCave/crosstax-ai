@@ -59,6 +59,7 @@ def _register_middleware(app: FastAPI, settings: Settings) -> None:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition", "X-Report-SHA256", "X-Report-Template-Version"],
     )
 
 

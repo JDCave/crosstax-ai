@@ -168,3 +168,6 @@ async def test_encrypted_tasks_use_migrated_tables_on_both_backends(persistence)
     assert await RuleTaskWorker(service).run_once()
     complete = await service.get(str(task.task_id))
     assert complete.status == "SUCCEEDED" and complete.result.verdict == "AUTO_PASS"
+    from backend.services.pdf_reports import PDFReportService
+    report = await PDFReportService(service).export(str(task.task_id))
+    assert report.content.startswith(b"%PDF-") and report.filename.endswith(".pdf")

@@ -105,9 +105,9 @@ async def test_unavailable_and_replay_mismatch_are_not_passes(api_client):
     assert (await client.post(PREFIX + "/validate", json=payload())).status_code == 200
 
 
-def test_openapi_exposes_only_two_task_endpoints():
+def test_openapi_exposes_task_endpoints_and_pdf_export():
     paths = create_app().openapi()["paths"]
-    assert set(paths) == {PREFIX + "/tasks", PREFIX + "/tasks/{task_id}"}
+    assert set(paths) == {PREFIX + "/tasks", PREFIX + "/tasks/{task_id}", PREFIX + "/tasks/{task_id}/report"}
     app = create_app()
     assert app.redoc_url is None
     assert app.swagger_ui_oauth2_redirect_url is None

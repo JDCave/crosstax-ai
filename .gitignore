@@ -70,3 +70,7 @@ htmlcov/
 
 # Config (generated from .env.example)
 config.json
+
+# Generated PDF previews and visual QA intermediates
+output/pdf/
+tmp/pdfs/
