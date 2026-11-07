@@ -161,7 +161,8 @@ async def validate_form(session_id: str, validation: dict, deadline_at: datetime
 
 ## 5. 配置和启动
 
-详细设计见 [异步任务设计](../engine/ASYNC_TASKS.md)。先 `uv sync --frozen`，设置数据库并升级迁移：
+详细设计见 [异步任务设计](../engine/ASYNC_TASKS.md)，新库初始化与已有库升级见 [数据库说明](../infrastructure/db/README.md)。
+完整 validation_engine.sql 为十表快照；推荐新库 bootstrap_rules.sql + Alembic，已有库只升级迁移，不重复执行 SQL。先 `uv sync --frozen`，设置数据库并升级迁移：
 
 ```bash
 # 已有基础规则表和 20261103_rule_history 迁移的环境

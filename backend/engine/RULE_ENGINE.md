@@ -48,7 +48,7 @@ schema_version=1 保留法域键 → regex/algorithm 的旧契约。schema_versi
 结构检查不等于税法正确性、国家代码有效性、正则复杂度审核或算法适用性确认。
 批准由调用方确认，report 作为审核记录保存；不会仅凭模型置信度或 report 内容自动批准。
 
-数据库使用 devdb/crosstax，原六张规则表及两张追加记录表见 ../infrastructure/db/README.md。
+数据库使用 devdb/crosstax，当前十张规则引擎表及生成 SQL 见 [数据库说明](../infrastructure/db/README.md)。
 register 在短事务中保存完整候选并验证，失败回滚，不留下无效候选。
 approve 仅处理 CANDIDATE；activate 只允许 APPROVED，并再次校验规则内容。
 激活使用 expected_revision 乐观锁；冲突抛出 ConflictException，调用方重新读取后决定重试。
@@ -284,15 +284,16 @@ validate 日志仅输出版本、revision、裁决、问题数和耗时；规则
 ## 数据库迁移与集成测试
 
 alembic/versions/20261103_rule_history.py 为通过 autogenerate 生成的扩展迁移，只新增两表，
-前提是原六张表已经按 setup SQL 创建。原始 User 模型和业务表不在这次迁移中改变。
+前提是原六张表已经创建。新库使用 bootstrap_rules.sql 建立基线；完整 validation_engine.sql 已是十表快照，不能再当作六表前置脚本。User 模型和业务表不在规则迁移中改变。
 迁移已在本地 devdb 应用，使用 func.now() 保持 SQLite/PostgreSQL 默认时间表达式兼容。
-新环境先执行原 schema SQL，再运行 uv run alembic upgrade head。
+新环境推荐先执行 bootstrap_rules.sql，再运行 uv run alembic upgrade head。
+当前链继续包含 20261108_rule_tasks；历史迁移保留。完整十表快照和逐步迁移是替代部署路径，不能重复执行。
 
 测试参数 CROSSTAX_TEST_DATABASE_URL 指向允许创建临时 schema 的 PostgreSQL 测试数据库。
 PostgreSQL 测试创建随机 crosstax_test_ 前缀 schema，先创建原六表，再执行实际 Alembic upgrade，
 最后清理且仅清理该测试 schema。测试不重置 crosstax，不覆盖当前规则或业务数据。
 覆盖真实并发发布、并发重复注册、错误审批报告、历史修改拒绝、审核归档和重放。
-无测试 URL 时仅跳过三个 PostgreSQL 参数化用例；SQLite 路径仍执行同一迁移和生命周期。
+无测试 URL 时跳过四个 PostgreSQL 参数化用例（包括新增任务 Worker 生命周期）；SQLite 路径仍执行同一迁移和生命周期。
 回归矩阵随 wheel 打包，已验证离线构建包含全部 264 条用例。
 
 ## 交付边界
@@ -554,3 +555,10 @@ Docker 补入规则及默认合成 Case，供非 root 用户使用的工作与�
 本次增加 cryptography 依赖及两张 ORM 表，SQLite Alembic 升降级已验证；与前述后台规则更新任务独立。
 详细设计以 [异步任务设计](ASYNC_TASKS.md)为准，调用／启动见 [任务 API](../api/RULE_TASKS_API.md)。
 需要实际配置密钥、升级目标数据库和启动 Worker 才能使用，未代替主系统全量加密／鉴权／抽取。
+
+
+## 建表 SQL 与实现一致性（2026-11-08）
+
+过时的六表完整设计已由当前十表快照替换；数据库职责、索引、约束、加密边界和部署路径统一见 [数据库说明](../infrastructure/db/README.md)。
+backend.cli.schema_sql 从 ORM 生成完整／基线 SQL，从现有迁移生成任务增量稿；--check 已纳入默认测试。
+不通过删旧迁移或重建现有表清理历史；旧归档仍受内部重放依赖，保留并明确其未加密边界。

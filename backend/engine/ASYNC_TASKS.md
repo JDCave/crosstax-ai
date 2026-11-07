@@ -45,7 +45,8 @@ GET 不返回过期内容，即使清理 Worker 尚未运行。清理需要持�
 使用现有依赖 uv 管理；新增 cryptography 是本方案认证加密的实现依赖，不自行编写加密算法。
 服务按内部可信主后端调用；用户鉴权和 session 归属授权仍由主后端/网关负责，不能当作公网匿名服务。
 按现有连接上限分配：建议 API DATABASE_POOL_SIZE=2，Worker=1，总共不超过 3，均 max_overflow=0。
-已有六张基础规则表与历史迁移是前置条件，不自动创建或激活未知规则。
+迁移以已有六张基础规则表与历史迁移为前置条件；新库用 bootstrap_rules.sql 建立基线。
+validation_engine.sql 当前是完整十表快照，不能再与 upgrade 重复执行。路径见[数据库说明](../infrastructure/db/README.md)。不自动激活未知规则。
 
 ## 分阶段验收
 
