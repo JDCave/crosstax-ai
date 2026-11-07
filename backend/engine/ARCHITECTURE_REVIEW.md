@@ -62,4 +62,6 @@ AUTO_PASS 表示当前检查通过，主流程仍须汇总抽取、跨源核验�
 真实文件／Vision、前端全流程、跨文档数据、云数据库、百炼真实 Key、Docker 构建及 cron 部署未在本轮验收。
 不宣称整个项目已完全符合所有 FR；本次修复的是可以根据上游结构化输入执行的规则接口缺口。
 
-实现验证：267 项测试通过、4 项 PostgreSQL 按环境跳过；Ruff 和全量 backend Mypy 通过。新契约样例已通过真实 ASGI HTTP 测试，未进行真实 Vision／百炼调用。
+实现验证：276 项测试通过，包含四项真实本地 PostgreSQL 集成测试；Ruff 和全量 backend Mypy 通过。新契约样例已通过真实 ASGI HTTP 测试，未进行真实 Vision／百炼调用。
+
+本地数据库后续已按用户授权升级到 20261108_rule_tasks，十张规则引擎表与 ORM 比较无差异；未修改原八表数据，未验收云端数据库。SQL／迁移路径和验收记录见 [数据库说明](../infrastructure/db/README.md)。

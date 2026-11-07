@@ -47,7 +47,7 @@ uv run python -m backend.cli.schema_sql --check  # 检测与模型／迁移不�
 
 ## 部署路径：选择一种
 
-所有操作前先确认 `DATABASE_URL` 指向目标库并备份。以下为操作说明，本次没有执行真实数据库 DDL。
+所有操作前先确认 `DATABASE_URL` 指向目标库并备份。以下说明覆盖三种路径；本轮按用户授权仅对本地 devdb 执行缺失的增量迁移，未重建已有表。
 
 ### 已有六表或历史表：优先迁移
 
@@ -109,4 +109,15 @@ uv run alembic upgrade head
 主会话、原始用户文件及授权仍由主后端负责。
 
 接口、密钥、Worker 与超时见 [异步 API 文档](../../api/RULE_TASKS_API.md)，规则发布见 [更新手册](../../engine/RULE_UPDATES.md)。
-自动化测试验证 SQL 生成一致性及 SQLite 迁移；PostgreSQL 实库验证需配置隔离测试库，未配置时明确跳过。
+自动化测试验证 SQL 生成一致性及 SQLite／PostgreSQL 迁移；配置 CROSSTAX_TEST_DATABASE_URL 后，PG 用例仅使用随机隔离 schema。未配置时四项 PG 用例跳过。
+
+
+## 本地同步验收记录（2026-11-08）
+
+用户授权同步的目标为 localhost:5432/devdb，规则 schema 为 crosstax。
+升级前为八表、版本 20261103_rule_history；只读比较确认仅缺两张任务表及三个普通索引。
+执行 `alembic upgrade head` 后，版本为 20261108_rule_tasks，共十表；任务幂等唯一约束及三个普通索引均已存在。
+Alembic 与 ORM 比较（含类型／默认值／索引／外键等支持项）无差异，原八表行数保持不变，未删除原有数据或修改活动规则。
+新任务表为空，队列单行由应用首次入队按需创建；未启动 Worker 或生成任务密钥。
+真实本地 PG 隔离测试已运行：全量 276 项通过、无跳过；测试 schema 已清理。
+此记录不代表云端数据库、真实百炼或完整上传审核链路已经部署或验收。
