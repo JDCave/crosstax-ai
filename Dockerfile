@@ -15,6 +15,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY backend/ backend/
 COPY rules/ rules/
 COPY assets/mock-data/cases.json assets/mock-data/cases.json
+COPY assets/rule-sources/oecd.json assets/rule-sources/oecd.json
 COPY alembic/ alembic/
 COPY alembic.ini .
 

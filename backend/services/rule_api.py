@@ -55,7 +55,7 @@ class RuleAPIService:
 
         result = await asyncio.to_thread(compute) if offload else compute()
         guidance = await self.agent.generate(result, snapshot, include_guidance)
-        return ValidationResponse(
+        response = ValidationResponse(
             verdict=result.verdict,
             issues=[*result.form_issues, *result.indicia_issues],
             rule_version_id=result.rule_version_id,
@@ -68,6 +68,11 @@ class RuleAPIService:
             review_scope=result.review_scope,
             guidance=guidance,
         )
+
+        from backend.services.presentation import explanation_cards
+
+        response.explanation_cards = explanation_cards(response)
+        return response
 
 
 @lru_cache(maxsize=1)

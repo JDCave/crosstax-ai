@@ -40,8 +40,8 @@ async def submit(payload: TaskRequest, response: Response, service: Service, ide
 
 
 @router.get("/{task_id}", response_model=TaskResponse, summary="Poll validation status and retrieve its result")
-async def get_task(task_id: UUID, response: Response, service: Service) -> TaskResponse:
-    result = await service.get(str(task_id))
+async def get_task(task_id: UUID, response: Response, service: Service, compare_to: UUID | None = None) -> TaskResponse:
+    result = await service.compare(str(task_id), str(compare_to)) if compare_to else await service.get(str(task_id))
     response.headers["Cache-Control"] = "no-store"
     if result.poll_after_ms:
         response.headers["Retry-After"] = "1"

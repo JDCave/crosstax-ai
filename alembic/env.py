@@ -12,7 +12,7 @@ from backend.models.user import User  # noqa: F401
 
 config = context.config
 
-if config.config_file_name is not None:
+if config.config_file_name is not None and config.attributes.get("connection") is None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
@@ -35,7 +35,8 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata,
+                      version_table_schema=config.attributes.get("version_table_schema"))
     with context.begin_transaction():
         context.run_migrations()
 
@@ -56,6 +57,8 @@ async def run_migrations_online() -> None:
 
 if context.is_offline_mode():
     run_migrations_offline()
+elif config.attributes.get("connection") is not None:
+    do_run_migrations(config.attributes["connection"])
 else:
     import asyncio
     asyncio.run(run_migrations_online())

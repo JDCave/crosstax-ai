@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, model_validator
 
 from backend.agents.remediation import GuidanceResult
+from backend.api.schemas.presentation import ExplanationCard
 from backend.engine.contracts import AuditIssue, CRSFormData, ExecutionContext, TINCheck, ValidationPolicy
 from backend.engine.document_contracts import (
     CheckItem,
@@ -61,6 +62,7 @@ class ValidationResponse(BaseModel):
     issue_origins: list[IssueOrigin]
     review_scope: ReviewScope
     guidance: GuidanceResult
+    explanation_cards: list[ExplanationCard] = Field(default_factory=list)
 
 
 class FieldError(BaseModel):
@@ -90,7 +92,7 @@ def field_errors(errors: Sequence[dict[str, Any]]) -> list[dict[str, str]]:
         *StructuredModel.__subclasses__(),
     ]
     known = {name for model in models for name in model.model_fields}
-    known.update({"session_id", "deadline_at", "validation", "task_id", "Idempotency-Key"})
+    known.update({"session_id", "deadline_at", "validation", "task_id", "compare_to", "Idempotency-Key"})
     messages = {
         "missing": "Required field is missing",
         "extra_forbidden": "Unknown field is not accepted",

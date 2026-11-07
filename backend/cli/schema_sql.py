@@ -15,20 +15,11 @@ from sqlalchemy import Table, insert
 from sqlalchemy.dialects.postgresql import dialect
 from sqlalchemy.schema import CreateIndex, CreateSchema, CreateTable
 
+from backend.infrastructure.schema_setup import BASE_TABLES
 from backend.models import Base
 
 ROOT = Path(__file__).resolve().parents[2]
 SQL_DIRECTORY = ROOT / "backend/infrastructure/db"
-BASE_TABLES = frozenset(
-    {
-        "rule_sources",
-        "rule_sync_runs",
-        "rule_documents",
-        "rule_versions",
-        "rule_version_documents",
-        "rule_engine_state",
-    }
-)
 
 
 def rule_tables() -> list[Table]:

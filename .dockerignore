@@ -31,6 +31,8 @@ design/
 assets/**
 !assets/mock-data/
 !assets/mock-data/cases.json
+!assets/rule-sources/
+!assets/rule-sources/oecd.json
 
 # Tests
 tests/

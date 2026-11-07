@@ -130,6 +130,23 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "compare_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Compare To"
+            }
           }
         ],
         "responses": {
@@ -1032,6 +1049,94 @@
         ],
         "title": "ExecutionContext"
       },
+      "ExplanationCard": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "WARNING"
+            ],
+            "title": "Severity"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "action_source": {
+            "type": "string",
+            "enum": [
+              "RULE",
+              "AGENT"
+            ],
+            "title": "Action Source"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "RULE_ENGINE",
+              "UPSTREAM"
+            ],
+            "title": "Origin"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Refs"
+          },
+          "rule_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RuleEvidence"
+            },
+            "type": "array",
+            "title": "Rule Evidence"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue_index",
+          "title",
+          "severity",
+          "field",
+          "reason",
+          "action",
+          "action_source",
+          "origin",
+          "evidence_refs",
+          "rule_evidence",
+          "confidence"
+        ],
+        "title": "ExplanationCard"
+      },
       "FieldError": {
         "properties": {
           "field": {
@@ -1054,6 +1159,46 @@
           "message"
         ],
         "title": "FieldError"
+      },
+      "FindingSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "field",
+          "severity",
+          "origin",
+          "count"
+        ],
+        "title": "FindingSummary"
       },
       "FormData": {
         "properties": {
@@ -1531,6 +1676,48 @@
         "type": "object",
         "title": "ReviewScope"
       },
+      "RuleEvidence": {
+        "properties": {
+          "jurisdiction_code": {
+            "type": "string",
+            "title": "Jurisdiction Code"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "verification_level": {
+            "type": "string",
+            "title": "Verification Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jurisdiction_code",
+          "rule_id",
+          "source_url",
+          "verification_level"
+        ],
+        "title": "RuleEvidence"
+      },
       "TINCheck": {
         "properties": {
           "status": {
@@ -1620,6 +1807,103 @@
           "verification_level"
         ],
         "title": "TINCheck"
+      },
+      "TaskComparison": {
+        "properties": {
+          "before_task_id": {
+            "type": "string",
+            "title": "Before Task Id"
+          },
+          "after_task_id": {
+            "type": "string",
+            "title": "After Task Id"
+          },
+          "before_verdict": {
+            "type": "string",
+            "title": "Before Verdict"
+          },
+          "after_verdict": {
+            "type": "string",
+            "title": "After Verdict"
+          },
+          "context": {
+            "type": "string",
+            "enum": [
+              "SAME_CONTEXT",
+              "DIFFERENT_CONTEXT"
+            ],
+            "title": "Context"
+          },
+          "context_changes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Context Changes"
+          },
+          "changed_field_count": {
+            "type": "integer",
+            "title": "Changed Field Count"
+          },
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changed Fields"
+          },
+          "changed_fields_truncated": {
+            "type": "boolean",
+            "title": "Changed Fields Truncated"
+          },
+          "resolved": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Resolved"
+          },
+          "introduced": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Introduced"
+          },
+          "remaining": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Remaining"
+          },
+          "findings_truncated": {
+            "type": "boolean",
+            "title": "Findings Truncated"
+          },
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "before_task_id",
+          "after_task_id",
+          "before_verdict",
+          "after_verdict",
+          "context",
+          "context_changes",
+          "changed_field_count",
+          "changed_fields",
+          "changed_fields_truncated",
+          "resolved",
+          "introduced",
+          "remaining",
+          "findings_truncated",
+          "statement"
+        ],
+        "title": "TaskComparison"
       },
       "TaskError": {
         "properties": {
@@ -1746,6 +2030,16 @@
           "poll_after_ms": {
             "type": "integer",
             "title": "Poll After Ms"
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskComparison"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "report_status": {
             "anyOf": [
@@ -2104,6 +2398,13 @@
           },
           "guidance": {
             "$ref": "#/components/schemas/GuidanceResult"
+          },
+          "explanation_cards": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationCard"
+            },
+            "type": "array",
+            "title": "Explanation Cards"
           }
         },
         "type": "object",

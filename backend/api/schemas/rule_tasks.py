@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict
 
+from backend.api.schemas.presentation import TaskComparison
 from backend.api.schemas.rule_engine import ValidationRequest, ValidationResponse
 
 
@@ -34,6 +35,7 @@ class TaskResponse(BaseModel):
     rule_revision: int
     engine_build_id: str
     poll_after_ms: int
+    comparison: TaskComparison | None = None
     report_status: Literal["PENDING", "RUNNING", "READY", "FAILED"] | None = None
     report_error: TaskError | None = None
     report_url: str | None = None

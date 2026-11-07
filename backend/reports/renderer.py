@@ -24,7 +24,7 @@ from reportlab.platypus import PageBreak, Paragraph, Preformatted, SimpleDocTemp
 
 from backend.api.schemas.rule_tasks import TaskResponse
 
-TEMPLATE_VERSION = "crs-rule-report-v1"
+TEMPLATE_VERSION = "crs-rule-report-v2"
 FONT_NAME = "CrossTaxSansSC"
 MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024
 MAX_PAGES = 100
@@ -106,7 +106,8 @@ def render_report(data: ReportData) -> bytes:
     registered_font()
     snapshot = {
         "task": task.model_dump(
-            mode="json", exclude={"result", "poll_after_ms", "report_status", "report_error", "report_url"}
+            mode="json",
+            exclude={"result", "poll_after_ms", "report_status", "report_error", "report_url", "comparison"},
         ),
         "validation": validation,
         "result": result.model_dump(mode="json"),
@@ -187,9 +188,14 @@ def render_report(data: ReportData) -> bytes:
     origins = {origin.issue_index: origin for origin in result.issue_origins}
     if not result.issues:
         paragraph("本次已执行的规则检查未产生问题;未核实范围见后文。")
+    cards = {card.issue_index: card for card in result.explanation_cards}
     for index, issue in enumerate(result.issues):
         paragraph(f"{index + 1}. [{issue.severity}] {issue.code}")
         paragraph(issue.message)
+        if index in cards:
+            card = cards[index]
+            paragraph(f"{card.title} | 建议:{card.action}")
+            paragraph(f"建议来源:{card.action_source}", small)
         origin = origins.get(index)
         paragraph(f"字段:{display(issue.field)} | 置信度:{issue.confidence}", small)
         if origin:

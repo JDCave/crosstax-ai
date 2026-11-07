@@ -123,6 +123,28 @@ class TaskService:
             raise AppException(410, "TASK_EXPIRED", "Validation task content has expired")
         return await self.view(row, self.cipher())
 
+    async def compare(self, task_id: str, before_id: str) -> TaskResponse:
+        from backend.services.task_comparison import compare_tasks
+
+        if task_id == before_id:
+            raise AppException(422, "COMPARE_SAME_TASK", "Choose two different tasks")
+        after, before = await self.get(task_id), await self.get(before_id)
+        if after.session_id != before.session_id:
+            raise AppException(409, "COMPARE_SESSION_MISMATCH", "Tasks must belong to the same session")
+        if after.status != "SUCCEEDED" or before.status != "SUCCEEDED":
+            raise AppException(409, "COMPARE_NOT_READY", "Both tasks must have succeeded")
+        rows = [await self.repository.get(before_id), await self.repository.get(task_id)]
+        if any(row is None or not row.payload_ciphertext for row in rows):
+            raise AppException(503, "COMPARE_DATA_UNAVAILABLE", "Stored input is unavailable")
+        cipher = self.cipher()
+        inputs = [
+            cipher.decrypt(row.payload_ciphertext)["validation"] for row in rows if row and row.payload_ciphertext
+        ]
+        after.comparison = await asyncio.to_thread(compare_tasks, before, after, inputs[0], inputs[1])
+        if any(aware(row.expires_at) <= utcnow() for row in rows if row):
+            raise AppException(410, "TASK_EXPIRED", "Validation task content has expired")
+        return after
+
     async def view(self, row: RuleValidationTask, cipher: TaskCipher) -> TaskResponse:
         response = self.response(row, cipher)
         if row.status != "SUCCEEDED":
@@ -148,6 +170,10 @@ class TaskService:
             if row.status == "SUCCEEDED" and row.result_ciphertext
             else None
         )
+        if result is not None and not result.explanation_cards:
+            from backend.services.presentation import explanation_cards
+
+            result.explanation_cards = explanation_cards(result)
         error = (
             TaskError(code=row.error_code, message="Validation execution could not complete; submit a new task")
             if row.error_code
