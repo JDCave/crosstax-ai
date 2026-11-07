@@ -1,11 +1,12 @@
 # Validation Engine 数据层设计
 
 本目录保存规则引擎的数据层设计和 PostgreSQL 建表评审稿。
-`validation_engine.sql` 尚未执行；正式部署应通过 SQLAlchemy 模型和 Alembic 迁移完成。
+`validation_engine.sql` 是六张基础表的历史初始化脚本，用户此前已执行；不是本次异步功能的完整初始化文件。
+新增异步任务的增量建表语句见 [rule_validation_tasks.sql](rule_validation_tasks.sql)，由 Alembic 迁移生成，包含两张任务表及索引；正式部署优先使用迁移。
 PostgreSQL 数据库名为 `devdb`，schema 为 `crosstax`。执行 SQL 前需连接 `devdb`；脚本包含 `CREATE SCHEMA IF NOT EXISTS crosstax`。SQL 显式限定所有表、索引目标表、外键及初始数据的 schema，不依赖连接的 search_path；执行账号需要具备相应建表权限，schema 不存在时还需要创建 schema 的权限。
 
-复用现有 `backend/infrastructure/database.py` 的数据库连接与会话，不创建第二套连接池。
-连接池应遵守 ADR-010：`pool_size=3`、`max_overflow=0`。
+复用现有 `backend/infrastructure/database.py` 的数据库连接与会话，API 复用原连接池，独立 Worker 使用同一数据库抽象创建一连接池。
+连接预算应遵守 ADR-010：API pool_size=2、Worker=1，均 max_overflow=0，总共不超过 3。
 
 ## 范围与流程
 
@@ -104,7 +105,32 @@ SQLite 测试通过 schema_translate_map 将 crosstax 映射到默认 schema，�
 
 `rule_publications`：激活历史，主键 revision，外键指向目标和前一规则版本。
 `rule_audit_records`：引擎执行信封，主键 session_id，保存输入、上游问题和完整结果，支持幂等与重放。
-先执行原 `validation_engine.sql` 初始化六表，再执行 `uv run alembic upgrade head` 创建追加两表。
+新环境先按已有流程初始化六张基础表，再执行 `uv run alembic upgrade head` 创建两张历史表及两张异步任务表。
 已有六表的数据库只运行迁移，不重新执行原建表 SQL。
 迁移前的发布不补造事件；新表不改变原主审核会话模型。
 应用层不可变保护见 immutability.py；数据库管理员和 Core 直连不受 ORM 保护。
+
+
+## 异步任务增量（2026-11-08）
+
+迁移 `20261108_rule_tasks` 接续 `20261103_rule_history`，新增：
+
+| 表／索引 | 用途 |
+| --- | --- |
+| rule_validation_tasks | 加密请求、冻结快照、加密结果、状态、截止时间、租约及幂等摘要 |
+| rule_task_queue_state | 单行状态，串行化容量检查和入队；应用按需初始化 |
+| idempotency_key UNIQUE | 同键去重，主键 task_id 已自带索引 |
+| ix_rule_task_claim(status, lease_until, created_at) | 领取和租约恢复 |
+| ix_rule_task_expiry(expires_at) | 过期清理 |
+| ix_rule_task_session(session_id, created_at) | 按主审核会话查任务 |
+
+已有数据库推荐仅运行：
+
+```bash
+uv run alembic upgrade head
+```
+
+不要重复运行基础 SQL，也不要再手动执行同一迁移对应的增量 SQL。
+增量 SQL 仅用于审阅或团队管理的手工部署；手工执行不会更新 Alembic 版本表，后续迁移前必须核对并协调版本记录，不能直接再次 upgrade。
+本次未连接或迁移真实数据库。迁移已验证 SQLite 升降级，PostgreSQL 目标环境验证尚待执行。
+接口与配置见 [异步 API 文档](../../api/RULE_TASKS_API.md)。
