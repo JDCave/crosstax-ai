@@ -90,6 +90,7 @@ def field_errors(errors: Sequence[dict[str, Any]]) -> list[dict[str, str]]:
         *StructuredModel.__subclasses__(),
     ]
     known = {name for model in models for name in model.model_fields}
+    known.update({"session_id", "deadline_at", "validation", "task_id", "Idempotency-Key"})
     messages = {
         "missing": "Required field is missing",
         "extra_forbidden": "Unknown field is not accepted",

@@ -36,7 +36,7 @@ async def persistence(request):
                 await conn.execute(CreateSchema(schema))
             await conn.run_sync(
                 lambda c: Base.metadata.create_all(
-                    c, tables=[t for t in tables if t.name not in {"rule_publications", "rule_audit_records"}]
+                    c, tables=[t for t in tables if t.name not in {"rule_publications", "rule_audit_records", "rule_validation_tasks", "rule_task_queue_state"}]
                 )
             )
 
@@ -47,6 +47,8 @@ async def persistence(request):
                 migration = runpy.run_path("alembic/versions/20261103_rule_history.py")
                 with Operations.context(MigrationContext.configure(connection)):
                     migration["upgrade"]()
+                    tasks = runpy.run_path(str(next(Path("alembic/versions").glob("20261108_rule_tasks*.py"))))
+                    tasks["upgrade"]()
 
             await conn.run_sync(migrate)
         sessions = async_sessionmaker(engine, expire_on_commit=False)
@@ -138,3 +140,31 @@ async def test_false_report_and_mutation_do_not_commit(persistence):
             record.rules = {"HK": {"regex": "[0-9]{9}", "algorithm": "REGEX_ONLY"}}
     async with sessions() as session:
         assert (await session.get(RuleVersion, candidate)).rules["HK"]["regex"] == "[0-9]{8}"
+
+
+async def test_encrypted_tasks_use_migrated_tables_on_both_backends(persistence):
+    from cryptography.fernet import Fernet
+    from pydantic import SecretStr
+    from backend.api.schemas.rule_tasks import TaskRequest
+    from backend.core.rule_tasks import RuleTaskSettings
+    from backend.services.rule_api import RuleAPIService
+    from backend.services.rule_tasks import TaskService
+    from backend.workers.rule_tasks import RuleTaskWorker
+
+    sessions, _ = persistence
+    publisher, version = await published(sessions)
+    await publisher.activate(version, 0)
+    base = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data"]
+    request = TaskRequest.model_validate({
+        "session_id": str(uuid4()), "validation": {
+            "form_data": base | {"jurisdiction_code": "HK", "tin": "12345678"},
+            "policy": {"today": "2026-11-03"},
+        },
+    })
+    service = TaskService(RuleAPIService(ValidationEngine(RuleLoader(sessions))), RuleTaskSettings(
+        _env_file=None, encryption_keys=[SecretStr(Fernet.generate_key().decode())]))
+    task = await service.submit(request, str(uuid4()))
+    assert task.status == "PENDING"
+    assert await RuleTaskWorker(service).run_once()
+    complete = await service.get(str(task.task_id))
+    assert complete.status == "SUCCEEDED" and complete.result.verdict == "AUTO_PASS"

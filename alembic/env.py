@@ -46,6 +46,8 @@ async def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        execution_options={"schema_translate_map": {"crosstax": None}}
+        if settings.database.url.startswith("sqlite") else {},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

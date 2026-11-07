@@ -42,3 +42,13 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+
+
+def create_worker_database() -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
+    """Independent worker uses at most one connection (API should use two)."""
+    worker_engine = create_async_engine(
+        db.url, pool_size=1, max_overflow=0, pool_recycle=db.pool_recycle,
+        pool_pre_ping=db.pool_pre_ping, echo=False,
+        execution_options={"schema_translate_map": {"crosstax": None}} if db.url.startswith("sqlite") else {},
+    )
+    return worker_engine, async_sessionmaker(worker_engine, expire_on_commit=False)

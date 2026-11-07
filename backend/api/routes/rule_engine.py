@@ -3,6 +3,7 @@
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
+from cryptography.fernet import InvalidToken
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -40,11 +41,21 @@ class RuleAPIRoute(APIRoute):
                         "details": field_errors(exc.errors()),
                     },
                 )
-            except AppException:
+            except AppException as exc:
+                if request.url.path.startswith("/api/v1/rule-engine/tasks"):
+                    return JSONResponse(
+                        status_code=exc.status_code,
+                        content={"code": exc.code, "message": exc.message},
+                        headers={
+                            "Cache-Control": "no-store",
+                            **({"Retry-After": "1"} if exc.status_code == 503 else {}),
+                        },
+                    )
                 raise
-            except (SQLAlchemyError, ValueError, OSError):
+            except (SQLAlchemyError, ValueError, OSError, InvalidToken):
                 return JSONResponse(
                     status_code=503,
+                    headers={"Retry-After": "1", "Cache-Control": "no-store"},
                     content={
                         "code": "RULE_ENGINE_UNAVAILABLE",
                         "message": "Rule engine data is unavailable or invalid",
@@ -66,6 +77,7 @@ Service = Annotated[RuleAPIService, Depends(get_rule_api_service)]
 @router.post(
     "/validate",
     response_model=ValidationResponse,
+    include_in_schema=False,
     summary="Validate structured CRS data and return results synchronously",
 )
 async def validate(payload: ValidationRequest, service: Service) -> ValidationResponse:

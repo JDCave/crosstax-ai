@@ -1,13 +1,15 @@
 """Stateless HTTP adapter: one fixed snapshot, optional bounded AI, no audit writes."""
 
+import asyncio
 from functools import lru_cache
+from typing import Any
 
 from backend.agents.remediation import GuidanceSettings, RemediationAgent
 from backend.api.schemas.rule_engine import ValidationResponse
 from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy
 from backend.engine.document_contracts import MultiResidenceForm
 from backend.engine.document_validation import validate_document
-from backend.engine.rule_loader import RuleLoader
+from backend.engine.rule_loader import RuleLoader, RuleSnapshot
 from backend.engine.structured_contracts import FormData
 from backend.engine.structured_validation import validate_structured
 from backend.engine.validation import ValidationEngine
@@ -31,11 +33,27 @@ class RuleAPIService:
             snapshot = await self.engine.loader.refresh()
         except NotFoundException as exc:
             raise AppException(503, "NO_ACTIVE_RULES", "No active rule version is available") from exc
-        result = (
-            validate_structured(form, policy, snapshot, issues)
-            if isinstance(form, FormData)
-            else (validate_document(self.engine, form, policy, snapshot, issues))
-        )
+        return await self.validate_frozen(form, policy, issues, include_guidance, snapshot)
+
+    async def validate_frozen(
+        self,
+        form: CRSFormData | MultiResidenceForm | FormData,
+        policy: ValidationPolicy,
+        issues: list[AuditIssue],
+        include_guidance: bool,
+        snapshot: RuleSnapshot,
+        form_policy: tuple[dict[str, Any], str] | None = None,
+        *,
+        offload: bool = False,
+    ) -> ValidationResponse:
+        def compute() -> Any:
+            return (
+                validate_structured(form, policy, snapshot, issues, form_policy=form_policy)
+                if isinstance(form, FormData)
+                else (validate_document(self.engine, form, policy, snapshot, issues))
+            )
+
+        result = await asyncio.to_thread(compute) if offload else compute()
         guidance = await self.agent.generate(result, snapshot, include_guidance)
         return ValidationResponse(
             verdict=result.verdict,

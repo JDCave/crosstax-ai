@@ -21,9 +21,9 @@ BASE = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data
 
 
 @pytest.fixture
-async def api_client():
+async def api_client(tmp_path):
     database = create_async_engine(
-        "sqlite+aiosqlite://", execution_options={"schema_translate_map": {"crosstax": None}}
+        f"sqlite+aiosqlite:///{tmp_path / 'api.db'}", execution_options={"schema_translate_map": {"crosstax": None}}
     )
     try:
         async with database.begin() as connection:
@@ -105,10 +105,9 @@ async def test_unavailable_and_replay_mismatch_are_not_passes(api_client):
     assert (await client.post(PREFIX + "/validate", json=payload())).status_code == 200
 
 
-def test_openapi_exposes_only_one_rule_engine_endpoint():
+def test_openapi_exposes_only_two_task_endpoints():
     paths = create_app().openapi()["paths"]
-    assert [path for path in paths if path.startswith(PREFIX)] == [PREFIX + "/validate"]
-    assert set(paths) == {PREFIX + "/validate"}
+    assert set(paths) == {PREFIX + "/tasks", PREFIX + "/tasks/{task_id}"}
     app = create_app()
     assert app.redoc_url is None
     assert app.swagger_ui_oauth2_redirect_url is None
