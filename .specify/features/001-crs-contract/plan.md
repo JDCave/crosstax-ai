@@ -43,7 +43,7 @@
 | 能力 | 当前状态 | 代码与证据 |
 | --- | --- | --- |
 | 工程底座 | 已实现 | 应用工厂、配置、日志、异常、健康探针、异步 SQLAlchemy、Alembic、Docker |
-| 规则持久化 | 已实现，SQLite／本地 PG 已验证 | `backend/models/rule_*.py`、`backend/repositories/rules.py`；六张基础表、两张历史表与两张异步任务表，已有迁移脚本 |
+| 规则持久化 | 已实现，SQLite／本地 PG 已验证 | `backend/models/rule_*.py`、`backend/repositories/rules.py`；六张基础表、两张历史表、两张异步任务表与一张 PDF 报告表，已有迁移脚本 |
 | TIN 规则与算法 | 已实现，有明确覆盖范围 | `rules/rules_global_v4.json`：22 法域、66 选择器；格式与校验位区分，未覆盖转人工；不是完整税法覆盖 |
 | 完备性与裁决 | 已实现 | 日期、签名声明、TIN／豁免一致性；BLOCKER 优先的三态裁决 |
 | 异步校验 API | 已实现、自动化验证 | `POST /api/v1/rule-engine/tasks` + `GET /api/v1/rule-engine/tasks/{task_id}`；同步 validate 隐藏并保留；个人／实体／控权人新结构、单／多税籍旧格式兼容、逐项结果、问题来源、范围和执行指纹 |
@@ -54,11 +54,11 @@
 | 百炼补正 Agent | 已实现，真实调用待联调 | 默认 qwen-plus；只读工具、证据引用、降级、有限重试与调用统计；未填有效 Key，未验收真实模型质量／耗时 |
 | 内部历史归档／重放 | 已实现，有边界 | 单税籍 Python 服务；旧同步 HTTP 不强制归档；异步任务加密保存完整结果，不替代主 AuditSession 或完整历史重放 |
 | 官方模板与测试数据 | 已提交 | 4 份 IRD PDF、个人／实体／多税籍 JSON、Case A–E 和商户 mock 数据 |
-| 测试与类型检查 | 已验证 | 合并后锁定依赖下 276 passed（含本地 PG，无跳过）；Ruff 与全量 backend Mypy 通过 |
+| 测试与类型检查 | 已验证 | 合并后锁定依赖下 294 passed（含本地 PG，无跳过）；Ruff 与全量 backend Mypy 通过 |
 
 **尚未完成或未验收**：
 
-- `frontend/` 未创建；上传、WebSocket、主审核流水线、跨源研判、主 AuditSession/Merchant ORM、HTML/PDF 审计报告尚未实现。
+- `frontend/` 未创建；上传、WebSocket、主审核流水线、跨源研判、主 AuditSession/Merchant ORM、完整主审核会话的 HTML/PDF 审计报告尚未实现；规则阶段 PDF 自动生成和下载已完成。
 - 双路 PDF／Vision 抽取、一致性汇总、多持有人检测、实体分类和控权人规则仍待实现；现有补正 Agent 不承担这些功能。
 - 新 schema 的字段结构已由运行接口承接；阈值所需的实体形式／持股事实、机构表头和实际跨文档证据仍有输入缺口。新结构税籍行数由 1 MiB 约束，不再受 20 行上限限制；旧格式保留原上限。
 - 监管参数尚未全部声明式化；现有完备性部分仍在 Python 中，不得把 66 个 TIN 选择器等同于 27 个监管参数已经实现。
@@ -178,7 +178,7 @@ rules/                             # 已有 TIN 配置；FR-041 的完整生效�
 | 新增 `deterministic_extractor.py`、`extraction_aggregator.py` | **本 feature 新增** | 见 §Project Structure 与 §Phase 0 ADR-004 增补 |
 | 逐行核实 `mapping-matrix.csv` 的 `path_capability` 列 | 待办 — **D4 实现期的首个待办** | 当前 43 个 `BOTH` 是默认值而非核实结论（已核实的只有 5 个 `VISION_ONLY`：R21/R22/R26/R35/R36）。核实需解密后读取字形与结构树，即 V1 依赖落地后才能做。核实前 SC-004 的一致率带有乐观偏差，方向与 SC-009 的反作弊意图相反，见 §Phase 0 ADR-004 增补 |
 | 受理层多持有人检测与拒收归因 | 待办 — **本 feature 新增** | FR-005 / FR-047 / SC-012；判据为「持有人身份块出现两次」，MUST NOT 按重复组计数 |
-| 审计报告生成（Jinja2 渲染 HTML/PDF） | 待办 | — |
+| 审计报告生成（Jinja2 渲染 HTML/PDF） | 部分完成 | 规则阶段 PDF 已自动生成、加密保存 PG 并可下载；完整主会话 HTML／PDF 仍待主流程实现 |
 
 ### 前端 SPA（11 项全部待办）
 
@@ -198,7 +198,7 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 | 热重载验证（加载 v2 补丁后即时生效） | 已实现 — 自动测试涵盖版本切换、旧快照隔离、下一调用读取新版本；真实部署时延未验收 |
 | WebSocket 实时推送验证 | 待办 |
 | 审计完整性验证（穿透溯源至原始文件 + 规则版本） | 部分完成 — 规则版本、指纹、发布历史与内部重放已测试；原始文件／主会话穿透待办 |
-| 覆盖率达标（`fail_under = 80`） | 待验证 — 已有 276 项通过（含本地 PG），不以测试数量代替覆盖率报告 |
+| 覆盖率达标（`fail_under = 80`） | 待验证 — 已有 294 项通过（含本地 PG），不以测试数量代替覆盖率报告 |
 
 ### 部署阶段（13 项全部待办）
 
@@ -420,3 +420,13 @@ validation_engine.sql 已更新为完整十表快照；bootstrap_rules.sql 明�
 升级后十表与 ORM 比较无差异（含支持的类型、默认值、索引和外键项），原八表行数不变，未更改活动规则或创建测试业务数据。
 全量 276 测试通过，无跳过；四项 PG 参数化生命周期在随机隔离 schema 中完成并清理。
 SQL 生成一致性、Ruff 和全量 backend Mypy 通过；未生成部署密钥、未运行生产 Worker，真实模型与云端仍待验收。
+
+
+## 2026-11-08：异步 PDF 报告持久化交付
+
+先更新设计，再实现校验成功同事务建立报告待办、独立后台生成、PG 密文保存及下载只读。
+API 维持三条：上游提交／查询两条，前端下载一条；查询提供 report_status/report_error，READY 有 report_url，生成中 GET 返回 REPORT_GENERATING + Retry-After: 2。
+前端在校验成功后可使用固定报告路径重试，主后端不用阻塞等待报告；最终生成失败停止普通重试，内部 CLI 支持故障修复后重排 FAILED 报告。
+新增 20261108_pdf_reports 迁移和增量 SQL，完整快照十一表；本地迁移已应用，原十表数据保留。
+全量 294 测试通过无跳过，包含真实 PG 与独立 Worker 进程；SQL 一致性、Ruff、Mypy 和 PDF 视觉检查通过。
+后续优先主会话聚合与授权、下载审计／队列监控，再考虑私有 OSS／KMS／真实签名；未自动部署云服务或新增前端脚手架。

@@ -16,7 +16,7 @@
 校验状态与报告状态独立。规则 SUCCEEDED 立即可消费 JSON，不等待 PDF。
 报告状态为 PENDING → RUNNING → READY / FAILED，有限重试期间回到 PENDING。
 任务未成功时 report_status 为 null；成功但历史报告待补建时视为 PENDING。
-仅 READY 提供 report_url。前端也可使用固定报告 URL，生成中按 Retry-After 重试。
+仅 READY 提供 report_url。主后端拿到规则 JSON 后不必继续阻塞轮询 PDF；前端按 task_id 使用固定报告 URL，生成中按 Retry-After 有界重试，不因 report_url 尚为 null 而永远无法启动下载。
 
 | 条件 | HTTP / code |
 | --- | --- |
@@ -70,3 +70,11 @@ PDF 使用与任务相同的轮换密钥，通过 Fernet 加密原始 PDF 字节
 3. 大规模和长期留存改用私有 OSS，PG 仅保留元数据，使用短期签名地址或服务转发。
 4. KMS 管理密钥和真实报告签名；当前摘要不能替代签名。
 5. 精简阅读版与完整证据附件分层，提升人工阅读体验。
+
+## 交付验证与运行
+
+rule_pdf_reports 已由自动生成迁移 20261108_pdf_reports 创建；SQL 快照与数据库说明同步为十一表。
+294 项测试全部通过，包含 SQLite/PG 迁移、原子回滚、生成中下载、重复存储读取、失败重试、失租防覆盖、历史补建、过期清理、字体和独立 Worker CLI。
+本地 devdb 已仅应用增量迁移；原十表数据保留。未启动生产常驻进程、未部署阿里云网关／用户授权。
+内部 CLI --retry-report 任务UUID 可在故障修复后重排未过期的 FAILED 报告，不覆盖 READY，不重跑规则。
+完整命令和前端有界重试示例见接口文档。

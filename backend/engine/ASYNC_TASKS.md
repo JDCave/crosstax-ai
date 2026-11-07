@@ -7,7 +7,7 @@
 
 - POST /api/v1/rule-engine/tasks：Idempotency-Key 必填，body 为 session_id(UUID)、deadline_at(可选带时区时间)、validation(现有校验请求)。保存事务成功后返回 202、Location 和任务状态。
 - GET /api/v1/rule-engine/tasks/{task_id}：返回状态、result/error、建议轮询间隔。完成时 result 是现有完整 ValidationResponse；不要求上游直接查 DB。
-- 保留旧同步 /validate 调用作为兼容入口，从 Swagger 隐藏；公开文档展示两个任务接口。
+- 保留旧同步 /validate 调用作为兼容入口，从 Swagger 隐藏；公开文档展示两个上游任务接口与一个前端报告下载接口。
 
 状态 PENDING → RUNNING → SUCCEEDED/FAILED。SUCCEEDED 表示执行成功，不代表 AUTO_PASS。
 提交仅检查请求结构；TIN、缺签等业务问题由 Worker 生成 SUCCEEDED + NEED_USER_FIX。
@@ -46,7 +46,7 @@ GET 不返回过期内容，即使清理 Worker 尚未运行。清理需要持�
 服务按内部可信主后端调用；用户鉴权和 session 归属授权仍由主后端/网关负责，不能当作公网匿名服务。
 按现有连接上限分配：建议 API DATABASE_POOL_SIZE=2，Worker=1，总共不超过 3，均 max_overflow=0。
 迁移以已有六张基础规则表与历史迁移为前置条件；新库用 bootstrap_rules.sql 建立基线。
-validation_engine.sql 当前是完整十表快照，不能再与 upgrade 重复执行。路径见[数据库说明](../infrastructure/db/README.md)。不自动激活未知规则。
+validation_engine.sql 当前是完整十一表快照，不能再与 upgrade 重复执行。路径见[数据库说明](../infrastructure/db/README.md)。不自动激活未知规则。
 
 ## 分阶段验收
 
@@ -76,3 +76,10 @@ validation_engine.sql 当前是完整十表快照，不能再与 upgrade 重复�
 
 [API、配置与运行命令](../api/RULE_TASKS_API.md)；自动化验证覆盖并发容量、幂等、Case A–E、三份结构化任务、加密轮换、失租恢复、超时与脱敏。
 未部署生产 Worker 或验收真实百炼请求。后续已按用户授权完成本地 PG 增量升级及隔离集成测试，验收记录见[数据库说明](../infrastructure/db/README.md)。
+
+## 持久化报告联动
+
+成功提交在同一事务建立 PDF 报告待办，具体状态和存储见 [报告设计](PDF_REPORTS.md)。
+查询返回独立 report_status/report_error；报告 READY 时才提供 report_url，规则 result 不等待 PDF。
+Worker 内两个循环共享一连接池，报告不占用规则 30 秒预算；公共入队容量同时计入待生成报告，限制下游积压。
+默认新后台循环会生成并保存 PDF，下载只读已生成文件。

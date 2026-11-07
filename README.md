@@ -122,7 +122,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外部使用。
 
 
-当前验证：锁定依赖下 **276 项测试通过（含真实本地 PostgreSQL 集成，无跳过）**，Ruff 与全量 backend Mypy 通过。
+当前验证：锁定依赖下 **294 项测试通过（含真实本地 PostgreSQL 集成，无跳过）**，Ruff 与全量 backend Mypy 通过。
 真实百炼调用、云数据库、完整上传审核链路和 cron 安装仍待验收；当前结果不代表完整契约或全部税法条件已覆盖。
 
 结构化个人／实体／控权人接口及架构审查见 [新契约接入](backend/api/STRUCTURED_CRS_API.md)和[差距矩阵](backend/engine/ARCHITECTURE_REVIEW.md)。存储保留当前实现；外部事实不足的要求没有标记为已完成。
@@ -130,9 +130,14 @@ AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外�
 
 规则引擎已支持持久化异步任务：先提交表单获取 task_id，再查询状态及完整结果。
 [队友接入与 Worker 启动](backend/api/RULE_TASKS_API.md)包含共享加密密钥、迁移、连接预算和三份请求样例。
-旧同步 validate 兼容保留，Swagger 只展示两个任务接口；本地 devdb 已按用户授权升级，尚未自动启动 Worker；云端数据库尚未迁移验收。
+旧同步 validate 兼容保留，Swagger 展示两个上游任务接口与一个前端报告接口；本地 devdb 已按用户授权升级，尚未自动启动 Worker；云端数据库尚未迁移验收。
 
-数据库建表文件已统一为 ORM／迁移生成的 [十表快照、六表基线及任务增量](backend/infrastructure/db/README.md)。
+数据库建表文件已统一为 ORM／迁移生成的 [十一表快照、六表基线及任务增量](backend/infrastructure/db/README.md)。
 使用 `uv run python -m backend.cli.schema_sql --check` 检测 SQL 漂移；新库和已有库升级步骤已分开，历史迁移保留。
 
-本地 PostgreSQL 已同步到 `20261108_rule_tasks`，十张规则表与 ORM 一致，原八表行数保持不变；详见上述数据库说明的本地验收记录。
+本地 PostgreSQL 已同步到 `20261108_pdf_reports`，十一张规则表与 ORM 一致，原八表行数保持不变；详见上述数据库说明的本地验收记录。
+
+
+规则校验成功后会自动排队生成 PDF，并加密保存到 PostgreSQL；前端下载只读取已保存报告，生成中按 REPORT_GENERATING 重试。
+[报告 API 与阿里云接入](backend/api/PDF_REPORT_API.md)包含三条接口分工、状态、前端重试示例及故障恢复。
+本地已升级至 `20261108_pdf_reports`，原十表数据保留；云端需升级迁移并启动更新后的 Worker。

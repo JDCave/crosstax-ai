@@ -11,7 +11,7 @@
 前两条对接见 [异步任务 API](RULE_TASKS_API.md)。前端不用再直接轮询这两条内部 API。
 主后端把任务状态、校验结果与 report_url 关联到自己的审核会话，并通过主会话查询／推送告知前端。
 任务 SUCCEEDED 后报告异步生成；查询响应增加 report_status/report_error。仅 report_status=READY 时 report_url 有值，其他状态为 null。
-前端收到可下载状态后显示下载按钮，经业务网关调用第三条接口。
+前端拿到校验 SUCCEEDED 和 task_id 后即可调用固定报告 URL；生成中按错误码重试。无需等待主后端继续轮询才开始下载流程。
 
 ```mermaid
 sequenceDiagram
@@ -84,7 +84,7 @@ PDF 由后台从保存的请求与 ValidationResponse 自动生成，并加密�
 生成超限、字体错误等由后台生成任务处理，最终反映为 report_error 和 REPORT_GENERATION_FAILED，不再由下载触发。
 
 REPORT_GENERATING 提示“报告生成中，请稍后重试”，带 Retry-After: 2；前端可据此有界重试。
-REPORT_NOT_READY 应等待主后端状态更新；REPORT_GENERATION_FAILED 提示失败并停止普通轮询，不无限重试。
+REPORT_NOT_READY 应等待主后端状态更新；REPORT_GENERATION_FAILED 提示失败并停止普通轮询，不无限重试，也不附 Retry-After。
 前端需要处理 ArrayBuffer／Blob 形式承载的 JSON 错误，不能一律保存为 .pdf。
 
 ## 前端 Axios 包装示例
@@ -137,7 +137,27 @@ export async function downloadRuleReport(api: AxiosInstance, taskId: string): Pr
 }
 ```
 
-Ant Design 下载按钮仅在主后端确认规则 task.status===SUCCEEDED 且 report_url 有值时启用；下载期间显示 loading，避免重复点击。
+下面的包装在生成中每 2 秒重试（当前 Retry-After 固定为 2），在 60 秒轮询窗口内重试（每次 HTTP 另有 20 秒超时）；生成失败、未完成、过期等直接交给 UI 提示。前端仍只调用报告 GET：
+
+```typescript
+export async function downloadWhenReady(api: AxiosInstance, taskId: string): Promise<void> {
+  const deadline = Date.now() + 60000;
+  while (true) {
+    try {
+      await downloadRuleReport(api, taskId);
+      return;
+    } catch (error: unknown) {
+      if (!(error instanceof Error) || error.message !== "REPORT_GENERATING") throw error;
+      if (Date.now() + 2000 >= deadline) throw new Error("REPORT_WAIT_TIMEOUT");
+      await new Promise<void>(resolve => setTimeout(resolve, 2000));
+    }
+  }
+}
+```
+
+实际 UI 在组件卸载／取消时应通过现有请求封装中止等待；超出等待上限可让用户稍后重新点击，不会重新创建校验任务或重新生成已保存文件。
+
+Ant Design 导出按钮在主后端确认规则 task.status===SUCCEEDED 后即可启用；生成中显示 loading，有限重试报告 GET，避免重复点击。report_url 尚为 null 时也可按 task_id 构造文档定义的固定路径。
 若整个会话还在跨源研判，报告仅代表规则阶段；主后端若要求审核全部完成后才能下载，应再按主会话状态控制按钮与授权。
 
 ## 后端联调
@@ -176,3 +196,14 @@ curl --fail-with-body -D /tmp/report-headers.txt \
 这些优化未自动引入新云服务或修改队友的主流程；当前已实现的边界见 [详细设计](../engine/PDF_REPORTS.md)。
 
 持久化、恢复、重试及清理以 [异步报告设计](../engine/PDF_REPORTS.md) 为准；此版本替代此前按下载请求实时生成的方案。
+
+## 迁移与运维恢复
+
+云端部署先 `uv run alembic upgrade head`，当前 head 为 20261108_pdf_reports；再部署同一版本 API／Worker。
+原 Worker 命令不变：`uv run python -m backend.workers.rule_tasks`，其两个循环并行处理校验和报告。
+`--once` 尝试一项校验及一项报告，`--cleanup` 清理两类过期密文。
+报告默认三次生成尝试，临时错误按 2、4 秒等退避；超限或不兼容构建立刻失败。
+修复故障后，可执行 `uv run python -m backend.workers.rule_tasks --retry-report 任务UUID`，只重排未过期 FAILED 报告；之后常驻 Worker 继续生成。
+该内部 CLI 不提供新管理 API，不修改规则结果或覆盖已有 READY 文件。
+默认预算配置见 RULE_REPORT_TIMEOUT_SECONDS=15、LEASE_SECONDS=20、HEARTBEAT_SECONDS=3、MAX_ATTEMPTS=3（均带 RULE_REPORT_ 前缀）。
+本地十一表迁移与 PostgreSQL 任务到报告链路已验证；云端迁移、网关会话授权和队友主流程仍需部署接入。

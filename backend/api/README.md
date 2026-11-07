@@ -4,7 +4,7 @@
 
 1. 上游后端：`POST /api/v1/rule-engine/tasks`：接收表单并持久化，返回 task_id。
 2. 上游后端：`GET /api/v1/rule-engine/tasks/{task_id}`：查询状态，完成时返回完整校验结果与 report_url。
-3. 前端：`GET /api/v1/rule-engine/tasks/{task_id}/report`：仅下载 SUCCEEDED 任务的 PDF。
+3. 前端：`GET /api/v1/rule-engine/tasks/{task_id}/report`：仅下载 SUCCEEDED 且报告 READY 的持久化 PDF。
 
 - [前端 PDF 下载、错误与阿里云对接](PDF_REPORT_API.md)
 - [异步接入、错误、重试及 Worker 启动](RULE_TASKS_API.md)
@@ -20,3 +20,7 @@ Swagger 只展示上述三条接口。旧同步 `/validate` 和健康探针保�
 
 [百炼 Agent 配置](../agents/BAILIAN.md)：默认 qwen-plus，设置 Key 后传 include_guidance=true。
 [后台规则更新](../engine/RULE_UPDATES.md)与规则验证 Worker 是两个独立职责，不能互相替代。
+
+校验成功后独立生成报告并加密保存 PG；查询返回 report_status/report_error，只有 READY 有 report_url。
+前端也可在规则成功后按 task_id 调用固定 report 路径，REPORT_GENERATING 时有界重试，避免等链接而卡住流程。
+下载永不触发生成；运维修复与报告重试命令见 PDF 文档。
