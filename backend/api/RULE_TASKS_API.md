@@ -1,6 +1,7 @@
 # 异步规则引擎接入
 
-主后端只调用两个接口：提交结构化表单，再按 task_id 查询执行状态和完整结果。
+主后端调用两个接口：提交结构化表单，再按 task_id 查询执行状态和完整结果。
+另有前端 PDF 下载接口，见 [报告 API](PDF_REPORT_API.md)；前三者构成当前三条公开接口。
 `session_id` 是主流程的审核会话 UUID，`task_id` 是规则引擎一次校验的 UUID；补正后提交新任务。
 用户鉴权、会话归属校验、文件抽取、跨源研判和最终 AuditSession 状态仍由主后端负责。
 这里是内部服务接口，不能直接作为公网匿名接口开放。
@@ -56,7 +57,7 @@ Idempotency-Key: 8d766b51-283f-445c-967c-35ee0df64681
 
 事务成功后返回 **202 Accepted**，`Location` 指向查询接口，`Retry-After: 1`，`Cache-Control: no-store`。
 响应包含 task_id、session_id、status、created_at、deadline_at、expires_at、started_at、completed_at、
-rule_version_id、rule_revision、engine_build_id、poll_after_ms、result、error。
+rule_version_id、rule_revision、engine_build_id、poll_after_ms、report_status、report_error、report_url、result、error。
 初始通常为 PENDING，result/error 为 null；并发 Worker 可能已开始执行。
 
 同键同输入重试返回同任务，包括已经完成的结果；规则热更新不会让旧键重新执行。
@@ -82,11 +83,12 @@ HTTP 200 返回同一任务响应结构：
 活动任务 `poll_after_ms=500`，HTTP `Retry-After=1` 秒；客户端建议至少每秒一次，可增加随机抖动。
 终态 `poll_after_ms=0`。**HTTP 200 或 SUCCEEDED 不等于 AUTO_PASS**：
 SUCCEEDED 的 result.verdict 仍可能是 NEED_USER_FIX 或 MANUAL_TRIAGE。
+校验 SUCCEEDED 后后台预生成报告，report_status 为 PENDING/RUNNING/READY/FAILED。仅 READY 时 report_url 有值，report_error 表示最终生成错误；规则 result 无需等待 PDF。主后端将状态和地址传给前端，前端只调用 PDF GET。
 完整结果保留逐项检查、问题来源、执行范围、规则/表单策略版本、输入指纹及可选 guidance。
 AI 不可用时现有确定性降级继续有效；Agent 不改变规则裁决，不负责资料提取。
 
 主流程通过 `run_audit_pipeline()` 编排这些调用，更新自己的 AuditSession 和 WebSocket 步骤状态。
-规则引擎不直接写主会话，不要求上游查数据库，也不新增最终裁决或第三个结果接口。
+规则引擎不直接写主会话，不要求上游查数据库，不新增主流程最终裁决接口；第三条 report 只把已保存的规则结果导出 PDF。
 
 ## 3. 截止、恢复和错误
 
@@ -199,5 +201,5 @@ Worker 不持有连接等待规则计算或模型响应。数据库暂时不可�
 到期查询立即 410；Worker 持续运行或 cleanup 才会实际清除密文，保留幂等 tombstone。
 旧内部 rule_audit_records 不在此次加密改造范围内；主系统原文件、商户数据等需其自身留存策略。
 
-新接入的 Swagger 只展示上述两条接口；旧同步 `/validate` 保留兼容、从 OpenAPI 隐藏。
+新接入的 Swagger 展示提交、查询及 PDF 导出三条接口；旧同步 `/validate` 保留兼容、从 OpenAPI 隐藏。
 本地 PostgreSQL 迁移及 Worker 隔离集成已验证；云端数据库、百炼联调和生产进程部署仍需在目标环境验收。

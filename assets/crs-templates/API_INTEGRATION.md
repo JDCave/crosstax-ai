@@ -17,7 +17,7 @@ Content-Type: application/json
 本地 Base URL 为 `http://localhost:8000`，远程调用替换为服务可达地址。
 启动：`uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000`。
 需预先配置数据库并发布活动规则。运行后访问 `/docs` 或 `/openapi.json`。
-OpenAPI 展示任务提交和查询两条接口；本页同步入口与健康探针保留但隐藏，没有管理路由。
+OpenAPI 展示任务提交、查询及 PDF 导出三条接口；本页同步入口与健康探针保留但隐藏，没有管理路由。
 
 旧的单税籍请求继续支持，响应原有字段保留并增加解释字段。
 新请求支持 `tax_residencies` 数组；不可同时提交旧版顶层 TIN 字段和数组。
