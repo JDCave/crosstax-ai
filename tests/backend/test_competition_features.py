@@ -293,3 +293,22 @@ async def test_unknown_execution_context_is_not_presented_as_a_clean_correction(
     before.result.execution = None
     summary = compare_tasks(before, after, request["validation"], request["validation"])
     assert summary.context == "DIFFERENT_CONTEXT" and "EXECUTION_CONTEXT_MISSING" in summary.context_changes
+
+
+async def test_initializer_upgrades_complete_legacy_baseline_without_stamping(empty_setup):
+    from backend.models import Base
+    from backend.infrastructure.schema_setup import BASE_TABLES
+    from sqlalchemy.schema import CreateSchema
+    _, setup, _ = empty_setup
+    async with setup.database.begin() as connection:
+        schema = await connection.run_sync(lambda c:c.get_execution_options()["schema_translate_map"]["crosstax"])
+        if schema:
+            await connection.execute(CreateSchema(schema))
+        tables = [table for table in Base.metadata.sorted_tables if table.schema == "crosstax" and table.name in BASE_TABLES]
+        await connection.run_sync(lambda c:Base.metadata.create_all(c,tables=tables))
+    async with setup.sessions.begin() as session:
+        session.add(RuleEngineState(id=1))
+    result = await setup.initialize()
+    assert result.table_count == 11 and result.active_revision == 1 and result.sources_added == 3
+    again = await setup.initialize()
+    assert again.active_revision == 1 and again.active_rule_preserved
