@@ -1,5 +1,6 @@
 """Task submission/query orchestration; no rule computation in request handlers."""
 
+import asyncio
 import hashlib
 import hmac
 from datetime import timedelta
@@ -51,6 +52,18 @@ class TaskService:
             raise AppException(409, "IDEMPOTENCY_CONFLICT", "Idempotency key belongs to a different request")
 
     async def submit(self, request: TaskRequest, key: str) -> TaskResponse:
+        budget = self.settings.timeout_seconds
+        if request.deadline_at and request.deadline_at > utcnow():
+            budget = min(budget, (request.deadline_at - utcnow()).total_seconds())
+        try:
+            async with asyncio.timeout(max(0, budget)):
+                return await self._submit(request, key)
+        except TimeoutError as exc:
+            raise AppException(
+                503, "TASK_SUBMISSION_TIMEOUT", "Submission timed out; retry with the same idempotency key"
+            ) from exc
+
+    async def _submit(self, request: TaskRequest, key: str) -> TaskResponse:
         cipher = self.cipher()
         identity = request.model_dump(mode="json")
         digests = cipher.digests(identity)

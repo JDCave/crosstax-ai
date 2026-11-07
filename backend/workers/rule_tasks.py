@@ -2,13 +2,17 @@
 
 import argparse
 import asyncio
+import logging
 from contextlib import suppress
 from typing import Any
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.api.schemas.rule_engine import ValidationRequest
 from backend.core.rule_tasks import RuleTaskSettings, TaskCipher
 from backend.engine.reproducibility import canonical_hash
 from backend.engine.rule_loader import RuleLoader, compile_snapshot
+from backend.engine.structured_contracts import FormData
 from backend.engine.structured_validation import FormPolicy
 from backend.engine.validation import ValidationEngine
 from backend.infrastructure.rule_tasks import aware, utcnow
@@ -52,6 +56,8 @@ class RuleTaskWorker:
                 request = ValidationRequest.model_validate_json(TaskCipher.canonical(payload["validation"]))
                 snapshot = compile_snapshot(task.rule_version_id, task.rule_revision, payload["rules"])
                 policy = payload["form_policy"]
+                if isinstance(request.form_data, FormData) and policy is None:
+                    raise ValueError("Structured tasks require a frozen form policy")
                 if policy is not None:
                     config = FormPolicy.model_validate(policy[0]).model_dump(mode="json")
                     if canonical_hash(config) != policy[1]:
@@ -100,11 +106,19 @@ async def run(cleanup_only: bool = False, once: bool = False) -> None:
         service = TaskService(RuleAPIService(ValidationEngine(RuleLoader(sessions))), RuleTaskSettings())
         service.cipher()
         if cleanup_only:
-            await service.repository.cleanup()
+            while await service.repository.cleanup():
+                pass
             return
         worker = RuleTaskWorker(service)
         while True:
-            worked = await worker.run_once()
+            try:
+                worked = await worker.run_once()
+            except SQLAlchemyError:
+                if once:
+                    raise
+                logging.getLogger(__name__).warning("Task storage unavailable; worker will retry")
+                await asyncio.sleep(1)
+                continue
             if once:
                 return
             if not worked:
@@ -118,7 +132,12 @@ def main() -> None:
     parser.add_argument("--once", action="store_true", help="Claim at most one task and exit")
     parser.add_argument("--cleanup", action="store_true", help="Purge one batch of expired ciphertexts and exit")
     args = parser.parse_args()
-    asyncio.run(run(cleanup_only=args.cleanup, once=args.once))
+    try:
+        asyncio.run(run(cleanup_only=args.cleanup, once=args.once))
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        raise SystemExit("Rule task worker stopped; check database and encryption configuration") from None
 
 
 if __name__ == "__main__":

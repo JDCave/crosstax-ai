@@ -229,3 +229,43 @@ async def test_active_rules_unavailable_and_key_rotation(task_api):
         state.activated_at = None
     unavailable = await client.post(PREFIX, json=payload(), headers={"Idempotency-Key": str(uuid4())})
     assert unavailable.status_code == 503 and unavailable.json()["code"] == "NO_ACTIVE_RULES"
+
+
+async def test_submission_timeout_can_be_retried_with_same_key(task_api):
+    client, service, _ = task_api
+    request, key = payload(), str(uuid4())
+    request["deadline_at"] = (utcnow() + timedelta(seconds=0.04)).isoformat()
+
+    async def blocked(*args):
+        await asyncio.sleep(10)
+
+    with patch.object(service.repository, "enqueue", blocked):
+        response = await client.post(PREFIX, json=request, headers={"Idempotency-Key": key})
+    assert response.status_code == 503 and response.json()["code"] == "TASK_SUBMISSION_TIMEOUT"
+    assert await service.repository.by_key(key) is None
+
+
+@pytest.mark.parametrize("kind,verdict", [
+    ("individual", "AUTO_PASS"), ("entity", "MANUAL_TRIAGE"), ("controlling-person", "MANUAL_TRIAGE"),
+])
+async def test_documented_task_samples(task_api, kind, verdict):
+    client, _, worker = task_api
+    request = json.loads(Path(f"assets/crs-templates/crs-{kind}-task-request.json").read_text())
+    response = await submit(client, request)
+    await worker.run_once()
+    body = (await client.get(response.headers["Location"])).json()
+    assert body["status"] == "SUCCEEDED" and body["result"]["verdict"] == verdict
+
+
+async def test_missing_frozen_policy_is_not_replaced_by_current_policy(task_api):
+    client, service, worker = task_api
+    request = json.loads(Path("assets/crs-templates/crs-individual-task-request.json").read_text())
+    response = await submit(client, request)
+    async with service.repository.sessions.begin() as session:
+        row = await session.get(RuleValidationTask, response.json()["task_id"])
+        data = service.cipher().decrypt(row.payload_ciphertext)
+        data["form_policy"] = None
+        row.payload_ciphertext = service.cipher().encrypt(data)
+    await worker.run_once()
+    body = (await client.get(response.headers["Location"])).json()
+    assert body["status"] == "FAILED" and body["result"] is None
