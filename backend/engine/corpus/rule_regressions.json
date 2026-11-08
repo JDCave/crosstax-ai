@@ -1,0 +1,2114 @@
+[
+  {
+    "case_id": "CN_CN_ID_INDIVIDUAL_positive",
+    "jurisdiction_code": "CN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CN_ID",
+    "tin": "11010519491231002X",
+    "valid": true
+  },
+  {
+    "case_id": "CN_CN_ID_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "CN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CN_ID",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_ID_INDIVIDUAL_empty",
+    "jurisdiction_code": "CN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CN_ID",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_ID_INDIVIDUAL_oversized",
+    "jurisdiction_code": "CN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CN_ID",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_LEGACY_TIN_ENTITY_positive",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_LEGACY_TIN",
+    "tin": "123456789012345",
+    "valid": true
+  },
+  {
+    "case_id": "CN_CN_LEGACY_TIN_ENTITY_invalid_character",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_LEGACY_TIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_LEGACY_TIN_ENTITY_empty",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_LEGACY_TIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_LEGACY_TIN_ENTITY_oversized",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_LEGACY_TIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_ENTITY_TIN_ENTITY_positive",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_ENTITY_TIN",
+    "tin": "123456781234567890",
+    "valid": true
+  },
+  {
+    "case_id": "CN_CN_ENTITY_TIN_ENTITY_invalid_character",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_ENTITY_TIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_ENTITY_TIN_ENTITY_empty",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_ENTITY_TIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CN_CN_ENTITY_TIN_ENTITY_oversized",
+    "jurisdiction_code": "CN",
+    "holder_type": "ENTITY",
+    "tin_type": "CN_ENTITY_TIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HKID_INDIVIDUAL_positive",
+    "jurisdiction_code": "HK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "HKID",
+    "tin": "A1234563",
+    "valid": true
+  },
+  {
+    "case_id": "HK_HKID_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "HK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "HKID",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HKID_INDIVIDUAL_empty",
+    "jurisdiction_code": "HK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "HKID",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HKID_INDIVIDUAL_oversized",
+    "jurisdiction_code": "HK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "HKID",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HK_BR_ENTITY_positive",
+    "jurisdiction_code": "HK",
+    "holder_type": "ENTITY",
+    "tin_type": "HK_BR",
+    "tin": "12345678",
+    "valid": true
+  },
+  {
+    "case_id": "HK_HK_BR_ENTITY_invalid_character",
+    "jurisdiction_code": "HK",
+    "holder_type": "ENTITY",
+    "tin_type": "HK_BR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HK_BR_ENTITY_empty",
+    "jurisdiction_code": "HK",
+    "holder_type": "ENTITY",
+    "tin_type": "HK_BR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "HK_HK_BR_ENTITY_oversized",
+    "jurisdiction_code": "HK",
+    "holder_type": "ENTITY",
+    "tin_type": "HK_BR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_NRIC_INDIVIDUAL_positive",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_NRIC",
+    "tin": "S0000001I",
+    "valid": true
+  },
+  {
+    "case_id": "SG_SG_NRIC_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_NRIC",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_NRIC_INDIVIDUAL_empty",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_NRIC",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_NRIC_INDIVIDUAL_oversized",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_NRIC",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_FIN_INDIVIDUAL_positive",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_FIN",
+    "tin": "F1234567A",
+    "valid": true
+  },
+  {
+    "case_id": "SG_SG_FIN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_FIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_FIN_INDIVIDUAL_empty",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_FIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_FIN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "SG",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SG_FIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROB_ENTITY_positive",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROB",
+    "tin": "12345678A",
+    "valid": true
+  },
+  {
+    "case_id": "SG_SG_UEN_ROB_ENTITY_invalid_character",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROB",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROB_ENTITY_empty",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROB",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROB_ENTITY_oversized",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROB",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROC_ENTITY_positive",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROC",
+    "tin": "202600001A",
+    "valid": true
+  },
+  {
+    "case_id": "SG_SG_UEN_ROC_ENTITY_invalid_character",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROC",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROC_ENTITY_empty",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROC",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_ROC_ENTITY_oversized",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_ROC",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_OTHER_ENTITY_positive",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_OTHER",
+    "tin": "T26LL0001A",
+    "valid": true
+  },
+  {
+    "case_id": "SG_SG_UEN_OTHER_ENTITY_invalid_character",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_OTHER",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_OTHER_ENTITY_empty",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_OTHER",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SG_SG_UEN_OTHER_ENTITY_oversized",
+    "jurisdiction_code": "SG",
+    "holder_type": "ENTITY",
+    "tin_type": "SG_UEN_OTHER",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_INDIVIDUAL_positive",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_EIN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "US_US_EIN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_EIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_INDIVIDUAL_empty",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_EIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_EIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_ENTITY_positive",
+    "jurisdiction_code": "US",
+    "holder_type": "ENTITY",
+    "tin_type": "US_EIN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "US_US_EIN_ENTITY_invalid_character",
+    "jurisdiction_code": "US",
+    "holder_type": "ENTITY",
+    "tin_type": "US_EIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_ENTITY_empty",
+    "jurisdiction_code": "US",
+    "holder_type": "ENTITY",
+    "tin_type": "US_EIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_EIN_ENTITY_oversized",
+    "jurisdiction_code": "US",
+    "holder_type": "ENTITY",
+    "tin_type": "US_EIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_SSN_INDIVIDUAL_positive",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_SSN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "US_US_SSN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_SSN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_SSN_INDIVIDUAL_empty",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_SSN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_SSN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_SSN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_ITIN_INDIVIDUAL_positive",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_ITIN",
+    "tin": "912501234",
+    "valid": true
+  },
+  {
+    "case_id": "US_US_ITIN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_ITIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_ITIN_INDIVIDUAL_empty",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_ITIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "US_US_ITIN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "US",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "US_ITIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_INDIVIDUAL_positive",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_TFN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "AU_AU_TFN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_TFN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_INDIVIDUAL_empty",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_TFN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_TFN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_INDIVIDUAL_positive",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_ABN",
+    "tin": "51824753556",
+    "valid": true
+  },
+  {
+    "case_id": "AU_AU_ABN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_ABN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_INDIVIDUAL_empty",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_ABN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "AU",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "AU_ABN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_ENTITY_positive",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_TFN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "AU_AU_TFN_ENTITY_invalid_character",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_TFN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_ENTITY_empty",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_TFN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_TFN_ENTITY_oversized",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_TFN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_ENTITY_positive",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_ABN",
+    "tin": "51824753556",
+    "valid": true
+  },
+  {
+    "case_id": "AU_AU_ABN_ENTITY_invalid_character",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_ABN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_ENTITY_empty",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_ABN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "AU_AU_ABN_ENTITY_oversized",
+    "jurisdiction_code": "AU",
+    "holder_type": "ENTITY",
+    "tin_type": "AU_ABN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_INDIVIDUAL_positive",
+    "jurisdiction_code": "NZ",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NZ_IRD",
+    "tin": "12345678",
+    "valid": true
+  },
+  {
+    "case_id": "NZ_NZ_IRD_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "NZ",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NZ_IRD",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_INDIVIDUAL_empty",
+    "jurisdiction_code": "NZ",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NZ_IRD",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_INDIVIDUAL_oversized",
+    "jurisdiction_code": "NZ",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NZ_IRD",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_ENTITY_positive",
+    "jurisdiction_code": "NZ",
+    "holder_type": "ENTITY",
+    "tin_type": "NZ_IRD",
+    "tin": "12345678",
+    "valid": true
+  },
+  {
+    "case_id": "NZ_NZ_IRD_ENTITY_invalid_character",
+    "jurisdiction_code": "NZ",
+    "holder_type": "ENTITY",
+    "tin_type": "NZ_IRD",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_ENTITY_empty",
+    "jurisdiction_code": "NZ",
+    "holder_type": "ENTITY",
+    "tin_type": "NZ_IRD",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NZ_NZ_IRD_ENTITY_oversized",
+    "jurisdiction_code": "NZ",
+    "holder_type": "ENTITY",
+    "tin_type": "NZ_IRD",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_INDIVIDUAL_positive",
+    "jurisdiction_code": "NL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NL_TIN",
+    "tin": "123456782",
+    "valid": true
+  },
+  {
+    "case_id": "NL_NL_TIN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "NL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NL_TIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_INDIVIDUAL_empty",
+    "jurisdiction_code": "NL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NL_TIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "NL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NL_TIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_ENTITY_positive",
+    "jurisdiction_code": "NL",
+    "holder_type": "ENTITY",
+    "tin_type": "NL_TIN",
+    "tin": "123456782",
+    "valid": true
+  },
+  {
+    "case_id": "NL_NL_TIN_ENTITY_invalid_character",
+    "jurisdiction_code": "NL",
+    "holder_type": "ENTITY",
+    "tin_type": "NL_TIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_ENTITY_empty",
+    "jurisdiction_code": "NL",
+    "holder_type": "ENTITY",
+    "tin_type": "NL_TIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NL_NL_TIN_ENTITY_oversized",
+    "jurisdiction_code": "NL",
+    "holder_type": "ENTITY",
+    "tin_type": "NL_TIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_INDIVIDUAL_positive",
+    "jurisdiction_code": "IE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IE_TRN",
+    "tin": "1234567AB",
+    "valid": true
+  },
+  {
+    "case_id": "IE_IE_TRN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "IE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IE_TRN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_INDIVIDUAL_empty",
+    "jurisdiction_code": "IE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IE_TRN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "IE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IE_TRN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_ENTITY_positive",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_TRN",
+    "tin": "1234567AB",
+    "valid": true
+  },
+  {
+    "case_id": "IE_IE_TRN_ENTITY_invalid_character",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_TRN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_ENTITY_empty",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_TRN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_TRN_ENTITY_oversized",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_TRN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_CHY_ENTITY_positive",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_CHY",
+    "tin": "CHY12345",
+    "valid": true
+  },
+  {
+    "case_id": "IE_IE_CHY_ENTITY_invalid_character",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_CHY",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_CHY_ENTITY_empty",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_CHY",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "IE_IE_CHY_ENTITY_oversized",
+    "jurisdiction_code": "IE",
+    "holder_type": "ENTITY",
+    "tin_type": "IE_CHY",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_INDIVIDUAL_positive",
+    "jurisdiction_code": "ZA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "0123456789",
+    "valid": true
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "ZA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_INDIVIDUAL_empty",
+    "jurisdiction_code": "ZA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_INDIVIDUAL_oversized",
+    "jurisdiction_code": "ZA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_ENTITY_positive",
+    "jurisdiction_code": "ZA",
+    "holder_type": "ENTITY",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "0123456789",
+    "valid": true
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_ENTITY_invalid_character",
+    "jurisdiction_code": "ZA",
+    "holder_type": "ENTITY",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_ENTITY_empty",
+    "jurisdiction_code": "ZA",
+    "holder_type": "ENTITY",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ZA_ZA_INCOME_TAX_ENTITY_oversized",
+    "jurisdiction_code": "ZA",
+    "holder_type": "ENTITY",
+    "tin_type": "ZA_INCOME_TAX",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_INDIVIDUAL_positive",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_NIP",
+    "tin": "2234567895",
+    "valid": true
+  },
+  {
+    "case_id": "PL_PL_NIP_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_NIP",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_INDIVIDUAL_empty",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_NIP",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_INDIVIDUAL_oversized",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_NIP",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_ENTITY_positive",
+    "jurisdiction_code": "PL",
+    "holder_type": "ENTITY",
+    "tin_type": "PL_NIP",
+    "tin": "2234567895",
+    "valid": true
+  },
+  {
+    "case_id": "PL_PL_NIP_ENTITY_invalid_character",
+    "jurisdiction_code": "PL",
+    "holder_type": "ENTITY",
+    "tin_type": "PL_NIP",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_ENTITY_empty",
+    "jurisdiction_code": "PL",
+    "holder_type": "ENTITY",
+    "tin_type": "PL_NIP",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_NIP_ENTITY_oversized",
+    "jurisdiction_code": "PL",
+    "holder_type": "ENTITY",
+    "tin_type": "PL_NIP",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_PESEL_INDIVIDUAL_positive",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_PESEL",
+    "tin": "02070803628",
+    "valid": true
+  },
+  {
+    "case_id": "PL_PL_PESEL_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_PESEL",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_PESEL_INDIVIDUAL_empty",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_PESEL",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "PL_PL_PESEL_INDIVIDUAL_oversized",
+    "jurisdiction_code": "PL",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "PL_PESEL",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_INDIVIDUAL_positive",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_UTR",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "GB_GB_UTR_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_UTR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_INDIVIDUAL_empty",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_UTR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_INDIVIDUAL_oversized",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_UTR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_ENTITY_positive",
+    "jurisdiction_code": "GB",
+    "holder_type": "ENTITY",
+    "tin_type": "GB_UTR",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "GB_GB_UTR_ENTITY_invalid_character",
+    "jurisdiction_code": "GB",
+    "holder_type": "ENTITY",
+    "tin_type": "GB_UTR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_ENTITY_empty",
+    "jurisdiction_code": "GB",
+    "holder_type": "ENTITY",
+    "tin_type": "GB_UTR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_UTR_ENTITY_oversized",
+    "jurisdiction_code": "GB",
+    "holder_type": "ENTITY",
+    "tin_type": "GB_UTR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_NINO_INDIVIDUAL_positive",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_NINO",
+    "tin": "AB123456C",
+    "valid": true
+  },
+  {
+    "case_id": "GB_GB_NINO_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_NINO",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_NINO_INDIVIDUAL_empty",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_NINO",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "GB_GB_NINO_INDIVIDUAL_oversized",
+    "jurisdiction_code": "GB",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "GB_NINO",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_SIN_INDIVIDUAL_positive",
+    "jurisdiction_code": "CA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CA_SIN",
+    "tin": "998986731",
+    "valid": true
+  },
+  {
+    "case_id": "CA_CA_SIN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "CA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CA_SIN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_SIN_INDIVIDUAL_empty",
+    "jurisdiction_code": "CA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CA_SIN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_SIN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "CA",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CA_SIN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_BN_ENTITY_positive",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_BN",
+    "tin": "123456789",
+    "valid": true
+  },
+  {
+    "case_id": "CA_CA_BN_ENTITY_invalid_character",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_BN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_BN_ENTITY_empty",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_BN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_BN_ENTITY_oversized",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_BN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_TRUST_ENTITY_positive",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_TRUST",
+    "tin": "T12345678",
+    "valid": true
+  },
+  {
+    "case_id": "CA_CA_TRUST_ENTITY_invalid_character",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_TRUST",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_TRUST_ENTITY_empty",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_TRUST",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CA_CA_TRUST_ENTITY_oversized",
+    "jurisdiction_code": "CA",
+    "holder_type": "ENTITY",
+    "tin_type": "CA_TRUST",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DE_DE_IDNR_INDIVIDUAL_positive",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_IDNR",
+    "tin": "12345678901",
+    "valid": true
+  },
+  {
+    "case_id": "DE_DE_IDNR_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_IDNR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DE_DE_IDNR_INDIVIDUAL_empty",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_IDNR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DE_DE_IDNR_INDIVIDUAL_oversized",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_IDNR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_INDIVIDUAL_positive",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR",
+    "tin": "DE123456789",
+    "valid": true
+  },
+  {
+    "case_id": "DE_WIDNR_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_INDIVIDUAL_empty",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_INDIVIDUAL_oversized",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_INDIVIDUAL_positive",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "DE123456789-00001",
+    "valid": true
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_INDIVIDUAL_empty",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_INDIVIDUAL_oversized",
+    "jurisdiction_code": "DE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ENTITY_positive",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR",
+    "tin": "DE123456789",
+    "valid": true
+  },
+  {
+    "case_id": "DE_WIDNR_ENTITY_invalid_character",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ENTITY_empty",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ENTITY_oversized",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_ENTITY_positive",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "DE123456789-00001",
+    "valid": true
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_ENTITY_invalid_character",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_ENTITY_empty",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DE_WIDNR_ACTIVITY_ENTITY_oversized",
+    "jurisdiction_code": "DE",
+    "holder_type": "ENTITY",
+    "tin_type": "DE_WIDNR_ACTIVITY",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SPI_INDIVIDUAL_positive",
+    "jurisdiction_code": "FR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "FR_SPI",
+    "tin": "0123456789012",
+    "valid": true
+  },
+  {
+    "case_id": "FR_FR_SPI_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "FR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "FR_SPI",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SPI_INDIVIDUAL_empty",
+    "jurisdiction_code": "FR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "FR_SPI",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SPI_INDIVIDUAL_oversized",
+    "jurisdiction_code": "FR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "FR_SPI",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIREN_ENTITY_positive",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIREN",
+    "tin": "422260208",
+    "valid": true
+  },
+  {
+    "case_id": "FR_FR_SIREN_ENTITY_invalid_character",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIREN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIREN_ENTITY_empty",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIREN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIREN_ENTITY_oversized",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIREN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIRET_ENTITY_positive",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIRET",
+    "tin": "12345678901234",
+    "valid": true
+  },
+  {
+    "case_id": "FR_FR_SIRET_ENTITY_invalid_character",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIRET",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIRET_ENTITY_empty",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIRET",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "FR_FR_SIRET_ENTITY_oversized",
+    "jurisdiction_code": "FR",
+    "holder_type": "ENTITY",
+    "tin_type": "FR_SIRET",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_MY_NUMBER_INDIVIDUAL_positive",
+    "jurisdiction_code": "JP",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "JP_MY_NUMBER",
+    "tin": "123456789012",
+    "valid": true
+  },
+  {
+    "case_id": "JP_JP_MY_NUMBER_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "JP",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "JP_MY_NUMBER",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_MY_NUMBER_INDIVIDUAL_empty",
+    "jurisdiction_code": "JP",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "JP_MY_NUMBER",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_MY_NUMBER_INDIVIDUAL_oversized",
+    "jurisdiction_code": "JP",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "JP_MY_NUMBER",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_CORPORATE_ENTITY_positive",
+    "jurisdiction_code": "JP",
+    "holder_type": "ENTITY",
+    "tin_type": "JP_CORPORATE",
+    "tin": "8700110005901",
+    "valid": true
+  },
+  {
+    "case_id": "JP_JP_CORPORATE_ENTITY_invalid_character",
+    "jurisdiction_code": "JP",
+    "holder_type": "ENTITY",
+    "tin_type": "JP_CORPORATE",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_CORPORATE_ENTITY_empty",
+    "jurisdiction_code": "JP",
+    "holder_type": "ENTITY",
+    "tin_type": "JP_CORPORATE",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "JP_JP_CORPORATE_ENTITY_oversized",
+    "jurisdiction_code": "JP",
+    "holder_type": "ENTITY",
+    "tin_type": "JP_CORPORATE",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_INDIVIDUAL_positive",
+    "jurisdiction_code": "IN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IN_PAN",
+    "tin": "ABCPD1234A",
+    "valid": true
+  },
+  {
+    "case_id": "IN_IN_PAN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "IN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IN_PAN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_INDIVIDUAL_empty",
+    "jurisdiction_code": "IN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IN_PAN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "IN",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "IN_PAN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_ENTITY_positive",
+    "jurisdiction_code": "IN",
+    "holder_type": "ENTITY",
+    "tin_type": "IN_PAN",
+    "tin": "ABCCD1234A",
+    "valid": true
+  },
+  {
+    "case_id": "IN_IN_PAN_ENTITY_invalid_character",
+    "jurisdiction_code": "IN",
+    "holder_type": "ENTITY",
+    "tin_type": "IN_PAN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_ENTITY_empty",
+    "jurisdiction_code": "IN",
+    "holder_type": "ENTITY",
+    "tin_type": "IN_PAN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "IN_IN_PAN_ENTITY_oversized",
+    "jurisdiction_code": "IN",
+    "holder_type": "ENTITY",
+    "tin_type": "IN_PAN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_OASI_INDIVIDUAL_positive",
+    "jurisdiction_code": "CH",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CH_OASI",
+    "tin": "756.1234.5678.97",
+    "valid": true
+  },
+  {
+    "case_id": "CH_CH_OASI_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "CH",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CH_OASI",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_OASI_INDIVIDUAL_empty",
+    "jurisdiction_code": "CH",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CH_OASI",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_OASI_INDIVIDUAL_oversized",
+    "jurisdiction_code": "CH",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "CH_OASI",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_UID_ENTITY_positive",
+    "jurisdiction_code": "CH",
+    "holder_type": "ENTITY",
+    "tin_type": "CH_UID",
+    "tin": "CHE-123.456.789",
+    "valid": true
+  },
+  {
+    "case_id": "CH_CH_UID_ENTITY_invalid_character",
+    "jurisdiction_code": "CH",
+    "holder_type": "ENTITY",
+    "tin_type": "CH_UID",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_UID_ENTITY_empty",
+    "jurisdiction_code": "CH",
+    "holder_type": "ENTITY",
+    "tin_type": "CH_UID",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "CH_CH_UID_ENTITY_oversized",
+    "jurisdiction_code": "CH",
+    "holder_type": "ENTITY",
+    "tin_type": "CH_UID",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_RRN_INDIVIDUAL_positive",
+    "jurisdiction_code": "KR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "KR_RRN",
+    "tin": "1234567890123",
+    "valid": true
+  },
+  {
+    "case_id": "KR_KR_RRN_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "KR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "KR_RRN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_RRN_INDIVIDUAL_empty",
+    "jurisdiction_code": "KR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "KR_RRN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_RRN_INDIVIDUAL_oversized",
+    "jurisdiction_code": "KR",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "KR_RRN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_BRN_ENTITY_positive",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_BRN",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "KR_KR_BRN_ENTITY_invalid_character",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_BRN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_BRN_ENTITY_empty",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_BRN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_BRN_ENTITY_oversized",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_BRN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_CRN_ENTITY_positive",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_CRN",
+    "tin": "1234567890123",
+    "valid": true
+  },
+  {
+    "case_id": "KR_KR_CRN_ENTITY_invalid_character",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_CRN",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_CRN_ENTITY_empty",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_CRN",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "KR_KR_CRN_ENTITY_oversized",
+    "jurisdiction_code": "KR",
+    "holder_type": "ENTITY",
+    "tin_type": "KR_CRN",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_DNI_INDIVIDUAL_positive",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_DNI",
+    "tin": "12345678Z",
+    "valid": true
+  },
+  {
+    "case_id": "ES_ES_DNI_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_DNI",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_DNI_INDIVIDUAL_empty",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_DNI",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_DNI_INDIVIDUAL_oversized",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_DNI",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIE_INDIVIDUAL_positive",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_NIE",
+    "tin": "X1234567L",
+    "valid": true
+  },
+  {
+    "case_id": "ES_ES_NIE_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_NIE",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIE_INDIVIDUAL_empty",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_NIE",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIE_INDIVIDUAL_oversized",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_NIE",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_SPECIAL_NIF_INDIVIDUAL_positive",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_SPECIAL_NIF",
+    "tin": "K1234567A",
+    "valid": true
+  },
+  {
+    "case_id": "ES_ES_SPECIAL_NIF_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_SPECIAL_NIF",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_SPECIAL_NIF_INDIVIDUAL_empty",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_SPECIAL_NIF",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_SPECIAL_NIF_INDIVIDUAL_oversized",
+    "jurisdiction_code": "ES",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "ES_SPECIAL_NIF",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIF_ENTITY_positive",
+    "jurisdiction_code": "ES",
+    "holder_type": "ENTITY",
+    "tin_type": "ES_NIF",
+    "tin": "A1234567A",
+    "valid": true
+  },
+  {
+    "case_id": "ES_ES_NIF_ENTITY_invalid_character",
+    "jurisdiction_code": "ES",
+    "holder_type": "ENTITY",
+    "tin_type": "ES_NIF",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIF_ENTITY_empty",
+    "jurisdiction_code": "ES",
+    "holder_type": "ENTITY",
+    "tin_type": "ES_NIF",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "ES_ES_NIF_ENTITY_oversized",
+    "jurisdiction_code": "ES",
+    "holder_type": "ENTITY",
+    "tin_type": "ES_NIF",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_PERSONNUMMER_INDIVIDUAL_positive",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_PERSONNUMMER",
+    "tin": "123456+7890",
+    "valid": true
+  },
+  {
+    "case_id": "SE_SE_PERSONNUMMER_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_PERSONNUMMER",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_PERSONNUMMER_INDIVIDUAL_empty",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_PERSONNUMMER",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_PERSONNUMMER_INDIVIDUAL_oversized",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_PERSONNUMMER",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_COORDINATION_INDIVIDUAL_positive",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_COORDINATION",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "SE_SE_COORDINATION_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_COORDINATION",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_COORDINATION_INDIVIDUAL_empty",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_COORDINATION",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_COORDINATION_INDIVIDUAL_oversized",
+    "jurisdiction_code": "SE",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "SE_COORDINATION",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_ORGNR_ENTITY_positive",
+    "jurisdiction_code": "SE",
+    "holder_type": "ENTITY",
+    "tin_type": "SE_ORGNR",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "SE_SE_ORGNR_ENTITY_invalid_character",
+    "jurisdiction_code": "SE",
+    "holder_type": "ENTITY",
+    "tin_type": "SE_ORGNR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_ORGNR_ENTITY_empty",
+    "jurisdiction_code": "SE",
+    "holder_type": "ENTITY",
+    "tin_type": "SE_ORGNR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "SE_SE_ORGNR_ENTITY_oversized",
+    "jurisdiction_code": "SE",
+    "holder_type": "ENTITY",
+    "tin_type": "SE_ORGNR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_NATIONAL_ID_INDIVIDUAL_positive",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_NATIONAL_ID",
+    "tin": "12345678901",
+    "valid": true
+  },
+  {
+    "case_id": "NO_NO_NATIONAL_ID_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_NATIONAL_ID",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_NATIONAL_ID_INDIVIDUAL_empty",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_NATIONAL_ID",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_NATIONAL_ID_INDIVIDUAL_oversized",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_NATIONAL_ID",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_D_NUMBER_INDIVIDUAL_positive",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_D_NUMBER",
+    "tin": "41234567890",
+    "valid": true
+  },
+  {
+    "case_id": "NO_NO_D_NUMBER_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_D_NUMBER",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_D_NUMBER_INDIVIDUAL_empty",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_D_NUMBER",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_D_NUMBER_INDIVIDUAL_oversized",
+    "jurisdiction_code": "NO",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "NO_D_NUMBER",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_ORGNR_ENTITY_positive",
+    "jurisdiction_code": "NO",
+    "holder_type": "ENTITY",
+    "tin_type": "NO_ORGNR",
+    "tin": "974760673MVA",
+    "valid": true
+  },
+  {
+    "case_id": "NO_NO_ORGNR_ENTITY_invalid_character",
+    "jurisdiction_code": "NO",
+    "holder_type": "ENTITY",
+    "tin_type": "NO_ORGNR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_ORGNR_ENTITY_empty",
+    "jurisdiction_code": "NO",
+    "holder_type": "ENTITY",
+    "tin_type": "NO_ORGNR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "NO_NO_ORGNR_ENTITY_oversized",
+    "jurisdiction_code": "NO",
+    "holder_type": "ENTITY",
+    "tin_type": "NO_ORGNR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CPR_INDIVIDUAL_positive",
+    "jurisdiction_code": "DK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DK_CPR",
+    "tin": "1234567890",
+    "valid": true
+  },
+  {
+    "case_id": "DK_DK_CPR_INDIVIDUAL_invalid_character",
+    "jurisdiction_code": "DK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DK_CPR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CPR_INDIVIDUAL_empty",
+    "jurisdiction_code": "DK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DK_CPR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CPR_INDIVIDUAL_oversized",
+    "jurisdiction_code": "DK",
+    "holder_type": "INDIVIDUAL",
+    "tin_type": "DK_CPR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CVR_ENTITY_positive",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_CVR",
+    "tin": "12345678",
+    "valid": true
+  },
+  {
+    "case_id": "DK_DK_CVR_ENTITY_invalid_character",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_CVR",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CVR_ENTITY_empty",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_CVR",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_CVR_ENTITY_oversized",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_CVR",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_SE_ENTITY_positive",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_SE",
+    "tin": "12345678",
+    "valid": true
+  },
+  {
+    "case_id": "DK_DK_SE_ENTITY_invalid_character",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_SE",
+    "tin": "!",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_SE_ENTITY_empty",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_SE",
+    "tin": "",
+    "valid": false
+  },
+  {
+    "case_id": "DK_DK_SE_ENTITY_oversized",
+    "jurisdiction_code": "DK",
+    "holder_type": "ENTITY",
+    "tin_type": "DK_SE",
+    "tin": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "valid": false
+  }
+]

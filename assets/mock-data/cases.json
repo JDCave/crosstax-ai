@@ -1,0 +1,106 @@
+[
+  {
+    "case_id": "A",
+    "synthetic": true,
+    "merchant_id": "DEMO_A",
+    "form_data": {
+      "holder_name": "DEMO PERSON A",
+      "holder_dob": "1949-12-31",
+      "residence_address": "DEMO CN ADDRESS",
+      "jurisdiction_code": "CN",
+      "holder_type": "INDIVIDUAL",
+      "tin_type": "CN_ID",
+      "tin": "11010519491231002X",
+      "has_no_tin": false,
+      "has_signature": true,
+      "signing_date": "2026-11-01"
+    },
+    "indicia_issues": [],
+    "expected_verdict": "AUTO_PASS"
+  },
+  {
+    "case_id": "B",
+    "synthetic": true,
+    "merchant_id": "DEMO_B",
+    "form_data": {
+      "holder_name": "DEMO PERSON B",
+      "holder_dob": "1949-12-31",
+      "residence_address": "DEMO CN ADDRESS",
+      "jurisdiction_code": "CN",
+      "holder_type": "INDIVIDUAL",
+      "tin_type": "CN_ID",
+      "tin": "110105194912310021",
+      "has_no_tin": false,
+      "has_signature": true,
+      "signing_date": "2026-11-01"
+    },
+    "indicia_issues": [],
+    "expected_verdict": "NEED_USER_FIX"
+  },
+  {
+    "case_id": "C",
+    "synthetic": true,
+    "merchant_id": "DEMO_C",
+    "form_data": {
+      "holder_name": "DEMO PERSON C",
+      "holder_dob": "1949-12-31",
+      "residence_address": "DEMO CN ADDRESS",
+      "jurisdiction_code": "CN",
+      "holder_type": "INDIVIDUAL",
+      "tin_type": "CN_ID",
+      "tin": "11010519491231002X",
+      "has_no_tin": false,
+      "has_signature": false,
+      "signing_date": "2026-11-01"
+    },
+    "indicia_issues": [],
+    "expected_verdict": "NEED_USER_FIX"
+  },
+  {
+    "case_id": "D",
+    "synthetic": true,
+    "merchant_id": "DEMO_D",
+    "form_data": {
+      "holder_name": "DEMO OFFSHORE ENTITY D",
+      "holder_dob": "1949-12-31",
+      "residence_address": "DEMO CN ADDRESS",
+      "jurisdiction_code": "CN",
+      "holder_type": "ENTITY",
+      "tin_type": "CN_ENTITY_TIN",
+      "tin": "123456781234567890",
+      "has_no_tin": false,
+      "has_signature": true,
+      "signing_date": "2026-11-01"
+    },
+    "indicia_issues": [
+      {
+        "code": "INDICIA_CONFLICT",
+        "severity": "WARNING",
+        "field": "jurisdiction_code",
+        "message": "演示上游研判：注册地 HK 与仅申报 CN 的声明存在待核实差异",
+        "confidence": 0.9
+      }
+    ],
+    "expected_verdict": "MANUAL_TRIAGE"
+  },
+  {
+    "case_id": "E",
+    "synthetic": true,
+    "merchant_id": "DEMO_E",
+    "form_data": {
+      "holder_name": "DEMO SG ENTITY E",
+      "holder_dob": "1949-12-31",
+      "residence_address": "DEMO CN ADDRESS",
+      "jurisdiction_code": "SG",
+      "holder_type": "ENTITY",
+      "tin_type": "SG_UEN_ROC",
+      "tin": "2026BAD01A",
+      "has_no_tin": false,
+      "has_signature": true,
+      "signing_date": "2026-11-01"
+    },
+    "indicia_issues": [],
+    "expected_verdict": "NEED_USER_FIX",
+    "expected_before_reload": "MANUAL_TRIAGE"
+  }
+]

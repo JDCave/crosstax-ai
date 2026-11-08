@@ -27,9 +27,8 @@
 用于项目表单、数据提取及演示的模板参考；表格字段不代表当前规则引擎已全部支持。
 个人版与实体版两份表格均支持多个税收居民地区及对应 TIN；实体版还包含实体分类，
 Passive NFE 的控权人信息须另附控权人表格填写，术语以术语表为准。
-**「支持多个税收居民地区」与下文「当前接口一次只支持一个」构成已知差距**，其契约层修订方案见
-[001-crs-contract 计划](../../.specify/features/001-crs-contract/plan.md)（D3：`tax_residencies[]` 重复组）；
-修订尚未实现，落地前以下文接口边界为准。
+
+当前实现已支持最多 20 个不同税籍；实体不再强制提供成立日期。上游新契约规划仍需与当前实现逐项对齐。
 
 ## API 请求示例
 
@@ -38,16 +37,12 @@ Passive NFE 的控权人信息须另附控权人表格填写，术语以术语�
 - [个人版请求](crs-individual-request.json)
 - [实体版请求](crs-entity-request.json)
 
-用于 `POST /api/v1/rule-engine/validate`，姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
+以下旧样例用于同步兼容 `/validate`；异步调用时放入 body.validation。姓名、地址和号码均为虚构测试数据，不代表真实签发记录。
 示例业务日期为 2026-11-04，实际调用时由主后端传入业务日期。
 
-`jurisdiction_code` 表示税收居民地区，不能直接用地址或注册地代替。
-当前接口一次只支持一个税收居民地区及 TIN，不支持实体分类、控权人等额外字段。
-这是上文已标注的已知差距，不是表格本身的限制；契约层修订方案见
-[001-crs-contract 计划](../../.specify/features/001-crs-contract/plan.md)，落地前本行仍然成立。
-实体请求中的 `holder_dob` 表示成立日期，是当前接口必填字段；实体版 PDF 不含该字段，
-示例假设由上游其他资料补充，不能从表格中凭空生成。
-当前香港规则只检查号码格式，不验证签发真实性或归属。
+另提供 [多税籍及 AI 补正请求](crs-multi-residence-request.json)，用于演示一次校验多个地区和请求补正建议。
+当前实体无需出生／成立日期，实体 PDF 不含成立日期，不应补造。
+多税籍最多 20 个不同地区，完整范围和 AI 降级机制见上述接入文档。
 
 从仓库根目录调用示例：
 
@@ -57,5 +52,19 @@ curl -X POST http://localhost:8000/api/v1/rule-engine/validate \
   --data-binary @assets/crs-templates/crs-individual-request.json
 ```
 
-完整接口说明见 [CRS 表格校验接口说明](API_INTEGRATION.md)；字段长度、类型与 policy 可选字段
-以服务运行后 `http://localhost:8000/docs` 生成的实时文档为准。
+完整接口说明见 [规则引擎 API 文档](../../backend/api/RULE_ENGINE_API.md)。
+
+## 新契约请求样例（2026-11-08）
+
+- [个人](crs-structured-individual-request.json)
+- [实体](crs-structured-entity-request.json)
+- [控权人](crs-structured-controlling-person-request.json)
+
+主流程调用方式、预期裁决及未核实事实见 [结构化接入文档](../../backend/api/STRUCTURED_CRS_API.md)。
+
+## 异步任务样例
+
+新接入使用 [个人任务](crs-individual-task-request.json)、[实体任务](crs-entity-task-request.json)、[控权人任务](crs-controlling-person-task-request.json)。
+包含 session_id 和完整 validation，可直接 POST `/api/v1/rule-engine/tasks`；必须另传 Idempotency-Key。
+样例使用合成数据；实际替换 session_id／业务日期，并传主审核剩余 deadline_at。
+提交、轮询和独立 Worker 启动见 [异步 API 文档](../../backend/api/RULE_TASKS_API.md)。

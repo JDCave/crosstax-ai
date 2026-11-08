@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.infrastructure.database import async_session_factory
+from backend.infrastructure.database import get_session
 
 router = APIRouter()
 
@@ -17,11 +18,10 @@ async def health() -> dict[str, str]:
 
 
 @router.get("/ready", summary="Readiness probe")
-async def ready() -> dict[str, str]:
+async def ready(session: AsyncSession = Depends(get_session)) -> dict[str, str]:
     """Return OK if the service and its dependencies are ready."""
     try:
-        async with async_session_factory() as session:
-            await session.execute(text("SELECT 1"))
+        await session.execute(text("SELECT 1"))
         return {"status": "ready"}
     except Exception as exc:
         from fastapi import HTTPException

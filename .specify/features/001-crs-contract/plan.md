@@ -2,6 +2,8 @@
 
 **Branch**: `001-crs-contract` | **Date**: 2026-11-04 | **Spec**: [spec.md](./spec.md)
 
+**Progress updated**: 2026-11-08（合并后实现核验；不修改 feature 需求及评审结论）
+
 **Input**: Feature specification from `.specify/features/001-crs-contract/spec.md`
 
 ## Summary
@@ -18,9 +20,9 @@
 
 **Primary Dependencies**: FastAPI、async SQLAlchemy 2.0、Alembic、uv。Vision 侧为阿里云神机百炼 Qwen-VL-Max（ADR-004 / ADR-007，SDK 或 HTTP 待 ADR-007 裁定）。确定性抽取侧需新增 PDF 解析依赖 —— 2026-11-05 团队已批准，见 §Complexity Tracking V1。
 
-**Storage**: 开发 SQLite，生产阿里云 PG 16（ADR-008）；规则载体存在三方分歧，见 spec.md FR-041 与 §变更单第 9–10 项。
+**Storage**: 开发 SQLite，生产阿里云 PG 16（ADR-008）；上游 ADR-003 已选择 JSON 文件，本 fork 规则版本存储采用 DB，按用户确认，本轮先核对黑盒 API 流程，内部存储不作为迁移阻塞。
 
-**Testing**: pytest（既有）。本轮不产出实现代码，故不新增测试。
+**Testing**: 本 feature 规划阶段未新增实现测试；fork 规则引擎已补充自动化测试，当前结果见 §实现现状。
 
 **Target Platform**: Linux 服务器（阿里云 ECS，ADR-006）
 
@@ -32,26 +34,46 @@
 
 **Scale/Scope**: 竞赛演示量级。本轮范围为 HK 单法域、48 个字段位、24 条严重缺口的处置。
 
-**实现现状（本计划为全项目进度的唯一权威落点）**
+**实现现状（本计划为全项目进度的唯一权威落点；更新于 2026-11-08）**
 
-已落地（均经文件系统抽验）：
+本节基于 fork 合并上游 `75fb627` 后的实际代码核验（合并提交 `258be94`）。
+此前主线检查中“规则引擎及相关目录不存在”的结论已被 fork 实现覆盖，不再作为当前进度依据。
+新契约字段及可确定性规则已接入现有 API（cee314f 及后续修正）；双路抽取及依赖外部事实的要求仍待实现，不能认定本 feature 已完整验收。
 
-- **工程脚手架**：`create_app()` 工厂 + lifespan + CORS + 全局异常处理 + `GET /health` / `GET /ready`（含 `SELECT 1` 连通性检查）
-- **基础设施**：`infrastructure/database.py` — `create_async_engine` + `async_sessionmaker` + 依赖 `get_session()`；`core/config.py` — `Settings` + `DatabaseSettings`/`RedisSettings` 分组、`.env` 加载、`get_settings()` 缓存单例；`core/logging/` — console/json 双格式 + `RequestIdMiddleware`；`infrastructure/exceptions.py` — `register_exception_handlers()`；Redis 依赖与配置就位、**业务用途待确认**（架构文档 §6 #11）
-- **持久化**：`alembic.ini` + `alembic/env.py`（已对接异步引擎）+ `script.py.mako` + Makefile `migrate*` 目标；`models/base.py`（`Base` + `TimestampMixin`）+ `models/user.py` + `repositories/base.py`（部分完成）
-- **容器与门禁**：uv 多阶段 Dockerfile + 非 root + `EXPOSE 8000` + HEALTHCHECK；compose 三服务 `backend` + `postgres:16-alpine` + `redis:7-alpine`，含健康检查与依赖顺序；ruff / mypy(strict) / pytest / pre-commit / Makefile 全绿
-- **测试**：`tests/backend/test_config.py`（含 ADR-010 连接池断言）+ `test_health.py` + `tests/conftest.py`
-- **设计产出**：`design/architecture.md` v1.3 + `design/diagrams/architecture-overview.html`；多智能体职责边界；规则热重载机制；审计留痕数据模型；TIN 校验引擎设计；跨源冲突研判逻辑；三态裁决状态机；内部模块接口；Vision API 封装；REST API；WebSocket；`design/ui-spec.md`
-- **选型裁定**：后端 Python + FastAPI、前端 React 18 + TS（2026-10-22）；混合数据库 SQLite + 阿里云 PG 16、pgvector 竞赛阶段豁免（2026-10-23）；阿里云神机百炼 Qwen-VL-Max / Qwen-Max / GLM / DeepSeek + Embedding（2026-10-23）
-- **需求归档**：两份 proposal 整合为 `specs/prd.md`
+| 能力 | 当前状态 | 代码与证据 |
+| --- | --- | --- |
+| 工程底座 | 已实现 | 应用工厂、配置、日志、异常、健康探针、异步 SQLAlchemy、Alembic、Docker |
+| 规则持久化 | 已实现，SQLite／本地 PG 已验证 | `backend/models/rule_*.py`、`backend/repositories/rules.py`；六张基础表、两张历史表、两张异步任务表与一张 PDF 报告表，已有迁移脚本 |
+| TIN 规则与算法 | 已实现，有明确覆盖范围 | `rules/rules_global_v4.json`：22 法域、66 选择器；格式与校验位区分，未覆盖转人工；不是完整税法覆盖 |
+| 完备性与裁决 | 已实现 | 日期、签名声明、TIN／豁免一致性；BLOCKER 优先的三态裁决 |
+| 异步校验 API | 已实现、自动化验证 | `POST /api/v1/rule-engine/tasks` + `GET /api/v1/rule-engine/tasks/{task_id}`；同步 validate 隐藏并保留；个人／实体／控权人新结构、单／多税籍旧格式兼容、逐项结果、问题来源、范围和执行指纹 |
+| 实体日期 | 已实现 | 实体不再强制补造成立日期；个人出生日期、可选实体成立日期各自检查 |
+| 发布与热加载 | 已实现 | 候选注册、显式批准、回归门禁、CAS 激活、发布历史、固定旧快照与新调用热加载 |
+| 升级影响分析 | 已实现 | 离线比较、裁决／覆盖／验证深度变化、资料与执行差异、报告哈希；不调用 AI 或 DB |
+| 后台规则更新 | 已实现，模拟联调通过 | 来源检查→上游结构化包→回归／影响／证据门禁→可信策略→CAS 发布；文件锁、原子报告和 cron 模板 |
+| 百炼补正 Agent | 已实现，真实调用待联调 | 默认 qwen-plus；只读工具、证据引用、降级、有限重试与调用统计；未填有效 Key，未验收真实模型质量／耗时 |
+| 内部历史归档／重放 | 已实现，有边界 | 单税籍 Python 服务；旧同步 HTTP 不强制归档；异步任务加密保存完整结果，不替代主 AuditSession 或完整历史重放 |
+| 官方模板与测试数据 | 已提交 | 4 份 IRD PDF、个人／实体／多税籍 JSON、Case A–E 和商户 mock 数据 |
+| PDF 自动生成与下载 | 本轮已完成 | 成功结果与报告待办同事务提交；后台生成、PG 加密保存、生成中重试、READY 下载及故障恢复；三条 API 分工已验证 |
+| 解释卡片与补正对比 | 已实现并验证 | result.explanation_cards；同会话 compare_to 对比问题及字段路径，版本/契约/上下文不同不误归因；PDF 模板 v2 |
+| 模拟规则升级演示 | 已实现，默认关闭 | opt-in upgrade-impact，Case A–E 合成用例前后对比，不改活动规则 |
+| 快速初始化 API | 已实现，默认关闭 | 内部口令保护；空库/六表基线/正常迁移库；ORM/Alembic 与幂等种子数据；保护已有规则及队友表 |
+| 本地数据库同步 | 已完成并复核 | localhost:5432/devdb，schema crosstax，版本 20261108_pdf_reports；11 表与 ORM 无差异，已有数据保留 |
+| 测试与类型检查 | 已验证 | 合并后锁定依赖下 316 passed（含本地 PG，无跳过）；Ruff 与全量 backend Mypy 通过 |
 
-**三处状态修正 —— 既有进度自评不成立或已被推翻**：
+**尚未完成或未验收**：
 
-1. 「媒体预处理流水线设计（PDF **栅格化** / EXIF / 缩放 / Base64）」与「Vision Parser Agent Prompt 设计（抽取字段定义、**输出 JSON Schema**、置信度策略）→ CRSFormData」两项设计均已产出，但其成果正是本 feature 变更单第 2 / 3 / 8 项要修订的对象。**二元「已完成 / 未完成」状态无法表达「已完成的设计被后续 feature 推翻」**，故此处显式标注其被修订的性质。
-2. 「`alembic/versions/` 目前为空」在文件系统层面不成立：存在孤立残骸 `alembic/versions/__pycache__/db0db89efd3a_initial_scaffold.cpython-314.pyc`。经 `git log --all -- alembic/versions/`（无输出）与 `git ls-files alembic/versions/`（无输出）核验，**该迁移脚本从未提交**；`.gitignore:6` 已排除 `__pycache__/`。故「无数据库迁移」的结论成立，但残骸应清理。
-3. 「定义性能指标：单次审核端到端响应时间目标」被列为待办，但 `specs/prd.md:57-61` 早已有 5 条量化指标（≤30 秒 / ≥90% / 100% / 100% / 100%）。该项状态应为**已过期**而非未完成，与本 feature 无关。
+- `frontend/` 未创建；上传、WebSocket、主审核流水线、跨源研判、主 AuditSession/Merchant ORM、完整主审核会话的 HTML/PDF 审计报告尚未实现；规则阶段 PDF 自动生成和下载已完成。
+- 双路 PDF／Vision 抽取、一致性汇总、多持有人检测、实体分类和控权人规则仍待实现；现有补正 Agent 不承担这些功能。
+- 新 schema 的字段结构已由运行接口承接；阈值所需的实体形式／持股事实、机构表头和实际跨文档证据仍有输入缺口。新结构税籍行数由 1 MiB 约束，不再受 20 行上限限制；旧格式保留原上限。
+- 监管参数尚未全部声明式化；现有完备性部分仍在 Python 中，不得把 66 个 TIN 选择器等同于 27 个监管参数已经实现。
+- 当前用户要求的 DB 版本存储／受控来源检查，与上游 ADR-003 的 JSON 文件规则载体仍有架构差异，尚未形成团队统一裁定；本次仅更新事实，不改 ADR。
+- 四项 PostgreSQL 集成用例已在本地隔离 schema 验证；云数据库、真实百炼 API、官网任务及前后端完整链路均未验收。
+- cron 仅提供模板，未安装；未执行真实规则发布。资料导入 manifest 当前仅 CN/HK/SG OECD 来源，资料提取及结构化包由上游提供。
+- 未出具覆盖率 ≥80% 报告，未验证端到端 ≤30s、真实抽取准确率或字段一致率指标。
+- 本地合并已完成；GitHub 推送因 HTTPS 凭据缺失失败，尚不能标记远程同步完成。
 
-未落地：`backend/agents/`、`backend/engine/`、`backend/api/schemas/` 三个目录**均不存在**；`rules/`、根 `fixtures/` 为空目录，`assets/mock-data/` 与 `assets/templates/` 仅含 `.gitkeep`，`design/openapi.yaml` 不存在；`frontend/` 整目录不存在。规则引擎只存在于文档（`API_INTEGRATION.md`）与规划路径（`design/architecture.md:568-570`）中，无任何实现——`API_INTEGRATION.md:134-137` 以「当前 global v4 规则」的口吻描述预期返回，属契约先行文档。**这意味着 D3 虽是对已发布契约的破坏性变更，其实际迁移成本仅为两个示例 JSON 与两份 markdown，无在运行的客户端、无已提交的数据库迁移。**
+需求质量清单仍归评审人所有，本次不改变其勾选状态；进度完成不等于需求或合规验收通过。
 
 ## Constitution Check
 
@@ -89,7 +111,7 @@
 
 ### Source Code (repository root)
 
-对齐 `design/architecture.md:560-570` 的既有规划树，**不新造并行布局**。仅新增 2 个 agent 模块：
+以下为本 feature 的目标结构，非当前目录清单；当前实际实现以 §实现现状 为准。新增确定性抽取与汇总模块仍待开发：
 
 ```text
 backend/agents/                    # (规划中，architecture.md:560-567)
@@ -107,7 +129,7 @@ backend/engine/                    # (规划中，architecture.md:568-570)
 ├── rule_engine.py                 # 既有规划 → FR-041 的 27 个监管参数求值
 └── models.py                      # 既有规划 → CRSFormData 落点，承接 D3 修订
 
-rules/                             # 当前为空目录；FR-041 要求带 effective_from
+rules/                             # 已有 TIN 配置；FR-041 的完整生效日／监管参数模型仍待对齐
 └── hk/                            # 建议分层，见 §变更单第 9 项
 ```
 
@@ -115,7 +137,7 @@ rules/                             # 当前为空目录；FR-041 要求带 effec
 
 ## 项目级待办
 
-**状态列按本轮核验修正，不照抄既有自评。**
+**状态列按 2026-11-08 合并后的 fork 实现核验；本 feature 专属工作仍按其独立验收标准跟进。**
 
 状态标记：**待办** = 尚未开始｜**本 feature 已完成** = 由 001-crs-contract 交付｜**部分完成** = 本 feature 覆盖一部分｜**已过期** = 事实已存在而原状态错误｜**已并入** = 内容见他处，此处只留指针
 
@@ -149,19 +171,19 @@ rules/                             # 当前为空目录；FR-041 要求带 effec
 |---|---|---|
 | 前端工程初始化（Vite + React 18 + TS + Ant Design + ESLint/Prettier） | 待办 | `frontend/` 整目录不存在 |
 | SQLAlchemy ORM 模型（AuditSession / Merchant） | 待办 | `base.py`/`user.py`/`repositories/base.py` 已就绪；**`CRSFormData` 有两个候选落点，见 §变更单第 19 项** |
-| Mock：商户底表 `mock_merchants.json` | 待办 | `assets/mock-data/` 仅占位 |
+| Mock：商户底表 `mock_merchants.json` | 已实现（合成数据） | `assets/mock-data/mock_merchants.json`；不是实际 KYC 接入 |
 | Mock：5 个 CRS 样本表单（PDF / 图片） | 部分完成 | `assets/crs-templates/` 已有 4 份 IRD 官方 PDF（个人 / 实体 / 控权人 / 术语），可直接作 HK 样本；仍缺 CN/SG 样本、扫描件与图片件 |
-| 规则配置 `rules/rules_v1_base.json`（CN/HK/SG） | 待办 + **结构不足** | `rules/` 为空目录。§规则表达力测算 证明现有 §3 结构只能承载 27 个监管参数中的 3 个（M/N = 11.1%），**须先扩展维度再编写**，否则写出来的规则无法表达控权人门槛生效日等 24 个参数。见 §变更单第 9 项 |
-| 规则补丁 `rules/rules_v2_patch.json`（热重载演示） | 待办 | 同上 |
-| OpenAPI 契约文件编写 | 待办 | 同设计阶段第 1 项 |
-| Pydantic 请求/响应模型（`backend/api/schemas/`） | 待办 | 目录不存在；**与 `engine/models.py` 的 `CRSFormData` 双落点冲突，见 §变更单第 19 项** |
-| REST 路由 `/api/v1/audit`、`/api/v1/rules`、`/api/v1/cases` | 待办 | 当前仅注册 health 路由 |
+| 规则配置 `rules/rules_v1_base.json`（CN/HK）及全球目录 | 部分完成 | 基线、补丁、全球 v4 已提交；TIN 选择器覆盖不等于 FR-041 的全部监管参数已实现 |
+| 规则补丁 `rules/rules_v2_patch.json`（热重载演示） | 已实现 | 完整 CN/HK/SG 快照；Case E 与后台更新热加载测试通过 |
+| OpenAPI 契约文件编写 | 部分完成 | `backend/api/openapi.json` 与运行时快照一致；仅规则校验，完整 audit/rules/cases 契约未实现 |
+| Pydantic 请求/响应模型（`backend/api/schemas/`） | 部分完成 | `structured_contracts.py` / `structured_validation.py` 已承接新字段和确定性检查；跨源证据及完整 feature 验收仍待完成 |
+| REST 路由 `/api/v1/audit`、`/api/v1/rules`、`/api/v1/cases` | 待办 | 当前已有任务提交／查询接口，旧同步 `/api/v1/rule-engine/validate` 隐藏保留；管理能力为内部 CLI，不增加公开路由 |
 | WebSocket 端点 `/ws/audit/{session_id}` | 待办 | — |
-| 媒体预处理 / Vision Parser / TIN 引擎 / 热重载 / 形式完备性 / 跨源研判 / 三态裁决 / 审计留痕（8 个模块） | **已并入** | 见 §Project Structure 的 `backend/agents/` 与 `backend/engine/` 树，不在此重复列举。其中媒体预处理的职责已收窄为「共享层（解密 + 页面枚举）」，Vision Parser 已由单路改为双路 |
+| 媒体预处理 / Vision / TIN / 热加载 / 完备性 / 跨源研判 / 裁决 / 审计 | 部分完成 | TIN、热加载、完备性、裁决和内部归档已实现；抽取、跨源研判和主流水线待办 |
 | 新增 `deterministic_extractor.py`、`extraction_aggregator.py` | **本 feature 新增** | 见 §Project Structure 与 §Phase 0 ADR-004 增补 |
 | 逐行核实 `mapping-matrix.csv` 的 `path_capability` 列 | 待办 — **D4 实现期的首个待办** | 当前 43 个 `BOTH` 是默认值而非核实结论（已核实的只有 5 个 `VISION_ONLY`：R21/R22/R26/R35/R36）。核实需解密后读取字形与结构树，即 V1 依赖落地后才能做。核实前 SC-004 的一致率带有乐观偏差，方向与 SC-009 的反作弊意图相反，见 §Phase 0 ADR-004 增补 |
 | 受理层多持有人检测与拒收归因 | 待办 — **本 feature 新增** | FR-005 / FR-047 / SC-012；判据为「持有人身份块出现两次」，MUST NOT 按重复组计数 |
-| 审计报告生成（Jinja2 渲染 HTML/PDF） | 待办 | — |
+| 审计报告生成（Jinja2 渲染 HTML/PDF） | 部分完成 | 规则阶段 PDF 已自动生成、加密保存 PG 并可下载；完整主会话 HTML／PDF 仍待主流程实现 |
 
 ### 前端 SPA（11 项全部待办）
 
@@ -173,19 +195,19 @@ Layout 框架（Header + Sider + Content）｜Axios 客户端 + API 模块（aud
 
 | 条目 | 状态 |
 |---|---|
-| 后端各模块单元测试（TIN 校验 / 冲突判定 / 裁决逻辑） | 待办 |
-| 后端业务 API 路由测试（TestClient 覆盖 audit/rules/cases） | 待办 |
+| 后端各模块单元测试（TIN 校验 / 冲突判定 / 裁决逻辑） | 部分完成 — TIN、裁决、来源、发布、Agent 等已有测试；真实跨源研判未实现 |
+| 后端业务 API 路由测试（TestClient 覆盖 audit/rules/cases） | 部分完成 — 规则校验 HTTP 测试已实现；audit/rules/cases 待实现 |
 | 前端组件单元测试（Vitest + RTL） | 待办 |
 | 5 个 Case 端到端集成测试（前后端联调） | 待办 |
-| 边界条件测试（未配置法域兜底、空文件、损坏 PDF） | **部分完成** — 判据已由 SC-001（加密 PDF 受理 4/4→0）与 FR-042（未配置法域→`MANUAL_TRIAGE`）给出；测试代码待写 |
-| 热重载验证（加载 v2 补丁后即时生效） | 待办 |
+| 边界条件测试（未配置法域兜底、空文件、损坏 PDF） | 部分完成 — 未覆盖地区／类型、字段错误、请求及响应限额等已测试；文件受理待实现 |
+| 热重载验证（加载 v2 补丁后即时生效） | 已实现 — 自动测试涵盖版本切换、旧快照隔离、下一调用读取新版本；真实部署时延未验收 |
 | WebSocket 实时推送验证 | 待办 |
-| 审计完整性验证（穿透溯源至原始文件 + 规则版本） | 待办 — 本 feature 新增两项溯源要求：FR-036 的文档指纹、SC-009 的共享层失败单独计数 |
-| 覆盖率达标（`fail_under = 80`） | 待办 — 当前仅覆盖脚手架代码 |
+| 审计完整性验证（穿透溯源至原始文件 + 规则版本） | 部分完成 — 规则版本、指纹、发布历史与内部重放已测试；原始文件／主会话穿透待办 |
+| 覆盖率达标（`fail_under = 80`） | 待验证 — 已有 316 项通过（含本地 PG），不以测试数量代替覆盖率报告 |
 
 ### 部署阶段（13 项全部待办）
 
-**云基础设施**：阿里云资源规划与开通（ECS / 容器服务 / 存储 / 网络 / Redis）｜PG 16 连接验证（连接池已按 ADR-010 落地 `pool_size=3, max_overflow=0`，待内网连通性实测）｜部署流水线配置｜环境变量与配置管理（`.env.example` + pydantic-settings + `.gitignore` 已就位；`DASHSCOPE_API_KEY` / `SECRET_KEY` 待新增）
+**云基础设施**：阿里云资源规划与开通（ECS / 容器服务 / 存储 / 网络 / Redis）｜PG 16 连接验证（连接池已按 ADR-010 落地 `pool_size=3, max_overflow=0`，待内网连通性实测）｜部署流水线配置｜环境变量与配置管理（`.env.example` + pydantic-settings + `.gitignore` 已就位；`DASHSCOPE_API_KEY` 已接入，真实 Key／模型联调、`SECRET_KEY` 与访问控制仍待完成）
 
 **安全加固**：HTTPS / TLS 传输加密｜数据存储加密（FR-046 已扩展敏感字段清单至 HKID/护照号、出生日期、出生地；实现待办）｜RBAC 角色隔离｜数据最小化与留存策略（clarify Q4 已定收窄规则；实现待办）
 
@@ -366,3 +388,91 @@ R10 / R12 的**字段位**归 IN（FR-019 要求分别保留 HKID 与商业登�
 |---|---|---|
 | **V1**：新增 PDF 解析顶层依赖（AGENTS.md 禁止未经团队同意的顶层依赖） | 确定性路必须读取 PDF 文本层与 `/StructTreeRoot` 结构树。取证已证明这是必要能力而非锦上添花：四份官方 PDF 均为 AES-128 加密，无 `cryptography` 时解析库直接抛 `DependencyError`（本轮已实际复现）；且均为 Tagged PDF，结构树是表格行列归属的唯一无损来源（R47、R48） | ①「复用现有依赖」不可行——`pyproject.toml` 无任何 PDF 解析库，PRD §4.2 提到的 pdf2image 只做栅格化，栅格化正是 R48 要停止的行为。②「只做 Vision 单路」被 ADR-004 增补草案否决：它使 SC-004 的字段级一致率无从产生，PRD §2.2 的 ≥90% KPI 永久不可验证。**2026-11-05 团队已批准，V1 消解。本轮未改动 `pyproject.toml`：D4 尚无消费方代码，此刻加依赖会留下半成品，应与消费它的代码同时落地。** |
 | **V2**：以 PM 角色修改 `design/` 下 2 个文件（AGENTS.md:160 规定 `specs/` `design/` `docs/` 为 PM/designer-owned，编码 Agent 不得修改） | 用户明确指令「调用 pm skill 去更改」，目的是修复仓库中指向已删除文件的入站引用。其中 `specs/prd.md:426` 在 PM 权属内，无越权问题；但 `design/ui-spec.md:503`、`design/architecture.md:536-634`（仓库目录树）、`:636-638`（历史说明及其追加段） **归设计侧所有，PM 角色并不覆盖**。3 处改动均为机械性修复，不涉及设计决策本身：删去失效的跨文档指代、目录树与实际仓库状态对齐、历史记录后追加（原文一字未改） | ①「只改 `specs/prd.md`，`design/` 三处留给设计侧」是**更符合权属边界的方案**，代价是仓库继续带 3 处断链直到设计侧处理。未采用是因为用户指令未区分权属、且 3 处均为机械性修复。②「不改任何文件、只出变更单」已被用户在前一轮否决。③「连同 `AGENTS.md:95` 一起改」未采用：该文件是事实上的 constitution，标注为需团队确认，用户未授权。**2026-11-05 设计侧已复核并接受 `design/ui-spec.md:503`、`design/architecture.md:536-634`（仓库目录树）、`:636-638`（历史说明及其追加段）三处改动，未触发回滚，V2 消解。** |
+
+
+## 2026-11-08：黑盒规则接口与新流程对齐
+
+架构差距与职责划分见 [审查矩阵](../../../backend/engine/ARCHITECTURE_REVIEW.md)，调用方式见 [结构化接口](../../../backend/api/STRUCTURED_CRS_API.md)。
+新增姓名／地址／文档／实体／控权人／声明全字段接收；香港派生等值、授权签署、ISO 代码与独立 POEM 语义检查。
+表单日期规范化，表单策略独立哈希，升级影响分析支持同一新结构。
+三份新的 JSON 样例通过真实 HTTP 集成测试；旧调用仍兼容，当前公开异步提交／查询两个端点。
+真实双路抽取、跨文档原件对照、缺失的 KYC／持股输入和全系统加密留存不标为完成。
+最新验证为 276 项通过（含本地 PG，无跳过）；Ruff 与全量 Mypy 通过，Docker 构建和真实模型未验收。
+
+
+## 2026-11-08：异步规则验证交付
+
+已完成：[详细设计](../../../backend/engine/ASYNC_TASKS.md)、[两步 API](../../../backend/api/RULE_TASKS_API.md)、三份任务样例、OpenAPI、两表迁移、认证加密及 HMAC、容量限制与幂等、冻结快照、独立 Worker、租约心跳／失租恢复、截止时间、过期清理。
+提交成功才返回 202；SUCCEEDED 与业务 verdict 分开。主流程无需直查 DB，仍管理自己的会话状态与前端事件。
+SQLite 真实 Alembic 命令升降级与并发队列测试通过；可选 PG 用例包含新迁移和任务 Worker 链路。
+本地 PG 后续已按授权升级，云端目标仍需升级迁移、配置共享密钥并启动 API／Worker；未部署生产进程。
+保留 24 小时后 GET 410；密文实际清理由运行中的 Worker 或手动 cleanup 完成，不宣称旧归档全量加密。
+API 两连接加 Worker 一连接，禁止额外进程使团队连接预算超限。Docker、真实模型、云数据库与完整主流程指标仍未验收。
+
+
+## 2026-11-08：数据库 SQL 与设计清理
+
+validation_engine.sql 已更新为完整十表快照；bootstrap_rules.sql 明确承担历史六表前置基线。
+任务增量 SQL 从已发布迁移生成，完整和基线 SQL 从 ORM 生成，新增 schema_sql --write/--check 与五项漂移测试。
+数据库 README 替换过时六表设计、提取范围和迁移步骤；关联接口／详细设计同步指向当前部署路径。
+历史迁移、内部归档及队友 User 模型保留，不删除真实表或数据。
+
+
+## 2026-11-08：本地 PostgreSQL 同步验收
+
+用户明确追加授权后连接 localhost:5432/devdb，先对八表／20261103_rule_history 做只读结构比较。
+确认只缺两张任务表及三个普通索引后，通过 Alembic 应用 20261108_rule_tasks。
+升级后十表与 ORM 比较无差异（含支持的类型、默认值、索引和外键项），原八表行数不变，未更改活动规则或创建测试业务数据。
+全量 276 测试通过，无跳过；四项 PG 参数化生命周期在随机隔离 schema 中完成并清理。
+SQL 生成一致性、Ruff 和全量 backend Mypy 通过；未生成部署密钥、未运行生产 Worker，真实模型与云端仍待验收。
+
+
+## 2026-11-08：异步 PDF 报告持久化交付
+
+先更新设计，再实现校验成功同事务建立报告待办、独立后台生成、PG 密文保存及下载只读。
+API 维持三条：上游提交／查询两条，前端下载一条；查询提供 report_status/report_error，READY 有 report_url，生成中 GET 返回 REPORT_GENERATING + Retry-After: 2。
+前端在校验成功后可使用固定报告路径重试，主后端不用阻塞等待报告；最终生成失败停止普通重试，内部 CLI 支持故障修复后重排 FAILED 报告。
+新增 20261108_pdf_reports 迁移和增量 SQL，完整快照十一表；本地迁移已应用，原十表数据保留。
+全量 294 测试通过无跳过，包含真实 PG 与独立 Worker 进程；SQL 一致性、Ruff、Mypy 和 PDF 视觉检查通过。
+竞赛本轮不再开发主会话聚合与下载授权、下载审计／队列监控、OSS／KMS／真实签名，也不在本次执行阿里云部署；这些能力不标记为已实现。
+
+
+## 2026-11-08：竞赛范围冻结与本地数据库复核
+
+按用户最新要求，本轮到此收尾，以已实现规则引擎、三条 API、后台 PDF 生成和 PG 存储为交付范围；不继续扩展生产化能力。
+
+| 工作项 | 最新状态 | 证据／说明 |
+| --- | --- | --- |
+| 本地迁移同步 | 已完成 | 再次执行 alembic upgrade head，数据库已为最新版本，无待执行迁移 |
+| 本地结构核对 | 已完成 | 20261108_pdf_reports；crosstax 共 11 表，与 ORM 比较无差异 |
+| 数据保留 | 已确认 | 来源 3、原始文档 3、同步记录 2、规则版本 4、活动状态行 1；其余相关表为空，未清空或重建数据 |
+| 自动化验证 | 上阶段已通过 | 294 项通过，含真实 PG 与 Worker CLI；此次仅同步复核和文档更新，不重复运行全套测试 |
+| 主会话聚合与下载授权增强 | 本轮不安排 | 属于已讨论但不继续开发的范围，不计入本轮规则引擎待办 |
+| 下载审计与队列监控 | 本轮不安排 | 按竞赛时间和投入产出取舍 |
+| OSS／KMS／报告签名 | 本轮不安排 | 保持当前 PG 加密存储设计 |
+| 阿里云部署操作 | 本次不执行 | 保留已有部署说明，未标记为已部署 |
+
+以上是范围取舍，不表示项目已有完整主流程／用户认证；此前的架构记录作为事实保留，不再据此自动扩展开发。
+
+
+## 2026-11-08：竞赛亮点与初始化交付（最新进度）
+
+在上轮范围冻结后，用户重新明确授权本轮解释卡片、补正对比、规则升级演示及快速初始化。此前排除的主会话/用户体系、审计监控、OSS/KMS 不重新纳入开发。
+
+| 本轮工作项 | 状态 | 验收与证据 |
+| --- | --- | --- |
+| 设计与接口文档先行 | 已完成 | backend/engine/COMPETITION_FEATURES.md、backend/api/COMPETITION_API.md，先文档提交后实现 |
+| 可解释卡片 | 已完成 | 来源、字段、原因、动作与实际规则出处；复用已验证 Agent 动作，不改 verdict |
+| 补正前后对比 | 已完成 | 既有 GET task 的 compare_to；同会话、成功、保留期检查；重复问题计数、变更路径和上下文差异 |
+| 模拟升级影响 | 已完成 | 默认关闭的只读演示端点，明确 simulation=true，不发布模拟补丁 |
+| 初始化 API | 已完成 | 默认关闭、独立至少 24 字符口令；仅补缺，保留活动规则/来源/队友表；不创建数据库实例或凭据 |
+| 初始化到报告全流程 | 已验证 | 空库建表/迁移/种子 → 校验卡片 → 后台报告 → PDF 下载；SQLite 与 PG 均覆盖 |
+| 现有库与旧基线兼容 | 已验证 | 完整六表升级、正常迁移重复调用、已有非默认活动版本、禁用来源保护；混乱手工结构拒绝猜测 stamp |
+| 数据库设计和 SQL 同步 | 已完成 | 无新增表/列，仍十一表、head=20261108_pdf_reports；全部 SQL 已重新生成并检查一致 |
+| 本地数据同步 | 已完成 | 来源3、文档3、同步2、版本4及活动 revision=3 保留；只补队列状态 id=1 |
+| 报告与部署资源 | 已完成本地验证 | 模板 v2 含卡片建议，视觉检查通过；Docker 补入 manifest，wheel 构建通过；未实际构建或部署云镜像 |
+| 最终回归 | 已通过 | 316 项全通过、无跳过，含真实 PG；Ruff/Mypy、SQL 一致性和文档链接检查通过 |
+| 前端展示对接 | 交队友消费契约 | 默认业务 API 仍三条，compare_to 和卡片为原接口扩展；演示仅启用时额外显示，初始化隐藏 |
+
+本地初始化 HTTP 开关保持默认关闭，未启用公网建表入口，未创建常驻服务；调用示例及启用/关闭步骤已在接口文档中提供。
+下一次演示可按“初始化 → 缺签卡片 → 补正对比 → PDF 下载 → 模拟升级影响”顺序，由队友对接展示，避免新增生产化项目。

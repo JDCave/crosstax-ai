@@ -61,11 +61,16 @@
 
 ## 实现边界
 
-上述流水线、规则引擎与审计留痕目前**只存在于设计文档中**。权威逻辑描述是 `docs/proposal/business-workflow-design.md`，`design/architecture.md` 是其工程化设计，`specs/prd.md` 与 `specs/data-spec.md` 定义需求与数据契约。
+进度更新于 2026-11-08；当前权威台账见 [实施计划的实现现状](.specify/features/001-crs-contract/plan.md)。本地同步合并提交为 `258be94`，远程 push 尚待 GitHub 登录凭据。
 
-仓库中已落地的代码是后端工程底座：FastAPI 应用工厂与 lifespan（`backend/main.py`）、pydantic-settings 配置（`backend/core/config.py`）、console/json 双格式结构化日志与 `RequestIdMiddleware`、全局异常处理、`/health` 存活与 `/ready` 就绪探针（后者执行 `SELECT 1` 校验数据库连通性）、SQLAlchemy 2.0 异步引擎与 `get_session()` 依赖、Alembic 初始化、uv 多阶段构建的非 root Docker 镜像、ruff + mypy(strict) + pytest + pre-commit 门禁。
 
-尚未落地的是全部业务逻辑：审核流水线各 Agent、TIN 规则引擎与热重载、跨源研判与三态裁决、审计留痕与报告渲染、业务 ORM 模型与首个 Alembic 迁移脚本、规则 JSON 与 Mock 数据，以及整个前端 SPA——仓库内不存在 `frontend/` 目录。任务级明细、依赖顺序与进度快照见 `.specify/features/001-crs-contract/plan.md` 的 §实现现状 与 §项目级待办。
+队友主线提供工程底座、规范和新契约规划；本 fork 另已实现数据库版本化规则引擎、异步提交／查询校验、多税籍、补正 Agent、影响分析与受控后台更新。完整文件上传审核流水线与前端尚未完成。
+
+当前 fork 对未覆盖地区／类型转人工复核，业务日期由调用方提供；TIN 规则来源和验证深度以实际响应为准。上述主线流程描述不替代当前运行契约。
+
+当前可运行接口见 [API 文档](backend/api/README.md)，规则设计见 [规则引擎详细设计](backend/engine/RULE_ENGINE.md)，后台更新见 [运行手册](backend/engine/RULE_UPDATES.md)。
+
+上游 ADR-003 选择 JSON 文件作为规则载体；本 fork 按当前用户要求使用 PostgreSQL 版本存储。此次同步保留两侧设计记录和现有实现，后续架构统一需团队明确；未在合并中切换存储方式。上游新契约规划也不等同于当前接口已经实现。
 
 技术栈选型的逐条依据记录在 `specs/adr/`（10 个 ADR）。其中 ADR-007 有一项待团队裁定的冲突：决策写 `dashscope` SDK，但该依赖未列入 `pyproject.toml`，而现有依赖已含 `httpx`，且 `design/architecture.md` §2.4 将 Vision/LLM 描述为外部 HTTP 调用——按 `AGENTS.md` 约定，新增顶层依赖需团队同意。
 
@@ -104,7 +109,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 
 复制仓库根目录 `.env.example` 为 `.env`——注意是**根目录**，不是 `backend/.env`（`Settings.model_config` 的 `env_file=".env"` 相对于进程工作目录解析）。
 
-实际被读取的变量、前缀分组与缺省值以 `backend/core/config.py` 为准，不以文档为准。`DASHSCOPE_API_KEY` / `VISION_API_MODEL` / `SECRET_KEY` 等尚未接入配置模块，待 Vision 与安全模块实现时新增（ADR-004 / ADR-007）。
+实际被读取的变量、前缀分组与缺省值以 `backend/core/config.py` 为准，不以文档为准。本 fork 已通过 `backend/core/bailian.py` 接入 `DASHSCOPE_API_KEY`；`VISION_API_MODEL` / `SECRET_KEY` 等尚未接入配置模块，待 Vision 与安全模块实现时新增（ADR-004 / ADR-007）。
 
 ## 文档地图
 
@@ -115,3 +120,29 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/crosstax_dev \
 ## 团队与许可
 
 AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外部使用。
+
+
+当前验证：锁定依赖下 **316 项测试通过（含真实本地 PostgreSQL 集成，无跳过）**，Ruff 与全量 backend Mypy 通过。
+真实百炼调用、云数据库、完整上传审核链路和 cron 安装仍待验收；当前结果不代表完整契约或全部税法条件已覆盖。
+
+结构化个人／实体／控权人接口及架构审查见 [新契约接入](backend/api/STRUCTURED_CRS_API.md)和[差距矩阵](backend/engine/ARCHITECTURE_REVIEW.md)。存储保留当前实现；外部事实不足的要求没有标记为已完成。
+
+
+规则引擎已支持持久化异步任务：先提交表单获取 task_id，再查询状态及完整结果。
+[队友接入与 Worker 启动](backend/api/RULE_TASKS_API.md)包含共享加密密钥、迁移、连接预算和三份请求样例。
+旧同步 validate 兼容保留，Swagger 展示两个上游任务接口与一个前端报告接口；本地 devdb 已按用户授权升级，尚未自动启动 Worker；云端数据库尚未迁移验收。
+
+数据库建表文件已统一为 ORM／迁移生成的 [十一表快照、六表基线及任务增量](backend/infrastructure/db/README.md)。
+使用 `uv run python -m backend.cli.schema_sql --check` 检测 SQL 漂移；新库和已有库升级步骤已分开，历史迁移保留。
+
+本地 PostgreSQL 已同步到 `20261108_pdf_reports`，十一张规则表与 ORM 一致，原八表行数保持不变；详见上述数据库说明的本地验收记录。
+
+
+规则校验成功后会自动排队生成 PDF，并加密保存到 PostgreSQL；前端下载只读取已保存报告，生成中按 REPORT_GENERATING 重试。
+[报告 API 与阿里云接入](backend/api/PDF_REPORT_API.md)包含三条接口分工、状态、前端重试示例及故障恢复。
+本地已升级至 `20261108_pdf_reports`，原十表数据保留；云端需升级迁移并启动更新后的 Worker。
+
+
+新增竞赛展示能力：解释卡片、同会话补正对比及显式模拟的规则升级影响。
+[竞赛功能与初始化接口](backend/api/COMPETITION_API.md)包含受控的快速建表／种子初始化 API，默认关闭，重复调用不覆盖活动规则。
+本轮无新增表／列，本地十一表及初始数据已同步，主会话／前端组件仍由队友接入。

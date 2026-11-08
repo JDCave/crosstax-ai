@@ -13,6 +13,9 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY backend/ backend/
+COPY rules/ rules/
+COPY assets/mock-data/cases.json assets/mock-data/cases.json
+COPY assets/rule-sources/oecd.json assets/rule-sources/oecd.json
 COPY alembic/ alembic/
 COPY alembic.ini .
 
@@ -23,6 +26,8 @@ RUN groupadd -r app && useradd -r -g app -G app app
 
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --from=builder --chown=app:app /app/backend /app/backend
+COPY --from=builder --chown=app:app /app/rules /app/rules
+COPY --from=builder --chown=app:app /app/assets /app/assets
 COPY --from=builder --chown=app:app /app/alembic /app/alembic
 COPY --from=builder --chown=app:app /app/alembic.ini /app/alembic.ini
 
@@ -30,6 +35,8 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+
+RUN mkdir -p /app/outputs && chown app:app /app /app/outputs
 
 USER app
 WORKDIR /app

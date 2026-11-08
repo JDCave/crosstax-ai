@@ -10,7 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend import __version__
-from backend.api.routes import health
+from backend.api.routes import competition, health, rule_engine, rule_tasks
+from backend.core.competition import get_demo_settings
 from backend.core.config import Settings, get_settings
 from backend.core.logging.config import setup_logging
 from backend.core.logging.middleware import RequestIdMiddleware
@@ -40,6 +41,8 @@ def create_app() -> FastAPI:
         version=__version__,
         description="CRS exemption determination AI system",
         lifespan=lifespan,
+        redoc_url=None,
+        swagger_ui_oauth2_redirect_url=None,
     )
 
     _register_middleware(app, settings)
@@ -57,11 +60,16 @@ def _register_middleware(app: FastAPI, settings: Settings) -> None:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition", "X-Report-SHA256", "X-Report-Template-Version"],
     )
 
 
 def _register_routers(app: FastAPI) -> None:
-    app.include_router(health.router, tags=["health"])
+    app.include_router(health.router, tags=["health"], include_in_schema=False)
+    app.include_router(rule_engine.router)
+    app.include_router(rule_tasks.router)
+    app.include_router(competition.demo_router, include_in_schema=get_demo_settings().enabled)
+    app.include_router(competition.setup_router, include_in_schema=False)
 
 
 app = create_app()

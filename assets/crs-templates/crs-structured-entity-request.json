@@ -1,0 +1,51 @@
+{
+  "form_data": {
+    "document": {
+      "is_encrypted": true,
+      "structure_tree_available": true,
+      "holders_declared": 1,
+      "fingerprint": "synthetic-document-hash"
+    },
+    "holder_type": "ENTITY",
+    "name": {
+      "entity_legal_name": "DEMO CROSS BORDER LIMITED"
+    },
+    "hk_identity": {
+      "business_registration_number": "12345678"
+    },
+    "addresses": [
+      {
+        "type": "RESIDENCE",
+        "line1": "Demo Building",
+        "city": "Hong Kong",
+        "country": "HK"
+      }
+    ],
+    "tax_residencies": [
+      {
+        "jurisdiction": "HK",
+        "basis": "RESIDENCE",
+        "tin": "12345678"
+      }
+    ],
+    "declaration": {
+      "holder_or_authorized_resolved": true,
+      "has_signature": true,
+      "signing_date": "04/11/2026",
+      "capacity": "Director",
+      "signatory_name": "DEMO CHAN"
+    },
+    "entity": {
+      "incorporation_jurisdiction": "HK",
+      "incorporation_jurisdiction_source": "FORM",
+      "entity_type": "PASSIVE_NFE",
+      "controlling_person_names": [
+        "DEMO CHAN"
+      ]
+    }
+  },
+  "policy": {
+    "today": "2026-11-08"
+  },
+  "indicia_issues": []
+}

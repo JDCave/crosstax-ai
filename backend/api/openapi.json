@@ -1,0 +1,2428 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CrossTax AI",
+    "description": "CRS exemption determination AI system",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/rule-engine/tasks": {
+      "post": {
+        "tags": [
+          "rule-engine"
+        ],
+        "summary": "Persist a validation task",
+        "operationId": "submit_api_v1_rule_engine_tasks_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Opaque random key; reuse for transport retries",
+              "title": "Idempotency-Key"
+            },
+            "description": "Opaque random key; reuse for transport retries"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rule-engine/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "rule-engine"
+        ],
+        "summary": "Poll validation status and retrieve its result",
+        "operationId": "get_task_api_v1_rule_engine_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "compare_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Compare To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rule-engine/tasks/{task_id}/report": {
+      "get": {
+        "tags": [
+          "rule-engine"
+        ],
+        "summary": "Download the completed rule-validation report as PDF",
+        "operationId": "download_report_api_v1_rule_engine_tasks__task_id__report_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF attachment",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AICallMetrics": {
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Attempts",
+            "default": 0
+          },
+          "retries": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Retries",
+            "default": 0
+          },
+          "provider_duration_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Provider Duration Ms",
+            "default": 0
+          },
+          "queue_duration_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queue Duration Ms",
+            "default": 0
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Tokens",
+            "default": 0
+          },
+          "usage_complete": {
+            "type": "boolean",
+            "title": "Usage Complete",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "AICallMetrics"
+      },
+      "AIErrorCategory": {
+        "type": "string",
+        "enum": [
+          "configuration",
+          "authentication",
+          "permission",
+          "rate_limit",
+          "quota",
+          "timeout",
+          "connection",
+          "invalid_request",
+          "invalid_response",
+          "service_unavailable",
+          "internal"
+        ],
+        "title": "AIErrorCategory"
+      },
+      "AIErrorInfo": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/AIErrorCategory"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "retryable"
+        ],
+        "title": "AIErrorInfo"
+      },
+      "Address": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "RESIDENCE",
+              "MAILING"
+            ],
+            "title": "Type"
+          },
+          "line1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line1"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "subentity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subentity"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "post_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Code"
+          },
+          "source_layout_anomaly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Layout Anomaly"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "country"
+        ],
+        "title": "Address"
+      },
+      "AuditIssue": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "WARNING"
+            ],
+            "title": "Severity"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "message",
+          "confidence"
+        ],
+        "title": "AuditIssue"
+      },
+      "CRSFormData": {
+        "properties": {
+          "holder_name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Holder Name"
+          },
+          "holder_dob": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Dob"
+          },
+          "incorporation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Date"
+          },
+          "residence_address": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Residence Address"
+          },
+          "jurisdiction_code": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Jurisdiction Code"
+          },
+          "holder_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "INDIVIDUAL",
+                  "ENTITY"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Type"
+          },
+          "tin_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Type"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin"
+          },
+          "has_no_tin": {
+            "type": "boolean",
+            "title": "Has No Tin"
+          },
+          "tin_reason_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Code"
+          },
+          "tin_reason_explanation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Explanation"
+          },
+          "has_signature": {
+            "type": "boolean",
+            "title": "Has Signature"
+          },
+          "signing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holder_name",
+          "residence_address",
+          "jurisdiction_code",
+          "has_no_tin",
+          "has_signature"
+        ],
+        "title": "CRSFormData",
+        "description": "Dates remain strings so invalid signing dates become business issues."
+      },
+      "CheckItem": {
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "FAILED",
+              "REVIEW_REQUIRED",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Status"
+          },
+          "issue_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Issue Indexes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_id",
+          "field",
+          "status"
+        ],
+        "title": "CheckItem"
+      },
+      "ControlledEntity": {
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "linked_document_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Document Ref"
+          },
+          "link_confidence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "LOW",
+                  "NAME_DOB_ONLY",
+                  "UNLINKED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Confidence"
+          },
+          "cp_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cp Types"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_name",
+          "link_confidence"
+        ],
+        "title": "ControlledEntity"
+      },
+      "ControllingPerson": {
+        "properties": {
+          "controlled_entities": {
+            "items": {
+              "$ref": "#/components/schemas/ControlledEntity"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Controlled Entities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ControllingPerson"
+      },
+      "Declaration": {
+        "properties": {
+          "holder_or_authorized_resolved": {
+            "type": "boolean",
+            "title": "Holder Or Authorized Resolved"
+          },
+          "signatory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signatory Name"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "power_of_attorney_attached": {
+            "type": "boolean",
+            "title": "Power Of Attorney Attached",
+            "default": false
+          },
+          "has_signature": {
+            "type": "boolean",
+            "title": "Has Signature"
+          },
+          "signing_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holder_or_authorized_resolved",
+          "has_signature"
+        ],
+        "title": "Declaration"
+      },
+      "Document": {
+        "properties": {
+          "is_encrypted": {
+            "type": "boolean",
+            "title": "Is Encrypted"
+          },
+          "structure_tree_available": {
+            "type": "boolean",
+            "title": "Structure Tree Available"
+          },
+          "holders_declared": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Holders Declared"
+          },
+          "has_continuation_sheets": {
+            "type": "boolean",
+            "title": "Has Continuation Sheets",
+            "default": false
+          },
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "is_encrypted",
+          "structure_tree_available",
+          "holders_declared"
+        ],
+        "title": "Document"
+      },
+      "Entity": {
+        "properties": {
+          "incorporation_jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Jurisdiction"
+          },
+          "incorporation_jurisdiction_source": {
+            "type": "string",
+            "enum": [
+              "FORM",
+              "MERCHANT_KYC",
+              "BOTH_AGREE",
+              "BOTH_CONFLICT"
+            ],
+            "title": "Incorporation Jurisdiction Source"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "FINANCIAL_INSTITUTION",
+                  "ACTIVE_NFE",
+                  "PASSIVE_NFE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_type_subitem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntitySubitem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "controlling_person_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Controlling Person Names"
+          },
+          "no_natural_person_control": {
+            "type": "boolean",
+            "title": "No Natural Person Control",
+            "default": false
+          },
+          "poe_jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poe Jurisdiction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Entity"
+      },
+      "EntitySubitem": {
+        "properties": {
+          "regularly_traded_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regularly Traded On"
+          },
+          "related_entity_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Entity Of"
+          },
+          "specify": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specify"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EntitySubitem"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorResponse"
+      },
+      "ExecutionContext": {
+        "properties": {
+          "engine_build_id": {
+            "type": "string",
+            "title": "Engine Build Id"
+          },
+          "form_policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Form Policy Id"
+          },
+          "input_fingerprint": {
+            "type": "string",
+            "title": "Input Fingerprint"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/ValidationPolicy"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "engine_build_id",
+          "input_fingerprint",
+          "policy"
+        ],
+        "title": "ExecutionContext"
+      },
+      "ExplanationCard": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "WARNING"
+            ],
+            "title": "Severity"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "action_source": {
+            "type": "string",
+            "enum": [
+              "RULE",
+              "AGENT"
+            ],
+            "title": "Action Source"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "RULE_ENGINE",
+              "UPSTREAM"
+            ],
+            "title": "Origin"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Refs"
+          },
+          "rule_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RuleEvidence"
+            },
+            "type": "array",
+            "title": "Rule Evidence"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue_index",
+          "title",
+          "severity",
+          "field",
+          "reason",
+          "action",
+          "action_source",
+          "origin",
+          "evidence_refs",
+          "rule_evidence",
+          "confidence"
+        ],
+        "title": "ExplanationCard"
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "FieldError"
+      },
+      "FindingSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "field",
+          "severity",
+          "origin",
+          "count"
+        ],
+        "title": "FindingSummary"
+      },
+      "FormData": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "holder_type": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "ENTITY",
+              "CONTROLLING_PERSON"
+            ],
+            "title": "Holder Type"
+          },
+          "name": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "birth_place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Place"
+          },
+          "hk_identity": {
+            "$ref": "#/components/schemas/HkIdentity"
+          },
+          "entity": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "addresses": {
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Addresses"
+          },
+          "tax_residencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaxResidency"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Tax Residencies"
+          },
+          "controlling_person": {
+            "$ref": "#/components/schemas/ControllingPerson"
+          },
+          "declaration": {
+            "$ref": "#/components/schemas/Declaration"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document",
+          "holder_type",
+          "name",
+          "addresses",
+          "tax_residencies",
+          "declaration"
+        ],
+        "title": "FormData"
+      },
+      "GuidanceAction": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "instruction": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Instruction"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Evidence Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "issue_index",
+          "field",
+          "instruction",
+          "evidence_refs"
+        ],
+        "title": "GuidanceAction"
+      },
+      "GuidanceResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "NOT_REQUESTED",
+              "GENERATED",
+              "FALLBACK"
+            ],
+            "title": "Status"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AIErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "omitted_action_count": {
+            "type": "integer",
+            "title": "Omitted Action Count",
+            "default": 0
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceAction"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version",
+            "default": "remediation-v2"
+          },
+          "prompt_fingerprint": {
+            "type": "string",
+            "title": "Prompt Fingerprint"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AICallMetrics"
+          },
+          "output_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Fingerprint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "GuidanceResult"
+      },
+      "HkIdentity": {
+        "properties": {
+          "hkid_or_passport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hkid Or Passport"
+          },
+          "business_registration_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Registration Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HkIdentity"
+      },
+      "IssueOrigin": {
+        "properties": {
+          "issue_index": {
+            "type": "integer",
+            "title": "Issue Index"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "RULE_ENGINE",
+              "UPSTREAM"
+            ],
+            "title": "Source"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issue_index",
+          "source",
+          "evidence_ref"
+        ],
+        "title": "IssueOrigin"
+      },
+      "MultiResidenceForm": {
+        "properties": {
+          "holder_name": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Holder Name"
+          },
+          "holder_type": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "ENTITY"
+            ],
+            "title": "Holder Type"
+          },
+          "holder_dob": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Dob"
+          },
+          "incorporation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incorporation Date"
+          },
+          "residence_address": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Residence Address"
+          },
+          "has_signature": {
+            "type": "boolean",
+            "title": "Has Signature"
+          },
+          "signing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Date"
+          },
+          "tax_residencies": {
+            "items": {
+              "$ref": "#/components/schemas/TaxResidence"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Tax Residencies"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holder_name",
+          "holder_type",
+          "residence_address",
+          "has_signature",
+          "tax_residencies"
+        ],
+        "title": "MultiResidenceForm"
+      },
+      "Name": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "middle_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Middle Names"
+          },
+          "entity_legal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Legal Name"
+          },
+          "is_branch": {
+            "type": "boolean",
+            "title": "Is Branch",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Name"
+      },
+      "ResidenceResult": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "jurisdiction_code": {
+            "type": "string",
+            "title": "Jurisdiction Code"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/TINCheck"
+          },
+          "issue_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Issue Indexes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "jurisdiction_code",
+          "checks",
+          "issue_indexes"
+        ],
+        "title": "ResidenceResult"
+      },
+      "ReviewScope": {
+        "properties": {
+          "statement": {
+            "type": "string",
+            "title": "Statement",
+            "default": "当前已执行检查通过不代表整份 CRS 合规或税收居民身份已经核实"
+          },
+          "evaluated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evaluated"
+          },
+          "not_evaluated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Not Evaluated"
+          }
+        },
+        "type": "object",
+        "title": "ReviewScope"
+      },
+      "RuleEvidence": {
+        "properties": {
+          "jurisdiction_code": {
+            "type": "string",
+            "title": "Jurisdiction Code"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "verification_level": {
+            "type": "string",
+            "title": "Verification Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jurisdiction_code",
+          "rule_id",
+          "source_url",
+          "verification_level"
+        ],
+        "title": "RuleEvidence"
+      },
+      "TINCheck": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "FAILED",
+              "NOT_COVERED",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Status"
+          },
+          "verification_level": {
+            "type": "string",
+            "enum": [
+              "FORMAT_ONLY",
+              "CHECKSUM",
+              "NONE"
+            ],
+            "title": "Verification Level"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "algorithm_source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algorithm Source Url"
+          },
+          "checks_performed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Checks Performed",
+            "default": []
+          },
+          "checks_not_performed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Checks Not Performed",
+            "default": []
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "verification_level"
+        ],
+        "title": "TINCheck"
+      },
+      "TaskComparison": {
+        "properties": {
+          "before_task_id": {
+            "type": "string",
+            "title": "Before Task Id"
+          },
+          "after_task_id": {
+            "type": "string",
+            "title": "After Task Id"
+          },
+          "before_verdict": {
+            "type": "string",
+            "title": "Before Verdict"
+          },
+          "after_verdict": {
+            "type": "string",
+            "title": "After Verdict"
+          },
+          "context": {
+            "type": "string",
+            "enum": [
+              "SAME_CONTEXT",
+              "DIFFERENT_CONTEXT"
+            ],
+            "title": "Context"
+          },
+          "context_changes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Context Changes"
+          },
+          "changed_field_count": {
+            "type": "integer",
+            "title": "Changed Field Count"
+          },
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changed Fields"
+          },
+          "changed_fields_truncated": {
+            "type": "boolean",
+            "title": "Changed Fields Truncated"
+          },
+          "resolved": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Resolved"
+          },
+          "introduced": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Introduced"
+          },
+          "remaining": {
+            "items": {
+              "$ref": "#/components/schemas/FindingSummary"
+            },
+            "type": "array",
+            "title": "Remaining"
+          },
+          "findings_truncated": {
+            "type": "boolean",
+            "title": "Findings Truncated"
+          },
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "before_task_id",
+          "after_task_id",
+          "before_verdict",
+          "after_verdict",
+          "context",
+          "context_changes",
+          "changed_field_count",
+          "changed_fields",
+          "changed_fields_truncated",
+          "resolved",
+          "introduced",
+          "remaining",
+          "findings_truncated",
+          "statement"
+        ],
+        "title": "TaskComparison"
+      },
+      "TaskError": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "TaskError"
+      },
+      "TaskRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline At"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationRequest"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "validation"
+        ],
+        "title": "TaskRequest"
+      },
+      "TaskResponse": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "SUCCEEDED",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "deadline_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Deadline At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "rule_version_id": {
+            "type": "string",
+            "title": "Rule Version Id"
+          },
+          "rule_revision": {
+            "type": "integer",
+            "title": "Rule Revision"
+          },
+          "engine_build_id": {
+            "type": "string",
+            "title": "Engine Build Id"
+          },
+          "poll_after_ms": {
+            "type": "integer",
+            "title": "Poll After Ms"
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskComparison"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "report_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "PENDING",
+                  "RUNNING",
+                  "READY",
+                  "FAILED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Status"
+          },
+          "report_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "report_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Url"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "session_id",
+          "status",
+          "created_at",
+          "deadline_at",
+          "expires_at",
+          "rule_version_id",
+          "rule_revision",
+          "engine_build_id",
+          "poll_after_ms"
+        ],
+        "title": "TaskResponse"
+      },
+      "TaxResidence": {
+        "properties": {
+          "jurisdiction_code": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Jurisdiction Code"
+          },
+          "tin_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Type"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin"
+          },
+          "has_no_tin": {
+            "type": "boolean",
+            "title": "Has No Tin"
+          },
+          "tin_reason_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Code"
+          },
+          "tin_reason_explanation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin Reason Explanation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jurisdiction_code",
+          "has_no_tin"
+        ],
+        "title": "TaxResidence"
+      },
+      "TaxResidency": {
+        "properties": {
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "RESIDENCE",
+              "POEM"
+            ],
+            "title": "Basis"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tin"
+          },
+          "no_tin_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Tin Reason"
+          },
+          "reason_b_explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason B Explanation"
+          },
+          "reason_c_applicability_unverified": {
+            "type": "boolean",
+            "title": "Reason C Applicability Unverified",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jurisdiction",
+          "basis"
+        ],
+        "title": "TaxResidency"
+      },
+      "ValidationPolicy": {
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "earliest_signing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Signing Date"
+          },
+          "strict_coverage": {
+            "type": "boolean",
+            "title": "Strict Coverage",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "today"
+        ],
+        "title": "ValidationPolicy",
+        "description": "Caller supplies the business date and any agreed historical cutoff."
+      },
+      "ValidationRequest": {
+        "properties": {
+          "form_data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CRSFormData"
+              },
+              {
+                "$ref": "#/components/schemas/MultiResidenceForm"
+              },
+              {
+                "$ref": "#/components/schemas/FormData"
+              }
+            ],
+            "title": "Form Data"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/ValidationPolicy"
+          },
+          "indicia_issues": {
+            "items": {
+              "$ref": "#/components/schemas/AuditIssue"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Indicia Issues"
+          },
+          "include_guidance": {
+            "type": "boolean",
+            "title": "Include Guidance",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "form_data",
+          "policy"
+        ],
+        "title": "ValidationRequest"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "AUTO_PASS",
+              "NEED_USER_FIX",
+              "MANUAL_TRIAGE"
+            ],
+            "title": "Verdict"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/AuditIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "rule_version_id": {
+            "type": "string",
+            "title": "Rule Version Id"
+          },
+          "rule_revision": {
+            "type": "integer",
+            "title": "Rule Revision"
+          },
+          "checks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TINCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "residence_results": {
+            "items": {
+              "$ref": "#/components/schemas/ResidenceResult"
+            },
+            "type": "array",
+            "title": "Residence Results"
+          },
+          "check_items": {
+            "items": {
+              "$ref": "#/components/schemas/CheckItem"
+            },
+            "type": "array",
+            "title": "Check Items"
+          },
+          "issue_origins": {
+            "items": {
+              "$ref": "#/components/schemas/IssueOrigin"
+            },
+            "type": "array",
+            "title": "Issue Origins"
+          },
+          "review_scope": {
+            "$ref": "#/components/schemas/ReviewScope"
+          },
+          "guidance": {
+            "$ref": "#/components/schemas/GuidanceResult"
+          },
+          "explanation_cards": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationCard"
+            },
+            "type": "array",
+            "title": "Explanation Cards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "issues",
+          "rule_version_id",
+          "rule_revision",
+          "checks",
+          "execution",
+          "residence_results",
+          "check_items",
+          "issue_origins",
+          "review_scope",
+          "guidance"
+        ],
+        "title": "ValidationResponse"
+      }
+    }
+  }
+}
