@@ -17,7 +17,7 @@ from backend.models import Base, RuleAuditRecord, RuleEngineState
 from backend.services.rule_api import RuleAPIService, get_rule_api_service
 
 PREFIX = "/api/v1/rule-engine"
-BASE = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data"]
+BASE = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[0]["form_data"]
 
 
 @pytest.fixture
@@ -32,7 +32,9 @@ async def api_client(tmp_path):
         async with sessions.begin() as session:
             session.add(RuleEngineState(id=1))
         publisher = RulePublisher(sessions)
-        version = await publisher.register(json.loads(Path("rules/rules_global_v4.json").read_text()), [])
+        version = await publisher.register(
+            json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8")), []
+        )
         await publisher.approve(version, {"review": "HTTP integration fixture"})
         await publisher.activate(version, 0)
         service = RuleAPIService(ValidationEngine(RuleLoader(sessions)))
@@ -69,7 +71,7 @@ async def test_one_request_returns_result_without_persisting_or_requiring_sessio
 
 async def test_three_business_verdicts_are_successful_http_responses(api_client):
     client, _ = api_client
-    cases = json.loads(Path("assets/mock-data/cases.json").read_text())
+    cases = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))
     for case in cases:
         request = payload() | {
             "form_data": case["form_data"],
@@ -137,7 +139,7 @@ async def test_streaming_body_limit_does_not_require_content_length(api_client):
 
 async def test_entity_form_does_not_require_invented_incorporation_date(api_client):
     client, _ = api_client
-    form = json.loads(Path("assets/crs-templates/crs-entity-request.json").read_text())["form_data"]
+    form = json.loads(Path("assets/crs-templates/crs-entity-request.json").read_text(encoding="utf-8"))["form_data"]
     form.pop("holder_dob", None)
     response = await client.post(
         PREFIX + "/validate", json=payload() | {"form_data": form, "policy": {"today": "2026-11-04"}}
@@ -214,7 +216,7 @@ async def test_individual_missing_dob_and_conflicting_entity_dates_are_business_
     body = (await client.post(PREFIX + "/validate", json=payload() | {"form_data": form})).json()
     assert body["verdict"] == "NEED_USER_FIX"
     assert any(i["field"] == "holder_dob" for i in body["issues"])
-    form = json.loads(Path("assets/crs-templates/crs-entity-request.json").read_text())["form_data"]
+    form = json.loads(Path("assets/crs-templates/crs-entity-request.json").read_text(encoding="utf-8"))["form_data"]
     form["holder_dob"] = "2020-06-15"
     form["incorporation_date"] = "2021-06-15"
     body = (
@@ -236,8 +238,8 @@ async def test_documented_samples_are_callable_and_match_guides(api_client, name
 
     client, service = api_client
     service.agent = RemediationAgent(GuidanceSettings(enabled=False))
-    raw = Path(f"assets/crs-templates/crs-{name}-request.json").read_text().strip()
-    assert raw in Path("assets/crs-templates/API_INTEGRATION.md").read_text()
+    raw = Path(f"assets/crs-templates/crs-{name}-request.json").read_text(encoding="utf-8").strip()
+    assert raw in Path("assets/crs-templates/API_INTEGRATION.md").read_text(encoding="utf-8")
     response = await client.post(PREFIX + "/validate", json=json.loads(raw))
     assert response.status_code == 200, response.text
     assert response.json()["verdict"] == "AUTO_PASS"
@@ -245,7 +247,7 @@ async def test_documented_samples_are_callable_and_match_guides(api_client, name
 
 
 def test_openapi_snapshot_matches_runtime():
-    assert json.loads(Path("backend/api/openapi.json").read_text()) == create_app().openapi()
+    assert json.loads(Path("backend/api/openapi.json").read_text(encoding="utf-8")) == create_app().openapi()
 
 
 async def test_http_agent_reads_same_rule_snapshot_and_preserves_blocking_verdict(api_client):
@@ -297,7 +299,7 @@ async def test_http_agent_reads_same_rule_snapshot_and_preserves_blocking_verdic
     service.agent = RemediationAgent(
         GuidanceSettings(enabled=True, api_key=SecretStr("mock"), model="mock-model"), httpx.MockTransport(provider)
     )
-    body = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text())
+    body = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text(encoding="utf-8"))
     body["form_data"]["tin"] = "SECRET-WRONG-TIN"
     body["include_guidance"] = True
     with patch.object(service.engine.loader, "refresh", wraps=service.engine.loader.refresh) as refresh:

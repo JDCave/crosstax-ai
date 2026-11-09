@@ -16,7 +16,7 @@ def test_all_sql_artifacts_are_current_and_transactional():
     generated = render_sql_files()
     assert {path.name for path in SQL_DIRECTORY.glob("*.sql")} == set(generated)
     for filename, content in generated.items():
-        assert (SQL_DIRECTORY / filename).read_text() == content
+        assert (SQL_DIRECTORY / filename).read_text(encoding="utf-8") == content
         assert content.count("BEGIN;") == 1 and content.count("COMMIT;") == 1
         assert "DROP " not in content and "TRUNCATE " not in content
         assert not any(line != line.rstrip() for line in content.splitlines())

@@ -10,7 +10,7 @@ from backend.engine.regression import run_regressions
 
 
 def test_all_66_selectors_have_positive_negative_and_boundaries():
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     result = run_regressions(snapshot(rules, 1))
     assert result["passed"] is True
     assert result["executed_cases"] == 264
@@ -19,7 +19,7 @@ def test_all_66_selectors_have_positive_negative_and_boundaries():
 
 
 def test_missing_cases_and_changed_rule_fail_closed():
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     with pytest.raises(ValueError, match="missing"):
         run_regressions(snapshot(rules, 1), [])
     rules["jurisdictions"]["HK"][1]["regex"] = "[0-9]{9}"

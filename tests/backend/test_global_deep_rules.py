@@ -8,7 +8,7 @@ import pytest
 from backend.cli.demo_cases import snapshot
 from backend.engine.tin_validator import TINValidatorEngine
 
-RULES = snapshot(json.loads(Path("rules/rules_global_v4.json").read_text()), 1)
+RULES = snapshot(json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8")), 1)
 
 
 @pytest.mark.parametrize(

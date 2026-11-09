@@ -84,7 +84,7 @@ async def test_handoff_persists_replays_and_retries_original_result(persistence)
     sessions, _ = persistence
     publisher, version = await published(sessions)
     await publisher.activate(version, 0, actor="integration-test", reason="initial publication")
-    base = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data"]
+    base = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[0]["form_data"]
     form = CRSFormData.model_validate(base | {"jurisdiction_code": "HK", "tin": "12345678"})
     policy = ValidationPolicy.model_validate({"today": "2026-11-03"})
     service = AuditValidationService(ValidationEngine(RuleLoader(sessions)))
@@ -156,7 +156,7 @@ async def test_encrypted_tasks_use_migrated_tables_on_both_backends(persistence)
     sessions, _ = persistence
     publisher, version = await published(sessions)
     await publisher.activate(version, 0)
-    base = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data"]
+    base = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[0]["form_data"]
     request = TaskRequest.model_validate({
         "session_id": str(uuid4()), "validation": {
             "form_data": base | {"jurisdiction_code": "HK", "tin": "12345678"},

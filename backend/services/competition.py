@@ -29,9 +29,9 @@ from backend.services.rule_import import RuleSourceImporter, SourceDefinition
 def upgrade_demo() -> UpgradeDemo:
     from backend.cli.demo_cases import snapshot
 
-    base = snapshot(json.loads((ROOT / "rules/rules_v1_base.json").read_text()), 1)
-    candidate = snapshot(json.loads((ROOT / "rules/rules_v2_patch.json").read_text()), 2)
-    cases = json.loads((ROOT / "assets/mock-data/cases.json").read_text())
+    base = snapshot(json.loads((ROOT / "rules/rules_v1_base.json").read_text(encoding="utf-8")), 1)
+    candidate = snapshot(json.loads((ROOT / "rules/rules_v2_patch.json").read_text(encoding="utf-8")), 2)
+    cases = json.loads((ROOT / "assets/mock-data/cases.json").read_text(encoding="utf-8"))
     report = analyze_impact(
         ValidationEngine(RuleLoader(async_session_factory)),
         base,
@@ -73,11 +73,14 @@ class InitializationService:
                     if await session.get(RuleTaskQueueState, 1) is None:
                         session.add(RuleTaskQueueState(id=1, generation=0))
                 definitions = TypeAdapter(list[SourceDefinition]).validate_json(
-                    (ROOT / "assets/rule-sources/oecd.json").read_text()
+                    (ROOT / "assets/rule-sources/oecd.json").read_text(encoding="utf-8")
                 )
                 async with httpx.AsyncClient() as client:
                     added = await RuleSourceImporter(self.sessions, client).register(definitions)
-                rules = cast(dict[str, object], json.loads((ROOT / "rules/rules_global_v4.json").read_text()))
+                rules = cast(
+                    dict[str, object],
+                    json.loads((ROOT / "rules/rules_global_v4.json").read_text(encoding="utf-8")),
+                )
                 compile_snapshot(canonical_hash(rules), 0, rules)
                 publisher = RulePublisher(self.sessions)
                 version_id = await publisher.register(rules, [])

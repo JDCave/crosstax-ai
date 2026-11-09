@@ -12,8 +12,8 @@ from backend.engine.rule_loader import RuleLoader
 from backend.engine.validation import ValidationEngine
 from backend.infrastructure.database import async_session_factory
 
-BASE = json.loads(Path("assets/mock-data/cases.json").read_text())[0]["form_data"]
-RULES = snapshot(json.loads(Path("rules/rules_global_v4.json").read_text()), 1)
+BASE = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[0]["form_data"]
+RULES = snapshot(json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8")), 1)
 POLICY = ValidationPolicy(today=date(2026, 11, 3))
 ENGINE = ValidationEngine(RuleLoader(async_session_factory))
 

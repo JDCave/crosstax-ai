@@ -71,7 +71,7 @@ async def context():
         documents=[{"document_id": document.id, "content_hash": document.content_hash}],
         regression_cases=regressions(),
     )
-    request = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text())
+    request = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text(encoding="utf-8"))
     cases = [{"case_id": "SAFE_CASE", "form_data": request["form_data"]}]
     policy = ValidationPolicy.model_validate(request["policy"])
     try:
@@ -306,9 +306,9 @@ async def test_cli_run_writes_atomic_plan_and_has_no_hidden_approval(context, tm
 
     sessions, _, bundle, cases, policy, _ = context
     path = tmp_path / "bundle.json"
-    path.write_text(bundle.model_dump_json())
+    path.write_text(bundle.model_dump_json(), encoding="utf-8")
     samples = tmp_path / "cases.json"
-    samples.write_text(json.dumps(cases))
+    samples.write_text(json.dumps(cases), encoding="utf-8")
     output = tmp_path / "output" / "plan.json"
     monkeypatch.setattr(database, "async_session_factory", sessions)
     dispose = AsyncMock()
@@ -327,7 +327,7 @@ async def test_cli_run_writes_atomic_plan_and_has_no_hidden_approval(context, tm
     )
     assert await run_command(args) == 0
     data = json.loads(capsys.readouterr().out)
-    assert data == json.loads(output.read_text())
+    assert data == json.loads(output.read_text(encoding="utf-8"))
     assert data["status"] == "PLANNED"
     dispose.assert_awaited_once()
     async with sessions() as session:

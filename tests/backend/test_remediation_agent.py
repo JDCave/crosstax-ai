@@ -18,9 +18,9 @@ from backend.engine.validation import ValidationEngine
 
 @pytest.fixture
 def evaluation():
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     snapshot = compile_snapshot(canonical_hash(rules), 3, rules)
-    form = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text())["form_data"]
+    form = json.loads(Path("assets/crs-templates/crs-individual-request.json").read_text(encoding="utf-8"))["form_data"]
     form.update(holder_name="PRIVATE NAME", residence_address="PRIVATE ADDRESS", tin="PRIVATE TIN")
     engine = ValidationEngine(None)
     policy = ValidationPolicy.model_validate({"today": "2026-11-04"})

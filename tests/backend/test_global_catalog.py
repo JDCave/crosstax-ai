@@ -8,7 +8,7 @@ import pytest
 from backend.cli.demo_cases import snapshot
 from backend.engine.tin_validator import TINValidatorEngine
 
-CATALOG = json.loads(Path("rules/rules_global_v3.json").read_text())
+CATALOG = json.loads(Path("rules/rules_global_v3.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize(

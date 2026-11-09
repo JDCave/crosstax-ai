@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,14 +25,14 @@ def evaluate(before, after, cases=None):
         engine,
         snapshot(before, 2),
         snapshot(after, 3),
-        cases or json.loads(Path("assets/mock-data/cases.json").read_text()),
+        cases or json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8")),
         ValidationPolicy.model_validate({"today": "2026-11-04"}),
     )
 
 
 def test_demo_upgrade_reports_exact_effects_without_private_form_values():
-    base = json.loads(Path("rules/rules_v1_base.json").read_text())
-    patch = json.loads(Path("rules/rules_v2_patch.json").read_text())
+    base = json.loads(Path("rules/rules_v1_base.json").read_text(encoding="utf-8"))
+    patch = json.loads(Path("rules/rules_v2_patch.json").read_text(encoding="utf-8"))
     report = evaluate(base, patch)
     assert report.sample_count == 5
     case_e = next(row for row in report.cases if row["case_id"] == "E")
@@ -47,7 +48,7 @@ def test_demo_upgrade_reports_exact_effects_without_private_form_values():
 
 
 def test_removal_downgrade_relaxation_and_metadata_are_distinguished():
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     removed = json.loads(json.dumps(rules))
     del removed["jurisdictions"]["HK"]
     assert "SELECTOR_REMOVED" in evaluate(rules, removed).risks
@@ -66,8 +67,8 @@ def test_removal_downgrade_relaxation_and_metadata_are_distinguished():
 
 
 def test_impact_supports_multi_residence_and_rejects_duplicate_cases():
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
-    request = json.loads(Path("assets/crs-templates/crs-multi-residence-request.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
+    request = json.loads(Path("assets/crs-templates/crs-multi-residence-request.json").read_text(encoding="utf-8"))
     cases = [{"case_id": "MULTI", "form_data": request["form_data"]}]
     report = evaluate(rules, rules, cases)
     assert len(report.cases[0]["after"]["residences"]) == 2
@@ -81,7 +82,7 @@ def test_impact_supports_multi_residence_and_rejects_duplicate_cases():
 def test_offline_cli_runs_without_a_database_or_model():
     result = subprocess.run(
         [
-            ".venv/bin/python",
+            sys.executable,
             "-m",
             "backend.cli.rule_updates",
             "impact",
@@ -100,10 +101,10 @@ def test_offline_cli_runs_without_a_database_or_model():
 
 
 def test_removed_blocker_is_detected_even_when_other_blockers_mask_verdict_change():
-    base = json.loads(Path("rules/rules_global_v4.json").read_text())
+    base = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     relaxed = json.loads(json.dumps(base))
     relaxed["jurisdictions"]["CN"][0].update(algorithm="REGEX_ONLY", verification_level="FORMAT_ONLY")
-    case = json.loads(Path("assets/mock-data/cases.json").read_text())[1]
+    case = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[1]
     case["form_data"]["has_signature"] = False
     report = evaluate(base, relaxed, [case])
     assert report.cases[0]["before"]["verdict"] == report.cases[0]["after"]["verdict"] == "NEED_USER_FIX"

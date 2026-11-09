@@ -11,7 +11,7 @@ URL = "/api/v1/rule-engine/validate"
 
 
 def request(kind="individual"):
-    return json.loads(Path(f"assets/crs-templates/crs-structured-{kind}-request.json").read_text())
+    return json.loads(Path(f"assets/crs-templates/crs-structured-{kind}-request.json").read_text(encoding="utf-8"))
 
 
 async def test_structured_individual_accepts_encrypted_document_and_normalizes_dates(api_client):
@@ -156,7 +156,9 @@ async def test_iso_codes_and_explicit_power_of_attorney_are_checked(api_client):
 def test_contract_model_field_sets_match_authoritative_schema():
     from backend.engine import structured_contracts as models
 
-    schema = json.loads(Path(".specify/features/001-crs-contract/contracts/crs-form-data.schema.json").read_text())
+    schema = json.loads(
+        Path(".specify/features/001-crs-contract/contracts/crs-form-data.schema.json").read_text(encoding="utf-8")
+    )
     for name, definition in schema["$defs"].items():
         assert set(getattr(models, name).model_fields) == set(definition["properties"])
 
@@ -180,7 +182,7 @@ def test_upgrade_impact_accepts_structured_samples_and_pins_form_policy():
     from backend.engine.validation import ValidationEngine
     from backend.infrastructure.database import async_session_factory
 
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     snapshot = compile_snapshot(canonical_hash(rules), 1, rules)
     body = request()
     report = analyze_impact(

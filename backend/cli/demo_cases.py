@@ -34,7 +34,7 @@ def run_cases() -> list[dict[str, str]]:
     latest = snapshot(read_rules("rules_v2_patch.json"), 2)
     validator = ValidationEngine(RuleLoader(async_session_factory))
     policy = ValidationPolicy.model_validate({"today": "2026-11-02"})
-    cases = json.loads((ROOT / "assets/mock-data/cases.json").read_text())
+    cases = json.loads((ROOT / "assets/mock-data/cases.json").read_text(encoding="utf-8"))
     results = []
     for case in cases:
         form = CRSFormData.model_validate(case["form_data"])

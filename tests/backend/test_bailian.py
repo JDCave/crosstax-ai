@@ -31,7 +31,7 @@ def test_key_only_configuration_and_standard_dashscope_key(monkeypatch):
 
 def test_empty_dotenv_placeholder_does_not_mask_environment_key(tmp_path, monkeypatch):
     config = tmp_path / ".env"
-    config.write_text("RULE_AI_API_KEY=\nRULE_AI_MODEL=\n")
+    config.write_text("RULE_AI_API_KEY=\nRULE_AI_MODEL=\n", encoding="utf-8")
     monkeypatch.setenv("DASHSCOPE_API_KEY", "environment-key")
     settings = BailianSettings(_env_file=config)
     assert settings.effective_api_key() == "environment-key"

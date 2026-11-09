@@ -24,7 +24,7 @@ def run_regressions(snapshot: RuleSnapshot, supplied: object = None) -> dict[str
     raw = (
         supplied
         if supplied is not None
-        else json.loads((Path(__file__).parent / "corpus/rule_regressions.json").read_text())
+        else json.loads((Path(__file__).parent / "corpus/rule_regressions.json").read_text(encoding="utf-8"))
     )
     if not isinstance(raw, list) or len(raw) > 5000:
         raise ValueError("Regression suite must have at most 5000 cases")

@@ -18,7 +18,7 @@ from backend.infrastructure.database import async_session_factory, engine
 def read_object(path: Path) -> dict[str, object]:
     if path.stat().st_size > 1_048_576:
         raise ValueError("JSON input exceeds 1 MiB")
-    value: object = json.loads(path.read_text())
+    value: object = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError("Expected a JSON object")
     return cast(dict[str, object], value)

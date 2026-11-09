@@ -195,7 +195,7 @@ async def test_initializer_preserves_non_default_active_version_and_disabled_sou
     from backend.engine.publication import RulePublisher
     _, setup, _ = empty_setup
     await setup.initialize()
-    rules = json.loads(Path("rules/rules_global_v4.json").read_text())
+    rules = json.loads(Path("rules/rules_global_v4.json").read_text(encoding="utf-8"))
     first_country = next(iter(rules["jurisdictions"]))
     rules["jurisdictions"][first_country][0]["source_section"] += " (isolated preservation fixture)"
     publisher = RulePublisher(setup.sessions)

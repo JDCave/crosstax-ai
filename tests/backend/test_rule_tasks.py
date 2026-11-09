@@ -64,7 +64,7 @@ async def test_submit_is_durable_then_worker_returns_same_contract(task_api):
 
 async def test_business_fix_is_success_and_all_five_cases_work(task_api):
     client, _, worker = task_api
-    cases = json.loads(Path("assets/mock-data/cases.json").read_text())
+    cases = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))
     for case in cases:
         request = payload()
         request["validation"].update(form_data=case["form_data"], indicia_issues=case["indicia_issues"])
@@ -92,7 +92,9 @@ async def test_idempotency_survives_reload_conflicts_and_capacity(task_api):
 
 async def test_structured_policy_and_rules_are_frozen(task_api):
     client, service, worker = task_api
-    validation = json.loads(Path("assets/crs-templates/crs-structured-individual-request.json").read_text())
+    validation = json.loads(
+        Path("assets/crs-templates/crs-structured-individual-request.json").read_text(encoding="utf-8")
+    )
     response = await submit(client, {"session_id": str(uuid4()), "validation": validation})
     original = response.json()
     # Live rules and policy disappear after admission; neither may be read by the worker.
@@ -250,7 +252,7 @@ async def test_submission_timeout_can_be_retried_with_same_key(task_api):
 ])
 async def test_documented_task_samples(task_api, kind, verdict):
     client, _, worker = task_api
-    request = json.loads(Path(f"assets/crs-templates/crs-{kind}-task-request.json").read_text())
+    request = json.loads(Path(f"assets/crs-templates/crs-{kind}-task-request.json").read_text(encoding="utf-8"))
     response = await submit(client, request)
     await worker.run_once()
     body = (await client.get(response.headers["Location"])).json()
@@ -259,7 +261,7 @@ async def test_documented_task_samples(task_api, kind, verdict):
 
 async def test_missing_frozen_policy_is_not_replaced_by_current_policy(task_api):
     client, service, worker = task_api
-    request = json.loads(Path("assets/crs-templates/crs-individual-task-request.json").read_text())
+    request = json.loads(Path("assets/crs-templates/crs-individual-task-request.json").read_text(encoding="utf-8"))
     response = await submit(client, request)
     async with service.repository.sessions.begin() as session:
         row = await session.get(RuleValidationTask, response.json()["task_id"])

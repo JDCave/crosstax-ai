@@ -64,7 +64,9 @@ def extracted(content):
 
 async def test_completed_json_precedes_pdf_then_download_only_reads_artifact(report_api):
     client, service, _, reports = report_api
-    validation = json.loads(Path("assets/crs-templates/crs-structured-individual-request.json").read_text())
+    validation = json.loads(
+        Path("assets/crs-templates/crs-structured-individual-request.json").read_text(encoding="utf-8")
+    )
     validation["form_data"]["name"]["first_name"] = "中文演示"
     task = await completed(report_api, validation, generate=False)
     generating = await client.get(url(task))
@@ -104,7 +106,7 @@ async def test_completed_json_precedes_pdf_then_download_only_reads_artifact(rep
 @pytest.mark.parametrize("case_index", [0, 1, 2, 3, 4])
 async def test_all_business_verdicts_generate_and_export(report_api, case_index):
     client, _, _, _ = report_api
-    case = json.loads(Path("assets/mock-data/cases.json").read_text())[case_index]
+    case = json.loads(Path("assets/mock-data/cases.json").read_text(encoding="utf-8"))[case_index]
     validation = task_fixtures.api_fixtures.payload() | {"form_data":case["form_data"], "indicia_issues":case["indicia_issues"]}
     task = await completed(report_api, validation)
     response = await client.get(url(task))

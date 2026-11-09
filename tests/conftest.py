@@ -19,6 +19,19 @@ from backend.models.base import Base
 TEST_DATABASE_URL = "sqlite+aiosqlite://"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_proxy_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep tests hermetic against the developer's ambient proxy configuration.
+
+    httpx parses NO_PROXY entries such as [::1] / CIDR blocks as URL patterns and
+    raises InvalidURL on some versions; tests must not depend on the host network.
+    """
+    for var in (
+        "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy"
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
     return "asyncio"

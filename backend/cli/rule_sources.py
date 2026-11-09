@@ -26,7 +26,9 @@ async def main() -> None:
         async with httpx.AsyncClient(headers={"User-Agent": "CrossTaxAI-RuleSync/0.1"}) as client:
             importer = RuleSourceImporter(async_session_factory, client)
             if args.manifest:
-                definitions = TypeAdapter(list[SourceDefinition]).validate_json(args.manifest.read_text())
+                definitions = TypeAdapter(list[SourceDefinition]).validate_json(
+                    args.manifest.read_text(encoding="utf-8")
+                )
                 print(json.dumps({"registered": await importer.register(definitions)}))
             if args.sync:
                 result = await importer.sync("SCHEDULED" if args.scheduled else "MANUAL")
