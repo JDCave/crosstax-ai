@@ -132,7 +132,7 @@
 | `.regex` | string | TIN 正则表达式 |
 | `.algorithm` | "MOD11_2" \| "HKID_WEIGHT" \| "NRIC_WEIGHT" \| "REGEX_ONLY" | 校验算法 |
 
-**数据来源：** `rules/rules_v1_base.json`、`rules/rules_v2_patch.json`
+**数据来源：** 应用数据库 `rule_versions.rules`（JSON 文档，ADR-011）；`rules/*.json`（当前全球版 `rules_global_v4.json`）为注册输入与种子工件
 
 ---
 

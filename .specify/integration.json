@@ -1,0 +1,20 @@
+{
+  "version": "1.3.1.dev0",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "none",
+    "qodercli"
+  ],
+  "integration_settings": {
+    "none": {
+      "script": "sh",
+      "invoke_separator": "."
+    },
+    "qodercli": {
+      "script": "sh",
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "qodercli",
+  "default_integration": "qodercli"
+}

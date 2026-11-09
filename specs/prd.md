@@ -186,8 +186,8 @@ flowchart TD
 | 项 | 说明 |
 |----|------|
 | **校验流程** | 清洗（剥离空格/连字符/括号）→ 正则匹配（长度+字符集）→ 算子分发（MOD11_2 / HKID_WEIGHT / NRIC_WEIGHT / REGEX_ONLY）→ 兜底（未配置国家执行 4–30 位基础校验） |
-| **规则存储** | `rules_v1_base.json`（基准）+ `rules_v2_patch.json`（增量补丁） |
-| **热重载** | `engine.load_rules(path)` 原子替换内存字典，无需重启，≤ 3 秒生效 |
+| **规则存储** | 应用数据库 `rule_versions`（ADR-011）；`rules_v1_base.json` / `rules_v2_patch.json` 为竞赛演示注册输入 |
+| **热重载** | 发布后 `RuleLoader.refresh()` 校验并原子替换内存快照，无需重启，≤ 3 秒生效 |
 | **版本绑定** | 每次审核会话强绑定 `rule_version_id`，确保审计可溯源 |
 
 #### F4: 形式完备性校验

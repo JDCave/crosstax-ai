@@ -37,7 +37,7 @@
 3. **算子分发** — 调用校验位算子：`MOD11_2` / `HKID_WEIGHT` / `NRIC_WEIGHT` / `REGEX_ONLY`
 4. **兜底** — 未配置辖区执行长度与非空基础审查（4~30 位），保证业务不被意外中断
 
-第 3 步失败记 `INVALID_TIN`（`BLOCKER`）。算子集与辖区正则均为声明式配置：规则以 JSON 存放于 `rules/`，经 `engine.load_rules(path)` 原子替换内存字典即秒级生效，无需重启服务（ADR-003）。这是"全球自适应"的实现方式——刻意不走在线抓取官方规则的路径，以解耦爬虫合规与稳定性风险。
+第 3 步失败记 `INVALID_TIN`（`BLOCKER`）。算子集与辖区正则均为声明式配置：规则以 JSON 文档存于应用数据库 `rule_versions`，发布后经 `RuleLoader.refresh()` 校验并原子替换内存快照即秒级生效，无需重启服务（ADR-011）。这是"全球自适应"的实现方式——刻意不走在线抓取官方规则的路径，以解耦爬虫合规与稳定性风险。
 
 ### 形式要件与豁免理由闭环
 
@@ -70,9 +70,9 @@
 
 当前可运行接口见 [API 文档](backend/api/README.md)，规则设计见 [规则引擎详细设计](backend/engine/RULE_ENGINE.md)，后台更新见 [运行手册](backend/engine/RULE_UPDATES.md)。
 
-上游 ADR-003 选择 JSON 文件作为规则载体；本 fork 按当前用户要求使用 PostgreSQL 版本存储。此次同步保留两侧设计记录和现有实现，后续架构统一需团队明确；未在合并中切换存储方式。上游新契约规划也不等同于当前接口已经实现。
+上游 ADR-003 曾选择 JSON 文件作为规则载体；2026-11-09 团队裁定改用数据库（ADR-011，取代 ADR-003），与本 fork 现有实现一致。上游新契约规划也不等同于当前接口已经实现。
 
-技术栈选型的逐条依据记录在 `specs/adr/`（10 个 ADR）。其中 ADR-007 有一项待团队裁定的冲突：决策写 `dashscope` SDK，但该依赖未列入 `pyproject.toml`，而现有依赖已含 `httpx`，且 `design/architecture.md` §2.4 将 Vision/LLM 描述为外部 HTTP 调用——按 `AGENTS.md` 约定，新增顶层依赖需团队同意。
+技术栈选型的逐条依据记录在 `specs/adr/`（11 个 ADR）。其中 ADR-007 有一项待团队裁定的冲突：决策写 `dashscope` SDK，但该依赖未列入 `pyproject.toml`，而现有依赖已含 `httpx`，且 `design/architecture.md` §2.4 将 Vision/LLM 描述为外部 HTTP 调用——按 `AGENTS.md` 约定，新增顶层依赖需团队同意。
 
 ## 快速开始
 

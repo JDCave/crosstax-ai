@@ -31,7 +31,7 @@
 |-----|------|------|------|
 | ADR-001 | Python 作为主语言 | [`001-python-main-language.md`](../specs/adr/001-python-main-language.md) | 已采纳 |
 | ADR-002 | React + FastAPI 前后端分离 | [`002-react-fastapi-split.md`](../specs/adr/002-react-fastapi-split.md) | 已采纳 |
-| ADR-003 | JSON 文件存储规则 | [`003-json-rule-storage.md`](../specs/adr/003-json-rule-storage.md) | 已采纳 |
+| ADR-003 | JSON 文件存储规则 | [`003-json-rule-storage.md`](../specs/adr/003-json-rule-storage.md) | 已被 ADR-011 取代 |
 | ADR-004 | 调用第三方 Vision API | [`004-vision-api.md`](../specs/adr/004-vision-api.md) | 已采纳 |
 | ADR-005 | Mock 数据替代真实对接 | [`005-mock-data.md`](../specs/adr/005-mock-data.md) | 已采纳 |
 | ADR-006 | 阿里云 ECS 部署 | [`006-alibaba-ecs.md`](../specs/adr/006-alibaba-ecs.md) | 已采纳 |
@@ -39,6 +39,7 @@
 | ADR-008 | 混合数据库方案（SQLite + PG） | [`008-hybrid-database.md`](../specs/adr/008-hybrid-database.md) | 已采纳 |
 | ADR-009 | 竞赛阶段豁免 pgvector | [`009-pgvector-exemption.md`](../specs/adr/009-pgvector-exemption.md) | 已采纳 |
 | ADR-010 | PG 连接池限制（每人 ≤ 3） | [`010-pg-connection-limit.md`](../specs/adr/010-pg-connection-limit.md) | 已采纳 |
+| ADR-011 | 数据库存储规则（取代 ADR-003） | [`011-db-rule-storage.md`](../specs/adr/011-db-rule-storage.md) | 已采纳 |
 
 ---
 
@@ -186,26 +187,23 @@ def run_audit_pipeline(file, merchant_id) -> AuditSession:
 #### 2.3.2 规则热重载机制
 
 ```python
-class RuleEngine:
-    def __init__(self):
-        self._rules: dict = {}
-        self._version_id: str = ""
+class RuleLoader:
+    """每进程一个；从 DB 读活动版本，校验后原子替换不可变快照（示意）"""
+    def __init__(self, sessions):
         self._lock = threading.Lock()
+        self._snapshot: RuleSnapshot | None = None
 
-    def load_rules(self, path: str):
-        """原子替换规则字典，线程安全"""
-        new_rules = json.load(open(path))
-        new_version = generate_version_id(new_rules)
+    async def refresh(self) -> RuleSnapshot:
+        async with self.sessions() as session:
+            revision, version = await RuleRepository(session).get_active_version()
+        candidate = compile_snapshot(version.version_id, revision, version.rules)  # 校验哈希与结构
         with self._lock:
-            self._rules = new_rules
-            self._version_id = new_version
-
-    @property
-    def current_version(self) -> str:
-        return self._version_id
+            self._snapshot = candidate
+        return self._snapshot
 ```
 
 **关键设计：**
+- 活动版本从应用数据库读取（`rule_versions` + `rule_publications`，ADR-011）；`rules/` JSON 仅为注册输入
 - 使用 `threading.Lock` 保证原子替换
 - 版本号基于规则内容哈希生成，确保可溯源
 - 审核会话创建时快照当前版本号，后续校验使用该快照
@@ -236,7 +234,7 @@ class RuleEngine:
 
 | 组件 | 技术选型 | 部署方式 | 说明 | 状态 |
 |------|----------|----------|------|------|
-| 规则配置库 | JSON 文件 | 本地磁盘 + 内存缓存 | `rules/`（ADR-003；原稿写的 `assets/mock-data/rules/` 已废弃） | 规划中 |
+| 规则配置库 | DB JSON 列（ADR-008 应用库） | `rule_versions` + `rule_publications` + 内存快照 | `rules/` JSON 仅作注册输入（ADR-011；原稿写的 `assets/mock-data/rules/` 已废弃） | 已落地 |
 | Vision API | 阿里云神机百炼（Qwen-VL-Max） | 外部调用（SDK / HTTP 待裁定，见 ADR-007） | API Key 通过环境变量注入 | 规划中 |
 | LLM 推理 | 神机百炼（Qwen-Max / GLM / DeepSeek） | 外部调用（同上） | 跨源冲突研判 + 名称模糊匹配 fallback | 规划中 |
 | Embedding | 神机百炼 Embedding 模型 | 外部调用 | 竞赛阶段不启用向量检索，预留接口（ADR-009） | 规划中 |
@@ -505,9 +503,8 @@ VISION_API_MODEL=qwen-vl-max
 # LLM 推理（神机百炼）
 LLM_API_MODEL=qwen-max                 # qwen-max / glm-4 / deepseek-v3
 
-# 规则引擎（ADR-003）
-RULES_BASE_PATH=./rules/rules_v1_base.json
-RULES_PATCH_PATH=./rules/rules_v2_patch.json
+# 规则引擎（ADR-011）：规则存于应用数据库，无文件路径环境变量
+# rules/ 下的 JSON 经 CLI 注册入库：uv run python -m backend.cli.rule_engine register rules/rules_global_v4.json
 
 # 审计报告模板
 AUDIT_TEMPLATE_PATH=./assets/templates/audit_report.html.j2
@@ -600,9 +597,10 @@ crosstax-ai/
 │   ├── crs-templates/                  # IRD 官方 CRS 取证资产（实有）：4 份官方 PDF（个人/实体/控权人/总则）+ 2 份示例请求 JSON + README.md + API_INTEGRATION.md
 │   ├── mock-data/                      # 商户底表 + 5 个 CRS 样本 (规划中，仅占位)
 │   └── templates/                      # Jinja2 审计报告模板      (规划中，仅占位)
-├── rules/                              # CRS 规则配置（后端消费）  (规划中，目录为空)
-│   ├── rules_v1_base.json              # 基准规则
-│   └── rules_v2_patch.json             # 增量补丁（热重载演示）
+├── rules/                              # 规则注册输入与种子工件（运行时载体为 DB，ADR-011）
+│   ├── rules_v1_base.json              # 竞赛基线（schema v2）
+│   ├── rules_v2_patch.json             # 基线+SG 完整快照（热重载演示注册输入）
+│   └── rules_global_v4.json            # 当前全球规则（22 法域 66 选择器，v3 为历史快照）
 ├── fixtures/                           # (规划中，目录为空)
 ├── docker/                             # (规划中，目录为空；编排见 docker-compose.yml)
 ├── design/
@@ -615,7 +613,7 @@ crosstax-ai/
 ├── specs/
 │   ├── prd.md                          # PRD
 │   ├── data-spec.md                    # 数据模型规格
-│   └── adr/                            # 架构决策记录（10 个独立文件）
+│   └── adr/                            # 架构决策记录（11 个独立文件）
 ├── docs/
 │   └── proposal/                       # 原始提案归档
 ├── .specify/                           # spec-kit 特性工件（features/001-crs-contract/：spec + plan + 契约 + 映射矩阵）

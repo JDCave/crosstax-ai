@@ -51,7 +51,7 @@ crosstax-ai/
 │       ├── types/    # TypeScript type definitions
 │       └── styles/   # Theme tokens, global CSS
 ├── assets/           # Shared: crs-templates/ (IRD official CRS PDFs + sample requests — real, not planned); mock-data/ + templates/ (placeholders only)
-├── rules/            # CRS rule JSON configs, backend consumes (planned, dir empty)
+├── rules/            # Rule JSON registration inputs & seeds (runtime carrier = DB, ADR-011)
 ├── tests/            # Mirrors backend/ (tests/backend/); tests/frontend/ planned
 ├── design/           # Design documents (DO NOT edit from code agent)
 ├── docs/             # Supporting docs — proposal/ only (DO NOT edit from code agent)
@@ -153,7 +153,7 @@ docker compose run --rm backend pytest
 
 ## Guardrails
 
-- **DO NOT** hardcode CRS rules — all rules come from JSON files in `rules/`
+- **DO NOT** hardcode CRS rules — all rules come from the database rule store (ADR-011); `rules/` JSON files are registration inputs only
 - **DO NOT** bypass the agent pipeline — all audit flows through `run_audit_pipeline()`
 - **DO NOT** use PG-specific SQL syntax directly — go through the `backend/infrastructure/database.py` abstraction (ADR-008: SQLite dev + PG production)
 - **DO NOT** call Vision API directly from routes — go through `VisionParserAgent`
