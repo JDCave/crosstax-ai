@@ -131,6 +131,7 @@ AI Campaign 2026 参赛团队，4 人。Private — 竞赛项目，未授权外�
 规则引擎已支持持久化异步任务：先提交表单获取 task_id，再查询状态及完整结果。
 [队友接入与 Worker 启动](backend/api/RULE_TASKS_API.md)包含共享加密密钥、迁移、连接预算和三份请求样例。
 旧同步 validate 兼容保留，Swagger 展示两个上游任务接口与一个前端报告接口；本地 devdb 已按用户授权升级，尚未自动启动 Worker；云端数据库尚未迁移验收。
+前端联调入口（范围声明、三份样例实测记录、轮询与错误语义、排障速查）见 [前端联调入口](backend/api/FRONTEND_INTEGRATION.md)。
 
 数据库建表文件已统一为 ORM／迁移生成的 [十一表快照、六表基线及任务增量](backend/infrastructure/db/README.md)。
 使用 `uv run python -m backend.cli.schema_sql --check` 检测 SQL 漂移；新库和已有库升级步骤已分开，历史迁移保留。

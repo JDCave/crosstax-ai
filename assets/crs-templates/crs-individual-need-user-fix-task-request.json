@@ -1,0 +1,46 @@
+{
+  "session_id": "bbb00265-1369-4d39-ae75-2d6e12de5c62",
+  "validation": {
+    "form_data": {
+      "document": {
+        "is_encrypted": true,
+        "structure_tree_available": true,
+        "holders_declared": 1,
+        "fingerprint": "synthetic-document-hash"
+      },
+      "holder_type": "INDIVIDUAL",
+      "name": {
+        "last_name": "CHAN",
+        "first_name": "DEMO"
+      },
+      "birth_date": "20/05/1990",
+      "hk_identity": {
+        "hkid_or_passport": "A123456(3)"
+      },
+      "addresses": [
+        {
+          "type": "RESIDENCE",
+          "line1": "Demo Building",
+          "city": "Hong Kong",
+          "country": "HK"
+        }
+      ],
+      "tax_residencies": [
+        {
+          "jurisdiction": "HK",
+          "basis": "RESIDENCE",
+          "tin": "A123456(9)"
+        }
+      ],
+      "declaration": {
+        "holder_or_authorized_resolved": true,
+        "has_signature": true,
+        "signing_date": "04/11/2026"
+      }
+    },
+    "policy": {
+      "today": "2026-11-12"
+    },
+    "indicia_issues": []
+  }
+}

@@ -1,4 +1,4 @@
-.PHONY: help dev test lint mypy migrate build up down clean install-hooks
+.PHONY: help dev worker test lint mypy migrate build up down clean install-hooks
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -11,6 +11,9 @@ install-hooks: ## Install pre-commit hooks
 
 dev: ## Run development server with auto-reload
 	uv run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+worker: ## Run rule-validation worker (required alongside dev, or tasks stay PENDING)
+	uv run python -m backend.workers.rule_tasks
 
 test: ## Run all tests
 	uv run pytest tests/ -v --tb=short
