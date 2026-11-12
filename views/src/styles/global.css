@@ -1,0 +1,49 @@
+/* CrossTax AI 全局样式 */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #f8fafc;
+}
+
+/* 数据字体规范：字段值、版本号、ID 使用等宽字体（ui-spec §6） */
+code,
+.ant-typography code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* Sider 内 Menu 紧凑化 */
+.ant-layout-sider .ant-menu-inline {
+  border-inline-end: none !important;
+}
+
+.ant-layout-sider .ant-menu-item {
+  height: 34px;
+  line-height: 34px;
+  margin: 2px 0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Upload Dragger 紧凑化 */
+.ant-upload-wrapper .ant-upload-drag .ant-upload {
+  padding: 12px 0;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
