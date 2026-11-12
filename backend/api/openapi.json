@@ -316,6 +316,57 @@
           }
         }
       }
+    },
+    "/api/v1/audit/documents": {
+      "post": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Submit one self-certification PDF as application/pdf bytes (AES-128 empty-user-password forms accepted)",
+        "operationId": "submit_document_api_v1_audit_documents_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentIntakeResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Content Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -866,6 +917,98 @@
         ],
         "title": "Document"
       },
+      "DocumentIntakeResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ACCEPTED | REJECTED"
+          },
+          "rejection_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Code",
+            "description": "MULTI_HOLDER_DOCUMENT | PDF_CORRUPTED | PDF_USER_PASSWORD_REQUIRED; never 'encrypted'"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict",
+            "description": "Existing three-state vocabulary (specs/data-spec.md §1.3)"
+          },
+          "holders_detected": {
+            "type": "integer",
+            "title": "Holders Detected"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document",
+            "description": "contracts/crs-form-data.schema.json#/$defs/Document"
+          },
+          "extraction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractionPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "holders_detected",
+          "fingerprint",
+          "document",
+          "extraction",
+          "note"
+        ],
+        "title": "DocumentIntakeResponse"
+      },
       "Entity": {
         "properties": {
           "incorporation_jurisdiction": {
@@ -1136,6 +1279,32 @@
           "confidence"
         ],
         "title": "ExplanationCard"
+      },
+      "ExtractionPayload": {
+        "properties": {
+          "fields": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Fields"
+          },
+          "anomalies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Anomalies"
+          },
+          "structure_tree_used": {
+            "type": "boolean",
+            "title": "Structure Tree Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields",
+          "structure_tree_used"
+        ],
+        "title": "ExtractionPayload"
       },
       "FieldError": {
         "properties": {

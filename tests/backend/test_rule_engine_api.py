@@ -109,7 +109,12 @@ async def test_unavailable_and_replay_mismatch_are_not_passes(api_client):
 
 def test_openapi_exposes_task_endpoints_and_pdf_export():
     paths = create_app().openapi()["paths"]
-    assert set(paths) == {PREFIX + "/tasks", PREFIX + "/tasks/{task_id}", PREFIX + "/tasks/{task_id}/report"}
+    assert set(paths) == {
+        PREFIX + "/tasks",
+        PREFIX + "/tasks/{task_id}",
+        PREFIX + "/tasks/{task_id}/report",
+        "/api/v1/audit/documents",
+    }
     app = create_app()
     assert app.redoc_url is None
     assert app.swagger_ui_oauth2_redirect_url is None

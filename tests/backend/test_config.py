@@ -7,7 +7,13 @@ import pytest
 from backend.core.config import Settings
 
 
-def test_default_settings():
+def test_default_settings(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    # Isolate from the developer's local .env and shell env so this tests
+    # code defaults only (nested DatabaseSettings reads .env independently).
+    monkeypatch.chdir(tmp_path)
+    for var in ("ENVIRONMENT", "DEBUG", "PORT", "DATABASE_POOL_SIZE", "DATABASE_MAX_OVERFLOW"):
+        monkeypatch.delenv(var, raising=False)
+
     settings = Settings()
     assert settings.environment == "dev"
     assert settings.debug is False
