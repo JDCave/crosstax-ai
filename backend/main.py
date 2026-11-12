@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend import __version__
-from backend.api.routes import competition, health, rule_engine, rule_tasks
+from backend.api.routes import audit, competition, health, rule_engine, rule_tasks
 from backend.core.competition import get_demo_settings
 from backend.core.config import Settings, get_settings
 from backend.core.logging.config import setup_logging
@@ -68,6 +68,7 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(health.router, tags=["health"], include_in_schema=False)
     app.include_router(rule_engine.router)
     app.include_router(rule_tasks.router)
+    app.include_router(audit.router)
     app.include_router(competition.demo_router, include_in_schema=get_demo_settings().enabled)
     app.include_router(competition.setup_router, include_in_schema=False)
 
