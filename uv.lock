@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -624,6 +624,7 @@ dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pypdf" },
     { name = "redis" },
     { name = "reportlab" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -636,7 +637,6 @@ dev = [
     { name = "httpx" },
     { name = "mypy" },
     { name = "pre-commit" },
-    { name = "pypdf" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -653,6 +653,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "pydantic", specifier = ">=2.9.0" },
     { name = "pydantic-settings", specifier = ">=2.5.0" },
+    { name = "pypdf", specifier = ">=6,<7" },
     { name = "redis", specifier = ">=5.1.0" },
     { name = "reportlab", specifier = ">=4.4,<5" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.35,<2.1" },
@@ -665,7 +666,6 @@ dev = [
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "mypy", specifier = ">=1.11.0" },
     { name = "pre-commit", specifier = ">=4.0.0" },
-    { name = "pypdf", specifier = ">=6,<7" },
     { name = "pytest", specifier = ">=8.3.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
