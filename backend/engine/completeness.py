@@ -5,7 +5,12 @@ from datetime import date
 from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy
 
 
-def check_completeness(form: CRSFormData, policy: ValidationPolicy) -> list[AuditIssue]:
+def check_completeness(form: CRSFormData, policy: ValidationPolicy, reason_b_min_length: int) -> list[AuditIssue]:
+    """Deterministic legacy-path completeness checks.
+
+    reason_b_min_length is supplied by the caller from rules/hk/form_policy.json (T031):
+    the threshold is a regulatory parameter and MUST NOT live in Python (FR-041).
+    """
     if policy.earliest_signing_date is not None and policy.earliest_signing_date > policy.today:
         raise ValueError("Earliest signing date cannot be later than business date")
     issues: list[AuditIssue] = []
@@ -56,6 +61,10 @@ def check_completeness(form: CRSFormData, policy: ValidationPolicy) -> list[Audi
     if form.has_no_tin:
         if form.tin_reason_code is None:
             add("MISSING_REASON", "tin_reason_code", "无 TIN 时请选择 Reason A/B/C")
-        elif form.tin_reason_code == "B" and len((form.tin_reason_explanation or "").strip()) < 5:
-            add("MISSING_REASON", "tin_reason_explanation", "Reason B 请提供至少 5 个字符的解释")
+        elif form.tin_reason_code == "B" and len((form.tin_reason_explanation or "").strip()) < reason_b_min_length:
+            add(
+                "MISSING_REASON",
+                "tin_reason_explanation",
+                f"Reason B 请提供至少 {reason_b_min_length} 个字符的解释",
+            )
     return issues

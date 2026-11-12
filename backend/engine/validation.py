@@ -13,6 +13,7 @@ from backend.engine.contracts import (
     ValidationPolicy,
     ValidationResult,
 )
+from backend.engine.regulatory_parameters import load_form_policy
 from backend.engine.reproducibility import engine_build_id, input_fingerprint
 from backend.engine.rule_loader import RuleLoader, RuleSnapshot, compile_snapshot
 from backend.engine.tin_validator import TINValidatorEngine
@@ -45,7 +46,7 @@ class ValidationEngine:
         indicia_issues: Sequence[AuditIssue] = (),
     ) -> ValidationResult:
         started = perf_counter()
-        form_issues = check_completeness(form, policy)
+        form_issues = check_completeness(form, policy, load_form_policy()[0]["reason_b_min_length"])
         covered = form.jurisdiction_code in snapshot.rules or any(
             key[0] == form.jurisdiction_code for key in snapshot.variants
         )

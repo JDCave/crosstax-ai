@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from backend.engine.completeness import check_completeness
 from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy
+from backend.engine.regulatory_parameters import load_form_policy
 from backend.engine.rule_loader import RuleLoader
 from backend.engine.validation import ValidationEngine
 from backend.models import RuleEngineState
@@ -29,6 +30,9 @@ def form(**changes):
 
 
 POLICY = ValidationPolicy(today=date(2026, 11, 2), earliest_signing_date=date(2020, 1, 1))
+# The threshold is a regulatory parameter (FR-041): the test reads the same
+# rules/hk/form_policy.json the engine does instead of asserting a private constant.
+REASON_B_MIN = load_form_policy()[0]["reason_b_min_length"]
 
 
 @pytest.mark.parametrize(
@@ -45,14 +49,16 @@ POLICY = ValidationPolicy(today=date(2026, 11, 2), earliest_signing_date=date(20
     ],
 )
 def test_completeness(changes, code):
-    assert code in {issue.code for issue in check_completeness(form(**changes), POLICY)}
+    assert code in {issue.code for issue in check_completeness(form(**changes), POLICY, REASON_B_MIN)}
 
 
 @pytest.mark.parametrize("reason", ["A", "B", "C"])
 def test_valid_exemption(reason):
     assert (
         check_completeness(
-            form(has_no_tin=True, tin=None, tin_reason_code=reason, tin_reason_explanation="Explanation"), POLICY
+            form(has_no_tin=True, tin=None, tin_reason_code=reason, tin_reason_explanation="Explanation"),
+            POLICY,
+            REASON_B_MIN,
         )
         == []
     )

@@ -9,10 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from backend.engine.contracts import AuditIssue, CRSFormData, ValidationPolicy
 from backend.engine.document_contracts import MultiResidenceForm
 from backend.engine.document_validation import DocumentResult, validate_document
+from backend.engine.regulatory_parameters import load_form_policy
 from backend.engine.reproducibility import canonical_hash, engine_build_id
 from backend.engine.rule_loader import CompiledRule, RuleSnapshot
 from backend.engine.structured_contracts import FormData
-from backend.engine.structured_validation import load_form_policy, validate_structured
+from backend.engine.structured_validation import validate_structured
 from backend.engine.validation import ValidationEngine
 
 

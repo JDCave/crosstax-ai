@@ -12,9 +12,9 @@ from uuid import uuid4
 from backend.api.schemas.rule_engine import ValidationResponse
 from backend.api.schemas.rule_tasks import TaskError, TaskRequest, TaskResponse
 from backend.core.rule_tasks import RuleTaskSettings, TaskCipher
+from backend.engine.regulatory_parameters import load_form_policy
 from backend.engine.reproducibility import engine_build_id
 from backend.engine.structured_contracts import FormData
-from backend.engine.structured_validation import load_form_policy
 from backend.infrastructure.exceptions import AppException, NotFoundException
 from backend.infrastructure.rule_tasks import TaskRepository, aware, utcnow
 from backend.models import RuleValidationTask, RuleVersion

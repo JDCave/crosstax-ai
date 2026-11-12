@@ -137,7 +137,7 @@
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T031 监管参数欠账清点：对照 plan.md M/N 表逐项核对 27 参数中仍硬编码于 `backend/engine/completeness.py` 等处的条目，产出声明式化迁移清单并迁 `rules/hk/`（FR-041 收尾；66 个 TIN 选择器 ≠ 27 参数已完成，不得混同）
+- [X] T031 监管参数欠账清点：`parameter-debt.md` 逐项定性 27 参数（CONFIG 12 / SCHEMA 4 / ALGO 5 / POLICY-IN 1 / TODO 3 / 记录 1；66 TIN 选择器未被混同）。实际迁移 3 项：① `FormPolicy` 家族落 `regulatory_parameters.py` ② `completeness.py` 理由 B `< 5` 字面量改显式注入同一 `rules/hk/form_policy.json` 值 ③ HK 派生等值两处特判改 `form_policy.derived_equalities` 数据驱动（HK 错误码逐字节不变，mypy/ruff/374 测试全绿）；罚则金额、30 天期限、持股门槛接线登记为「功能未实现+落点约定」，不留空壳 ✓
 - [ ] T032 产出 `design/openapi.yaml`：按已裁定方案①——`CRSFormData` 仅在 `contracts/crs-form-data.schema.json` 定义，`$ref` 外链引用（plan.md 变更单第 20 项）
 - [ ] T033 变更单第 1–14、19 项文档修订落笔（PM 权属内执行 `specs/prd.md`/`specs/data-spec.md`；`design/` 两处需设计侧确认后改；第 19 项 `CRSFormData` 权威落点需裁定）
 - [ ] T034 覆盖率报告：`make test-cov` 出具 `fail_under=80` 达标证明（plan.md §尚未完成；不以测试数量代替覆盖率）
@@ -173,3 +173,20 @@
 - 路径约定以 AGENTS.md 结构为准；`backend/agents/` 新增模块遵守 plan.md §Structure Decision 导入图。
 - 每个 Phase 结束提交一次（或按逻辑组）；不引入未经团队批准的依赖（V1 已批准 PDF 解析一项）。
 - `specs/`、`design/`、`docs/` 修改仅限 T033/T034 所列 PM 权属项。
+
+---
+
+## Phase 9: Convergence
+
+> 2026-11-12 converge 核验产出（勾选≠证据，全部经代码实测）。T034 覆盖率闸门已实测达标（90.49% ≥ 80%，374 passed），不再列任务。F7 对应竞赛范围冻结项，开工前需用户/团队裁定。
+
+- [ ] T037 裁定并落地 Vision 路栅格化依赖（pdf2image/poppler 或 pypdfium2，需团队批准），在 `backend/agents/vision_parser.py` 实现默认栅格化替换 `RASTERIZER_NOT_WIRED` 接缝，并以真实 Qwen-VL 模型对四份官方 PDF 验收抽取质量 per FR-036 / T021 遗留 (partial)
+- [ ] T038 在受理/任务运行时路径接入双路并行抽取与 `extraction_aggregator`（当前 `document_intake.py` 仅确定性路、汇总器零运行时调用方），API 响应暴露字段级一致率、共享层失败与单路可及两个独立计数器 per FR-037 / SC-004 / SC-009 / SC-011 (missing)
+- [ ] T039 将 `backend/services/document_linking.py` 的 `link_bundle` 接入运行时路径（当前唯一导入方为测试），使实体↔控权人跨文档数量/回指校验可经 API 触发 per FR-025 / FR-027 / SC-008 (missing)
+- [ ] T040 完成 T031 监管参数欠账迁移：27 参数中仍硬编码或缺失项（罚则级别/$10,000/30 天期限、星号→BLOCKER 映射、日期格式、基数约束等）逐项声明式化至 `rules/hk/`，并把 `regulatory_parameters.py` 的门槛/分类加载器接入运行时校验路径（当前仅测试调用） per FR-041 (partial)
+- [ ] T041 消除旧路径硬编码冲突：`backend/engine/completeness.py:59` 理由 B `< 5` 改读 `rules/hk/form_policy.json` 同一配置源，与结构化路径行为一致 per FR-041 (contradicts)
+- [ ] T042 扩展加密留存至 FR-046 清单：同步审计路径 `rule_audit_records.form_data/result` 明文存储 DOB/TIN 等敏感字段改为加密，并建立显式敏感字段清单（HKID/护照号、出生日期、出生地） per FR-046 (partial)
+- [ ] T043 主审核流水线缺口裁定与实现：AuditSession/Merchant ORM、`run_audit_pipeline()`、`/ws/audit/{session_id}`、跨源研判（indicia 现仅透传）、主会话 HTML/PDF 报告、`/api/v1/rules` 与 `/api/v1/cases` 路由——属竞赛范围冻结项，先经用户/团队裁定本轮实现或正式延期，再按裁定执行 per plan:项目级待办(实现阶段) (missing)
+- [ ] T044 产出 `design/openapi.yaml`：按已裁定方案①，`CRSFormData` 仅在 `contracts/crs-form-data.schema.json` 定义并以 `$ref` 外链引用 per plan:变更单第 20 项 / T032 (missing)
+- [ ] T045 落笔变更单第 1–3、5–14、19 项（第 4 项已由 PRD v1.3 完成，核验销项）：`specs/prd.md`/`specs/data-spec.md` PM 权属内执行；`design/architecture.md` 两处需设计侧确认；第 19 项 `CRSFormData` 权威落点需裁定 per plan:变更单 / T033 (partial)
+- [ ] T046 实测端到端 ≤30s 与一致率首次真实读数（依赖 T037/T038）；同步 `plan.md` §实现现状/§项目级待办 与 `README.md` 至 Phase 1–7 完成态；提交并推送 `.specify` 未跟踪/修改文件（spec.md、tasks.md、path-capability-verification.md） per T035 / T036 (partial)

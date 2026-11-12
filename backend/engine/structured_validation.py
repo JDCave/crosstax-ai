@@ -6,13 +6,12 @@ import re
 from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from backend.engine.contracts import AuditIssue, ExecutionContext, TINCheck, ValidationPolicy
 from backend.engine.document_contracts import CheckItem, IssueOrigin, ResidenceResult, ReviewScope
 from backend.engine.document_validation import DocumentResult
+from backend.engine.regulatory_parameters import load_form_policy
 from backend.engine.reproducibility import canonical_hash, engine_build_id
-from backend.engine.rule_loader import RuleSnapshot, load_jurisdiction_policy_file
+from backend.engine.rule_loader import RuleSnapshot
 from backend.engine.structured_contracts import FormData
 from backend.engine.tin_validator import TINValidatorEngine
 from backend.engine.verdict import resolve_verdict
@@ -30,38 +29,6 @@ def normalized_date(value: str | None) -> str | None:
     except ValueError:
         pass
     return None
-
-
-class FormPolicy(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
-    schema_version: Literal[1]
-    policy_revision_date: str
-    source_kind: Literal["PROJECT_REQUIREMENT"]
-    source_reference: str = Field(min_length=1)
-    reason_b_min_length: int = Field(ge=1, le=4000)
-    required_fields: dict[str, list[str]]
-    entity_types: list[str] = Field(min_length=1)
-    passive_entity_type: str
-    trusted_link_confidences: list[str] = Field(min_length=1)
-    country_codes: list[str] = Field(min_length=1)
-    country_code_source: dict[str, str]
-    poem_holder_types: list[str] = Field(min_length=1)
-    power_of_attorney_capacities: list[str] = Field(min_length=1)
-    declared_non_poa_capacities: list[str] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def complete_required_groups(self) -> FormPolicy:
-        if set(self.required_fields) != {"INDIVIDUAL", "ENTITY", "CONTROLLING_PERSON"}:
-            raise ValueError("Missing holder policy")
-        if any(not fields or any(not path.strip() for path in fields) for fields in self.required_fields.values()):
-            raise ValueError("Empty required-field policy")
-        return self
-
-
-def load_form_policy() -> tuple[dict[str, Any], str]:
-    config, policy_id = load_jurisdiction_policy_file("hk", "form_policy", FormPolicy)
-    date.fromisoformat(config["policy_revision_date"])  # Software policy revision, not a legal effective date.
-    return config, policy_id
 
 
 def validate_structured(
@@ -337,7 +304,17 @@ def validate_structured(
                 reason_code="EXEMPTION_REVIEW_REQUIRED",
             )
         else:
-            tin_type = ("HK_BR" if holder_type == "ENTITY" else "HKID") if residence.jurisdiction == "HK" else None
+            # R32 derived equality runs from rules/hk/form_policy.json derived_equalities (T031);
+            # no jurisdiction is special-cased in Python anymore.
+            equality = next(
+                (
+                    item
+                    for item in config["derived_equalities"]
+                    if item["jurisdiction"] == residence.jurisdiction and item["holder_type"] == holder_type
+                ),
+                None,
+            )
+            tin_type = equality["tin_type"] if equality else None
             candidates = [key[2] for key in snapshot.variants if key[:2] == (residence.jurisdiction, holder_type)]
             if tin_type is None and len(candidates) == 1:
                 tin_type = candidates[0]
@@ -352,41 +329,39 @@ def validate_structured(
                         }
                     )
                 )
-            if residence.jurisdiction == "HK":
-                identity = form.hk_identity
-                reference = (
-                    (identity.business_registration_number if holder_type == "ENTITY" else identity.hkid_or_passport)
-                    if identity
-                    else None
-                )
-                source_field = "hk_identity." + (
-                    "business_registration_number" if holder_type == "ENTITY" else "hkid_or_passport"
-                )
+            if equality is not None:
+                jur = str(equality["jurisdiction"])
+                source_field = str(equality["source_field"])
+                equality_check = f"{jur.lower()}_identity_equality"
+                missing_code = f"{jur}_IDENTITY_EVIDENCE_MISSING"
+                mismatch_code = f"{jur}_TIN_IDENTITY_MISMATCH"
+                raw_reference = value_at(source_field)
+                reference = raw_reference if isinstance(raw_reference, str) else None
 
                 def normal(value: str | None) -> str:
                     return re.sub(r"[\s()\-]", "", value or "").upper()
 
                 identity_start = len(issues)
                 if not reference or not reference.strip():
-                    add("HK_IDENTITY_EVIDENCE_MISSING", source_field, "缺少独立证件字段, 无法执行香港 TIN 派生等值检查")
+                    add(missing_code, source_field, f"缺少独立证件字段, 无法执行 {jur} TIN 派生等值检查")
                     trace = trace.model_copy(
                         update={
                             "status": "NOT_COVERED" if trace.status == "PASSED" else trace.status,
-                            "reason_code": "HK_IDENTITY_EVIDENCE_MISSING",
-                            "checks_not_performed": (*trace.checks_not_performed, "hk_identity_equality"),
+                            "reason_code": missing_code,
+                            "checks_not_performed": (*trace.checks_not_performed, equality_check),
                         }
                     )
                 else:
                     trace = trace.model_copy(
-                        update={"checks_performed": (*trace.checks_performed, "hk_identity_equality")}
+                        update={"checks_performed": (*trace.checks_performed, equality_check)}
                     )
                     if normal(reference) != normal(tin):
-                        add("HK_TIN_IDENTITY_MISMATCH", prefix + ".tin", f"请核对本字段与 {source_field}, 两来源不一致")
-                        trace = trace.model_copy(update={"status": "FAILED", "reason_code": "HK_TIN_IDENTITY_MISMATCH"})
+                        add(mismatch_code, prefix + ".tin", f"请核对本字段与 {source_field}, 两来源不一致")
+                        trace = trace.model_copy(update={"status": "FAILED", "reason_code": mismatch_code})
                 identity_indexes = list(range(identity_start, len(issues)))
                 items.append(
                     CheckItem(
-                        check_id=f"hk_identity_equality:{index}",
+                        check_id=f"{equality_check}:{index}",
                         field=prefix + ".tin",
                         status="FAILED" if identity_indexes else "PASSED",
                         issue_indexes=identity_indexes,
@@ -442,13 +417,14 @@ def finish(
                 "declaration_capacity",
             ]
         )
+        performed = {operation for residence in residences for operation in residence.checks.checks_performed}
         for operation in (
             "rule_selection",
-            "hk_identity_equality",
             "exemption_declaration_completeness",
             "declaration_basis",
+            *sorted(op for op in performed if op.endswith("_identity_equality")),
         ):
-            if any(operation in r.checks.checks_performed for r in residences):
+            if operation in performed:
                 scope.evaluated.append(operation)
     scope.not_evaluated.extend(
         [

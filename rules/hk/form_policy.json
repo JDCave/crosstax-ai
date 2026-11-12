@@ -3,6 +3,29 @@
   "source_kind": "PROJECT_REQUIREMENT",
   "source_reference": ".specify/features/001-crs-contract/spec.md",
   "reason_b_min_length": 5,
+  "derived_equalities": [
+    {
+      "jurisdiction": "HK",
+      "holder_type": "INDIVIDUAL",
+      "source_field": "hk_identity.hkid_or_passport",
+      "tin_type": "HKID",
+      "source": "IRD individual form Part 3 note (R32): HK resident TIN is the Hong Kong Identity Card Number"
+    },
+    {
+      "jurisdiction": "HK",
+      "holder_type": "CONTROLLING_PERSON",
+      "source_field": "hk_identity.hkid_or_passport",
+      "tin_type": "HKID",
+      "source": "IRD controlling-person form note (R32): same rule as the individual form"
+    },
+    {
+      "jurisdiction": "HK",
+      "holder_type": "ENTITY",
+      "source_field": "hk_identity.business_registration_number",
+      "tin_type": "HK_BR",
+      "source": "IRD entity form Part 4 (R32): 'If the account holder is a tax resident of the Hong Kong ... the TIN is the Hong Kong Business Registration Number'"
+    }
+  ],
   "required_fields": {
     "INDIVIDUAL": [
       "name.last_name",
@@ -297,5 +320,5 @@
     "content_sha256": "f01b812b57fba9f31ff621bf33e7c7570a01964dbeb5be2167e94decf538c89f",
     "retrieved_on": "2026-11-08"
   },
-  "policy_revision_date": "2026-11-08"
+  "policy_revision_date": "2026-11-12"
 }

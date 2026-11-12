@@ -11,10 +11,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from backend.api.schemas.rule_engine import ValidationRequest
 from backend.core.rule_tasks import RuleTaskSettings, TaskCipher
+from backend.engine.regulatory_parameters import FormPolicy
 from backend.engine.reproducibility import canonical_hash
 from backend.engine.rule_loader import RuleLoader, compile_snapshot
 from backend.engine.structured_contracts import FormData
-from backend.engine.structured_validation import FormPolicy
 from backend.engine.validation import ValidationEngine
 from backend.infrastructure.rule_tasks import aware, utcnow
 from backend.services.rule_api import RuleAPIService
