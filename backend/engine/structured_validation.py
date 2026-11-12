@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from datetime import date
-from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -13,7 +12,7 @@ from backend.engine.contracts import AuditIssue, ExecutionContext, TINCheck, Val
 from backend.engine.document_contracts import CheckItem, IssueOrigin, ResidenceResult, ReviewScope
 from backend.engine.document_validation import DocumentResult
 from backend.engine.reproducibility import canonical_hash, engine_build_id
-from backend.engine.rule_loader import RuleSnapshot
+from backend.engine.rule_loader import RuleSnapshot, load_jurisdiction_policy_file
 from backend.engine.structured_contracts import FormData
 from backend.engine.tin_validator import TINValidatorEngine
 from backend.engine.verdict import resolve_verdict
@@ -60,15 +59,9 @@ class FormPolicy(BaseModel):
 
 
 def load_form_policy() -> tuple[dict[str, Any], str]:
-    path = Path(__file__).resolve().parents[2] / "rules/hk/form_policy.json"
-    with path.open("rb") as stream:
-        content = stream.read(65537)
-    if len(content) > 65536:
-        raise ValueError("Form policy exceeds size limit")
-    config = FormPolicy.model_validate_json(content)
-    date.fromisoformat(config.policy_revision_date)  # Software policy revision, not a legal effective date.
-    data = config.model_dump(mode="json")
-    return data, canonical_hash(data)
+    config, policy_id = load_jurisdiction_policy_file("hk", "form_policy", FormPolicy)
+    date.fromisoformat(config["policy_revision_date"])  # Software policy revision, not a legal effective date.
+    return config, policy_id
 
 
 def validate_structured(

@@ -6,15 +6,45 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock
 from types import MappingProxyType
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from backend.engine.reproducibility import canonical_hash
 from backend.engine.rule_safety import check_pattern
 from backend.repositories.rules import RuleRepository
+
+JURISDICTION_FILE_MAX_BYTES = 65_536
+_RULES_ROOT = Path(__file__).resolve().parents[2] / "rules"
+
+
+def load_jurisdiction_policy_file(
+    jurisdiction: str, filename: str, model: type[BaseModel]
+) -> tuple[dict[str, Any], str]:
+    """Read one rules/<jurisdiction>/<filename>.json file and return (data, canonical hash).
+
+    Convention (see rules/hk/README.md): jurisdiction directories carry per-jurisdiction
+    policy files that are validated by a Pydantic model at load time and identified by the
+    canonical SHA-256 of their parsed content. Files are registration inputs reviewed in
+    git; the runtime carrier for rule bundles remains the database (ADR-011). Size limit
+    and hashing are shared by every jurisdiction file so callers cannot drift the checks.
+    """
+    if re.fullmatch(r"[a-z]{2}", jurisdiction) is None:
+        raise ValueError("Jurisdiction directory must be a lowercase two-letter code")
+    if re.fullmatch(r"[a-z0-9_]+", filename) is None:
+        raise ValueError("Policy file name must be a lowercase identifier")
+    path = _RULES_ROOT / jurisdiction / f"{filename}.json"
+    with path.open("rb") as stream:
+        content = stream.read(JURISDICTION_FILE_MAX_BYTES + 1)
+    if len(content) > JURISDICTION_FILE_MAX_BYTES:
+        raise ValueError("Policy file exceeds size limit")
+    config = model.model_validate_json(content)
+    data = config.model_dump(mode="json")
+    return data, canonical_hash(data)
 
 Algorithm = Literal[
     "MOD11_2",
