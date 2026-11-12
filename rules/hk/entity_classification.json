@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "source_kind": "OFFICIAL_TERMS",
+  "source_reference": "assets/crs-templates/crs-terms-ird.pdf (controlled terms); mapping-matrix rows R21/R22",
+  "notes": "Classification criteria seed for FR-021/FR-022. The runtime classification decision is upstream (Vision/entity form data); validation enforces 'exactly one hit'. Terms below are quoted identifiers, not paraphrases, per CHK004 (source of controlled vocabulary declared).",
+  "entity_types": {
+    "FINANCIAL_INSTITUTION": {
+      "ird_terms": ["Custodial Institution", "Depository Institution", "Specified Insurance Company"],
+      "subitems_with_fillin": []
+    },
+    "ACTIVE_NFE": {
+      "ird_terms": [
+        "NFE the stock of which is regularly traded on recognized stock exchanges",
+        "Related entity of a regularly traded entity",
+        "NFE is a governmental entity, an international organisation, a central bank or a wholly owned political subdivision",
+        "Active NFE other than the above"
+      ],
+      "subitems_with_fillin": ["regularly_traded_on", "related_entity_of", "specify"]
+    },
+    "PASSIVE_NFE": {
+      "ird_terms": [
+        "Investment entity",
+        "NFE that is not an active NFE"
+      ],
+      "subitems_with_fillin": [],
+      "conditional_requirement": {
+        "rule": "PASSIVE_NFE implies at least one controlling person name slot completed",
+        "fr": "FR-023",
+        "severity": "BLOCKER"
+      }
+    }
+  },
+  "exactly_one_hit": true,
+  "holder_type_substitution_prohibited": "holder_type=ENTITY is NOT the three-way classification (API_INTEGRATION.md:83)"
+}

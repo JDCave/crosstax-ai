@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "source_kind": "OFFICIAL_FOOTNOTE",
+  "source_reference": "assets/crs-templates/crs-controlling-person-ird.pdf CP-P4 footnote ^ (row R27, mapping-matrix.csv)",
+  "notes": "Values are registration inputs reviewed in git; runtime reads the published DB snapshot (ADR-011). Parameters apply only when the business date >= effective_from; before that date the threshold is NOT derivable from this file and the entity goes to human review — never an implicit carry-back (SC-006).",
+  "parameters": [
+    {
+      "entity_form": "CORPORATION",
+      "threshold_ratio": 0.25,
+      "effective_from": "2021-01-01",
+      "basis": "share capital / capital / profits",
+      "source": "IRD CP form footnote ^: '25 % in relation to a corporation'"
+    },
+    {
+      "entity_form": "PARTNERSHIP",
+      "threshold_ratio": 0.0,
+      "effective_from": "2021-01-01",
+      "basis": "partnership interests",
+      "source": "IRD CP form footnote ^: '0% in relation to a partnership'",
+      "semantics": "0% means EVERY partner is a controlling person, not 'nobody qualifies'"
+    }
+  ],
+  "fallback": {
+    "unknown_entity_form": "MANUAL_TRIAGE",
+    "business_date_before_effective_from": "MANUAL_TRIAGE",
+    "note": "FR-028: values are per entity form with effective dates; hardcoding a global constant is prohibited. The 2025-12-09 consultation may revise these figures (R46)."
+  }
+}
