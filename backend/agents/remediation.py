@@ -244,6 +244,12 @@ class RemediationAgent:
             transport=self.transport,
             timeout=self.settings.timeout_seconds,
             follow_redirects=False,
+            # Ambient proxy variables must not affect provider calls: Windows hosts
+            # commonly carry NO_PROXY entries like "[::1]" or CIDRs that httpx parses
+            # as URL patterns and rejects with InvalidURL at client construction,
+            # silently degrading every AI guidance call to INTERNAL fallback.
+            # Tests isolate the same variables (tests/conftest.py).
+            trust_env=False,
         ) as client:
             provider = BailianClient(self.settings, client, metrics, deadline)
             for _ in range(4):

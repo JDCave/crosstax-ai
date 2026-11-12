@@ -342,3 +342,25 @@ async def test_success_keeps_usage_metrics_separate_between_concurrent_requests(
     assert first.metrics.attempts == second.metrics.attempts == 1
     assert first.metrics.usage_complete and second.metrics.usage_complete
     assert first.metrics is not second.metrics
+
+
+async def test_host_proxy_environment_does_not_break_provider_client(evaluation, monkeypatch):
+    """NO_PROXY values common on Windows hosts ([::1], CIDRs) must not crash the provider call.
+
+    httpx parses ambient proxy env entries as URL patterns at AsyncClient construction;
+    an InvalidURL there used to surface as AI_INTERNAL_ERROR fallback for every request.
+    """
+    result, snapshot = evaluation
+    monkeypatch.setenv("NO_PROXY", "localhost,.localhost,127.0.0.1,127.0.0.0/8,[::1],::1")
+    monkeypatch.setenv("no_proxy", "localhost,127.0.0.0/8,[::1]")
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return envelope(tools("get_validation_evidence", "get_rule_details"))
+        return envelope(answer())
+
+    guidance = await RemediationAgent(settings(), httpx.MockTransport(handler)).generate(result, snapshot, True)
+    assert guidance.status == "GENERATED"
+    assert guidance.model == "mock-model"
