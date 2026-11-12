@@ -74,3 +74,7 @@ config.json
 # Generated PDF previews and visual QA intermediates
 output/pdf/
 tmp/pdfs/
+
+# Local development artifacts (DB backups; root-level smoke run output)
+*.db.bak*
+/integration_smoke_report.pdf

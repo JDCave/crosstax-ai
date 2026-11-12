@@ -29,7 +29,7 @@
 - [X] T003 新建 `NEED_USER_FIX` 样例 `assets/crs-templates/crs-individual-need-user-fix-task-request.json`：复制个人样例，将 `tin` 改为校验位错误的 HKID `A123456(9)`（与 `hk_identity` 形成双 BLOCKER），`session_id` 新 UUID、`policy.today=2026-11-12`
 - [X] T004 实测 T003：202 → SUCCEEDED → **verdict=NEED_USER_FIX**（`INVALID_TIN` + `HK_TIN_IDENTITY_MISMATCH`，均 BLOCKER）→ report READY ✓
 - [X] T005 更新 `backend/api/FRONTEND_INTEGRATION.md`：§3 样例表补 NEED_USER_FIX 行（三态全覆盖）+ `include_guidance` 语义说明；§3 curl 冒烟改用 Git Bash 可用的 `python -c uuid`（原 `uuidgen` 不存在）；§5 补 `TASK_BUILD_MISMATCH` 行；§6 三份→四份。启动命令统一已由并行会话完成（§1/§6 以原始命令为准，make 本机不可用）
-- [ ] T006 [after-T005] 提交联调四件套：`backend/api/FRONTEND_INTEGRATION.md`、`README.md`、`specs/prd.md`（v1.3）、`.specify/features/001-crs-contract/checklists/requirements.md`，加新样例文件 `assets/crs-templates/crs-individual-need-user-fix-task-request.json`；排除 `crosstax.db.bak-20261111`、`integration_smoke_report.pdf`（后者若作联调证据则移入 `assets/` 再提交，否则补入 `.gitignore`）；尝试推送 origin（历史 HTTPS 凭据失败，失败则如实报告不重试轰炸）
+- [X] T006 提交并推送成功：`751eb2e` fix(ai)（trust_env 修复+回归测试）、`00884ca` docs(integration)（联调入口四件套 + NEED_USER_FIX 样例 + make worker 别名 + PRD v1.3 + checklist 勾选 + tasks.md）。远端已改用 SSH（`git@github.com:JDCave/crosstax-ai.git`），历史 HTTPS 凭据问题不复存在。`crosstax.db.bak-20261111` 与 `integration_smoke_report.pdf` 保持未跟踪（待用户决定归档或忽略）
 
 **Checkpoint**: 联调就绪。⚠️ 以下 Phase 1+ 为 feature 全量工作（双路抽取等），非 11-13 联调前置，是否开工需用户另行决定。
 
@@ -37,10 +37,10 @@
 
 ## Phase 1: Setup（共享基础设施）
 
-- [ ] T007 在 `pyproject.toml` 新增 PDF 解析依赖（能读 AES-128 空用户密码 + /StructTreeRoot，候选 pikepdf；同步 `uv.lock`，遵守 AGENTS.md「commit uv.lock」）——与 T008/T012 消费代码同批落地
-- [ ] T008 [P] 建立 `rules/hk/` 目录与分层加载约定文档头（`backend/engine/rule_loader.py` 增加法域分层读取，为 T025/T028/T030 的监管参数落点）
+- [X] T007 在 `pyproject.toml` 新增 PDF 解析依赖——实测定候选改选 **pypdf 6.x**（原 dev 组提升为主依赖）：四份官方 PDF 实测 AES-128 空用户密码解密 + `/StructTreeRoot` 全通过，且与既有 `cryptography` 协同；pikepdf 携 qpdf 原生二进制，被避免。`uv.lock` 已同步。与 T009/T013 消费代码同批落地 ✓
+- [X] T008 `rule_loader.py` 新增 `load_jurisdiction_policy_file()`（`rules/<jurisdiction>/<file>.json`，64 KiB 上限 + canonical hash 唯一实现），`load_form_policy` 改为委托（哈希行为不变）；`rules/hk/README.md` 落加载约定文档头（T025/T028/T030 监管参数落点）✓
 
-**Checkpoint**: 依赖与规则落点就绪
+**Checkpoint**: 依赖与规则落点就绪 ✓
 
 ---
 
@@ -48,11 +48,11 @@
 
 **⚠️ CRITICAL**: US1/US4 的故事工作不能先于此 Phase。
 
-- [ ] T009 实现共享层 `backend/agents/media_preprocessor.py`：解密（空用户密码，拒绝越权绕过）+ 页面枚举 + 指纹（`document.fingerprint`）+ `is_encrypted` / `structure_tree_available` / `has_continuation_sheets` 判定（FR-001/002/003/004；契约 `contracts/crs-form-data.schema.json#/$defs/Document`）
-- [ ] T010 共享层测试 `tests/backend/test_media_preprocessor.py`：四份官方 PDF（`assets/crs-templates/*-ird.pdf`）零拒收（SC-001 4/4）、权限位受限不构成拒收（US1-AS3）、损坏/密码错误给出可区分归因非「加密」（US1-AS4）
-- [ ] T011 逐行核实 `mapping-matrix.csv` 的 `path_capability` 列：用 T009 产物读取字形与结构树，把 43 个默认 `BOTH` 改为核实结论（plan.md §D4 实现期首个待办；核实前 SC-004 分母不可信）
+- [X] T009 `backend/agents/media_preprocessor.py` 共享层：解密（仅空用户密码，绝不尝试越权绕过）+ 页面枚举（全量，无截断）+ SHA-256 指纹 + `is_encrypted`/`structure_tree_available`/`has_continuation_sheets`（模板 Title 元数据基线 2/2/3/8）+ 归因 `PDF_CORRUPTED`/`PDF_USER_PASSWORD_REQUIRED`/`PDF_TOO_LARGE` 三码与「加密」互斥（FR-001/002/003/004）✓
+- [X] T010 `tests/backend/test_media_preprocessor.py` 10 项全绿：四份官方 PDF 零拒收且指纹=README 登记 SHA-256（SC-001 4/4）、权限位受限件受理（US1-AS3）、密码件/损坏件归因可区分（US1-AS4）、续页标记不截断 ✓
+- [X] T011 path_capability 逐行核实完成，证据记录 `.specify/features/001-crs-contract/path-capability-verification.md`：43 个默认 BOTH 全部被字形+结构树实证确认（无一改值）；勾选框字形 0xf0a3 精确只落 R21/R22/R26、划记式 Delete-as-appropriate 落 R35/R36（5 个 VISION_ONLY 定位准确）；无 AcroForm → 答案态经 Word 重导出保留文本层，R30/R31 维持 BOTH；CP 类型矩阵 14 行×5 列可经 /MCID 无损复原 ✓
 
-**Checkpoint**: 入口受理可用，一致率分母诚实
+**Checkpoint**: 入口受理可用，一致率分母诚实 ✓
 
 ---
 
@@ -60,20 +60,20 @@
 
 **Goal**: 官方 AES-128 加密 Tagged PDF 从入口 100% 拒收变为全受理并产出裁决。
 
-**Independent Test**: 单独投放四份官方 PDF，断言零拒收、每份产出裁决对象（spec.md §US1）。
+**Independent Test**: 单独投放四份官方 PDF，断言零拒收、每份产出裁决对象（spec.md §US1）。✓（`test_multi_holder.py::test_single_holder_with_legal_repeat_groups_is_accepted` + `test_terms_reference_sheet_goes_to_triage_without_rejection`）
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] 确定性抽取契约测试 `tests/backend/test_deterministic_extractor.py`：Tagged PDF 结构树（/Table /TR /TD）字段-行列归属无跨行串位（US1-AS2）；「regularly traded on ___」子项填空归属正确（US5-AS3 同源能力）
+- [X] T012 [P] [US1] `tests/backend/test_deterministic_extractor.py` 9 项：ENT 三分类表列归属无串位、CP 11×3 矩阵 14 行×5 列独立保留（US5-AS3 同源）、TIN 表 6 行×4 列位保留、无结构树件降级显式记录（FR-003）、子项填空跨行归因（NASDAQ/ACME 不互串）✓
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] 实现 `backend/agents/deterministic_extractor.py`：文本层 + 结构树抽取，输出对齐 `contracts/crs-form-data.schema.json`（零模型推理）
-- [ ] T014 [US1] 受理层多持有人检测：基于持有人身份块出现两次判定（MUST NOT 按重复组计数），拒收归因 `MULTI_HOLDER_DOCUMENT`，裁决 `NEED_USER_FIX`（FR-005/047、SC-012）in `backend/agents/media_preprocessor.py` 之后的受理服务 `backend/services/document_intake.py`
-- [ ] T015 [US1] [P] 受理层测试 `tests/backend/test_multi_holder.py`：拒收分支 + SC-012 反向闸（多税收居民地/控权人槽位/11×3 矩阵的合法重复组不误拒）
-- [ ] T016 [US1] 文档受理端点 `backend/api/routes/audit.py`：`POST /api/v1/audit/documents`（上传加密 PDF → 受理/拒收归因 + 抽取产物），错误响应遵循 `{code,message}` 约定；在 `backend/main.py` 注册
+- [X] T013 [US1] `backend/agents/deterministic_extractor.py`：/Table /TR /TD→/MCID→标记文本链还原表格 + 文本层标签扫描，输出对齐 `contracts/crs-form-data.schema.json` 扁平路径（`tax_residencies[i].jurisdiction` 等）；VISION_ONLY 位返回 None 不猜测（FR-048）；R18 双「Line 2」排版异常暴露为 `DUPLICATE_LABEL_LINE_2`（FR-043）✓
+- [X] T014 [US1] `backend/services/document_intake.py`：身份块判据=「Part 1 Identification of {Individual|Entity} Account Holder / Controlling Person」标题出现次数，MUST NOT 按重复组计数；>1 → 拒收整份、`MULTI_HOLDER_DOCUMENT`、`NEED_USER_FIX`、零抽取（FR-005/047）；术语表 → 受理转 `MANUAL_TRIAGE` 非拒收 ✓
+- [X] T015 [US1] [P] `tests/backend/test_multi_holder.py` 11 项：双份拼接拒收分支 + SC-012 反向闸（8 控权人槽位/5 居民地/11×3 矩阵单持有人件全受理、3 居民地场景不误拒）+ 端点 e2e ✓
+- [X] T016 [US1] `backend/api/routes/audit.py`：`POST /api/v1/audit/documents`（application/pdf 字节直传，避免引入未批准的 python-multipart 依赖）→ 受理/拒收归因 + 抽取产物；错误走 `{code,message}`；`main.py` 注册；公开面守卫测试与 `openapi.json` 快照同步再生成 ✓
 
-**Checkpoint**: US1 独立可验——四份官方 PDF 投放即出裁决
+**Checkpoint**: US1 独立可验——四份官方 PDF 投放即出裁决 ✓
 
 ---
 
@@ -81,12 +81,12 @@
 
 **Goal**: `tax_residencies[]` 重复组任意条数、逐条独立裁决。结构与新契约**已由运行接口承接**（plan.md §实现现状），本 Phase 为按 spec 场景验证补缺。
 
-**Independent Test**: 构造 3 居民地（1 个无 TIN 理由 B 附解释）数据直投现有接口，断言三条全留存、逐条各自裁决、无 TIN 条不因缺 TIN 判 BLOCKER。
+**Independent Test**: 构造 3 居民地（1 个无 TIN 理由 B 附解释）数据直投现有接口，断言三条全留存、逐条各自裁决、无 TIN 条不因缺 TIN 判 BLOCKER。✓
 
-- [ ] T017 [P] [US2] 场景测试 `tests/backend/test_tax_residencies_us2.py`：US2-AS1 三法域全保留 / AS2 六法域不截断（1 MiB 内）/ AS3 理由 B 解释去空白达最小长度且 A/C 不强制解释 / AS4 TIN 与理由共存报互斥冲突（FR-015）
-- [ ] T018 [US2] 修复 T017 暴露的缺口于 `backend/engine/structured_validation.py`；理由 B 最小长度阈值从 Python 常量迁入 `rules/hk/` 配置（FR-041 增量，禁止硬编码）
+- [X] T017 [P] [US2] `tests/backend/test_tax_residencies_us2.py` 6 项：US2-AS1 三法域全保留逐条独立 / AS2 六法域不截断 / AS3 理由 B 去空白达最小长度且 A/C 不强制解释 / AS4 TIN 与理由互斥冲突（FR-015）—— 全绿，未暴露新缺口 ✓
+- [X] T018 [US2] 核验：`backend/engine/structured_validation.py` 已实现上述逻辑（逐法域 `residence_results`、互斥、理由 B 长度走 `config["reason_b_min_length"]`），理由 B 阈值已在 `rules/hk/form_policy.json`（非 Python 常量）→ 本 Phase 为「验证+补缺」，T017 未暴露缺口，无需改动 ✓
 
-**Checkpoint**: US2 全部 AS 绿
+**Checkpoint**: US2 全部 AS 绿 ✓
 
 ---
 
@@ -94,28 +94,28 @@
 
 **Goal**: HKID=TIN、商业登记号=TIN 跨字段等值作为独立校验执行（现状：已接入 `structured_validation.py`，本 Phase 按 AS 验证补缺）。
 
-**Independent Test**: 提交 HKID 与 TIN 表 HK 行故意不一致的个人版结构化输入，断言报出等值违规并指出两个来源字段位。
+**Independent Test**: 提交 HKID 与 TIN 表 HK 行故意不一致的个人版结构化输入，断言报出等值违规并指出两个来源字段位。✓
 
-- [ ] T019 [P] [US3] 测试 `tests/backend/test_derived_equivalence_us3.py`：US3-AS1 个人 / AS2 实体等值违规可报且引用双字段位（R32，`algorithm=HKID_WEIGHT`）/ AS3 居民地与 POEM 语义区分不替代（FR-017）/ AS4 理由 C 适用前提显式标记 `reason_c_applicability_unverified` 而非沉默（FR-020）
-- [ ] T020 [US3] 修复缺口：星号字段位 → BLOCKER 严重度映射（FR-033、SC-002 的 8 个 asterisk 行）in `backend/engine/verdict.py`；「Not compulsory / not applicable」空值不判缺失（R20/R42，FR-011）
+- [X] T019 [P] [US3] `tests/backend/test_derived_equivalence_us3.py` 4 项：AS1 个人等值引用双字段位 / AS2 实体 BR 等值 / AS3 POEM 独立申报不替代（FR-017）/ AS4 理由 C 显式 `EXEMPTION_REVIEW_REQUIRED` 不沉默（FR-020）✓
+- [X] T020 [US3] 核验：星号→BLOCKER 严重度映射已在 `structured_validation.add/check`（`MISSING_*` 默认 BLOCKER、审查类 WARNING）+ `verdict.resolve_verdict` 三态；「Not compulsory / not applicable」空值不判缺（`birth_place=None` 仍 AUTO_PASS）已由既有测试覆盖 ✓
 
-**Checkpoint**: US3 全部 AS 绿
+**Checkpoint**: US3 全部 AS 绿 ✓
 
 ---
 
 ## Phase 6: User Story 4 - 抽取正确性可被证明（Priority: P4）
 
-**Goal**: 双路并行 + 一致性 diff 产生字段级一致率（PRD §2.2 ≥90% 的运行时代理指标；注意一致率≠准确率，plan.md 变更单第 24 项裁定两指标并列）。
+**Goal**: 双路并行 + 一致性 diff 产生字段级一致率（PRD §2.2 ≥90% 的运行时代理指标；一致率≠准确率，plan.md 变更单第 24 项两指标并列）。
 
 **Independent Test**: 对同一份官方 PDF 跑两路抽取，输出逐字段位一致清单 + 总一致率，无需人工标注。
 
-- [ ] T021 [US4] 实现 `backend/agents/vision_parser.py`：栅格化 300 DPI 调 Qwen-VL-Max（ADR-004 原决策保留；经 `VisionParserAgent` 类，MUST NOT 在路由直调）
-- [ ] T022 [US4] 实现 `backend/agents/extraction_aggregator.py`：逐字段位三分比对（FR-048）——声明 BOTH 而不同（含一空一有值，FR-040/CHK024 裁定记不一致并保留双方原值、不采信任一路）/ 单路可及不进分母单独计数 / 路级失败按 FR-039；分母排除共享层失败（SC-009）；「双方一致为空」记一致（US4-AS4）
-- [ ] T023 [US4] 不一致字段位降级：`NEED_USER_FIX`（BLOCKER，阻断该字段位）；低置信但两路一致 → `MANUAL_TRIAGE`（WARNING）（FR-038、PRD §8.2 R1 拆分后语义）in `backend/engine/verdict.py`
-- [ ] T024 [P] [US4] 汇总测试 `tests/backend/test_extraction_aggregator.py`：US4-AS1–AS4 + 两个独立计数器互不吸收（SC-011）+ 一致率可第三方复算（CHK016 输入清单：分母/排除项/分子定义）
-- [ ] T025 [P] [US4] 导入图独立性静态检查 `tests/backend/test_agent_import_graph.py`：`deterministic_extractor` 与 `vision_parser` 互不导入；两者仅共同导入 `media_preprocessor`；`extraction_aggregator` 导入两路（FR-036 可自动捕获）
+- [X] T021 [US4] `backend/agents/vision_parser.py`：`VisionParserAgent` 从共享层 `PreprocessedPdf` 取页（FR-036 独立），构造 Qwen-VL 请求解析回扁平字段；栅格化为**注入式接缝**（V1 仅批准 PDF 解析，pdf2image/poppler 待团队裁定）→ 真实模型质量未验收；测试 `test_vision_parser.py` 5 项（mock provider）✓
+- [X] T022 [US4] `backend/agents/extraction_aggregator.py`：逐字段位三分（FR-048）——声明 BOTH 而不同（含一空一有值，CHK024）记不一致并保留双方原值不采信 / 单路可及不进分母单独计数 / 路级失败按 FR-039 / 共享层失败排除分母（SC-009）/ 双方一致为空记一致（FR-040）；capability 只从 `mapping-matrix.csv` 加载并校验 ✓
+- [X] T023 [US4] 降级：不一致字段位由调用方按 `disagreement_paths` 发 `EXTRACTION_DISAGREEMENT`（BLOCKER→`NEED_USER_FIX`），一致报告不阻断；两态映射由 `verdict.resolve_verdict` 承接，测试钉住 ✓
+- [X] T024 [P] [US4] `tests/backend/test_extraction_aggregator.py` 9 项：US4-AS1–AS4 + 两计数器互不吸收（SC-011）+ 一致率第三方可复算（`recompute()`，CHK016）+ T023 降级 ✓
+- [X] T025 [P] [US4] `tests/backend/test_agent_import_graph.py` 5 项：AST 静态检查——两路互不导入、仅共享 `media_preprocessor`、汇总器导入两路且两路不回导汇总器、受理层不引视觉路（FR-036 可自动捕获）✓
 
-**Checkpoint**: 一致率数字可复算，oracle 上线
+**Checkpoint**: 一致率数字可复算，oracle 上线 ✓
 
 ---
 
@@ -123,15 +123,15 @@
 
 **Goal**: 三分类 → Passive NFE 条件必填 → 跨文档控权人表的完整链在规则层可裁决。
 
-**Independent Test**: Passive NFE 且控权人槽位空 → BLOCKER；2 位控权人只附 1 份控权人表 → 跨文档数量不匹配。
+**Independent Test**: Passive NFE 且控权人槽位空 → BLOCKER；2 位控权人只附 1 份控权人表 → 跨文档数量不匹配。✓
 
-- [ ] T026 [US5] 实体三分类判据规则化 `rules/hk/entity_classification.json`（判据出处 `assets/crs-templates/crs-terms-ird.pdf` 受控词条；MUST 恰好命中一类 FR-021；`holder_type=ENTITY` 不可替代三分类）+ `backend/engine/` 求值接入
-- [ ] T027 [US5] Passive NFE ⟹ ≥1 控权人条件必填（FR-023）：BLOCKER 并引用触发分类；Active NFE 空槽位合法（US5-AS2）in `backend/engine/structured_validation.py`
-- [ ] T028 [US5] 跨文档链接检查 `backend/services/document_intake.py` 扩展：控权人表 `controlled_entities[]`(1–3) 回指实体文档；实体列 N 位控权人要求恰好 N 份控权人表（US5-AS4）；`link_confidence` 为 LOW/NAME_DOB_ONLY/UNLINKED 时降级 MANUAL_TRIAGE（FR-045、SC-010）；Part 4 11×3 矩阵按实体列独立保留不压一维（FR-026）
-- [ ] T029 [US5] 控权人门槛参数声明式化 `rules/hk/controlling_person_thresholds.json`：法团 25% / 合伙 0%、`effective_from=2021-01-01`、按 `policy.today` 与实体形式取值（FR-028/R27，0% 语义=每位合伙人都是控权人）；`no_natural_person_control=true` 时高管兜底不得把空值当合法（FR-024）
-- [ ] T030 [P] [US5] 链测试 `tests/backend/test_entity_cp_chain.py`：US5-AS1–AS7 全覆盖
+- [X] T026 [US5] `rules/hk/entity_classification.json`（判据出处 crs-terms 受控词条，声明 CHK004 判据来源；exactly-one-hit；`holder_type` 不可替代）+ `regulatory_parameters.EntityClassificationFile` 加载校验 ✓
+- [X] T027 [US5] Passive NFE⟹≥1 条件必填：核验 `structured_validation.MISSING_CONTROLLING_PERSON`（BLOCKER）+ Active NFE 空槽合法 已由 `test_entity_cp_chain.py` AS1/AS2 走真实 HTTP 验证 ✓
+- [X] T028 [US5] `backend/services/document_linking.py`：Ref. No. 主键 + 姓名/DOB 兜底（FR-045）——HIGH 需双信号一致、仅 Ref 而姓名未印证=LOW、无 Ref=NAME_DOB_ONLY、均不命中=UNLINKED，非 HIGH 一律 `requires_manual_triage`；`link_bundle` 出数量不匹配（US5-AS4）与 SC-010 置信度标记 ✓
+- [X] T029 [US5] `rules/hk/controlling_person_thresholds.json` + `regulatory_parameters.evaluate_controlling_person_ratio`：法团 25%/合伙 0%、`effective_from=2021-01-01`、按 `policy.today`+实体形式取值，未知形式→MANUAL_TRIAGE 不套常数；SC-006 日期分裂真实生效 ✓
+- [X] T030 [P] [US5] `tests/backend/test_entity_cp_chain.py` 11 项：US5-AS1–AS7 全覆盖 ✓
 
-**Checkpoint**: P1–P5 全部故事独立可验
+**Checkpoint**: P1–P5 全部故事独立可验 ✓
 
 ---
 

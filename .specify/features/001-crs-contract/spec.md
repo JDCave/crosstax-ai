@@ -29,6 +29,16 @@
 
 **授权说明**: 两题均由用户明确选择建议项，非代决。
 
+### Session 2026-11-12（实现口径回写，对应清单第②类 5 项 CHK003/005/006/010/022）
+
+以下五条为「实现已有答案、spec 未回写」项的机械回写，内容取自已交付代码与已 PM 裁定的 plan.md 处置清单，不含新决策；勾选判定仍归评审人。
+
+- **CHK003｜「部分纳入」边界（R22/R23）**：R22 = 三个子项填空（`regularly_traded_on` / `related_entity_of` / `specify`）**纳入契约**；「Word Textbox 在线性抽取下丢失归属」记为已知抽取限制——结构树恢复时归属正确（`deterministic_extractor` 已实现并测试），纯线性文本时按正则锚定同一句子。R23 = 「Passive NFE ⟹ ≥1 控权人」条件必填规则**纳入规则配置**（`MISSING_CONTROLLING_PERSON` BLOCKER）；8 个姓名槽位**全展开排除**，`controlling_person_names` 为无槽位语义数组（`structured_contracts.Entity`）。
+- **CHK005｜数据量假设**：单次受理文档数 = 1 份/请求（`POST /api/v1/audit/documents` 端点基数，多份=多次调用）；单实体控权人数上限 = 表单印刷 8 槽（但规则只要求 ≥1，全展开排除，见 CHK003）；控权人表所控实体 1–3（契约 `maxItems=3`）；税收居民地无 maxItems、实际上界由 1 MiB 请求体推导（FR-013 既有）。量级定位 = 竞赛演示。
+- **CHK006｜FR-045 置信度阈值**：置信度为**类别枚举**（`HIGH / LOW / NAME_DOB_ONLY / UNLINKED`）而非数值分数；「阈值」= 可信集合 `trusted_link_confidences`，存于 `rules/hk/form_policy.json`（当前取值 `["HIGH"]`），可随规则版本调整而不改代码（FR-041 一致）。HIGH 的成立判据（实现口径）：Ref. No. 一致 **且** 控权人姓名在该实体名单内（双信号印证）；仅 Ref. No. 命中而姓名未印证 = LOW，仅姓名+DOB = NAME_DOB_ONLY——两者均不在可信集合，降级 `MANUAL_TRIAGE`。
+- **CHK010｜FR-028 实体形式清单**：枚举 = `{CORPORATION, PARTNERSHIP}`，出处为控权人表脚注 ^ 原文（「25 % in relation to a corporation; and 0% in relation to a partnership」），**脚注未给第三种形式的门槛值**；因此形式不在枚举内、或业务日期早于 `effective_from`（2021-01-01）时 MUST 走 `MANUAL_TRIAGE`，MUST NOT 以默认值代入（`regulatory_parameters.evaluate_controlling_person_ratio` 已实现并测试，SC-006 日期分裂为证）。
+- **CHK022｜抽取失败重跑的幂等性**：重跑 MUST 幂等，判据复用既有已交付机制——异步任务层 `Idempotency-Key` 唯一约束（同键重放返回原任务、异 body 报 409 `IDEMPOTENCY_CONFLICT`）；文档层以 SHA-256 指纹为幂等锚，同一字节序列的受理/抽取为纯函数（同输入同产物）；不一致字段位保留的双方原值以（指纹, 字段位）为键，重跑不翻倍留存面。
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 受理官方加密表单而不拒收 (Priority: P1)
@@ -174,7 +184,7 @@
 - **FR-025**: 系统 MUST 校验跨文档一致性：实体列出的每位控权人 MUST 有一份对应的控权人表，且该表 MUST 能回指该实体。（R23、R25）
 - **FR-026**: 系统 MUST 以二维方式保留控权人类型矩阵（控权人类别 × 所控实体），MUST NOT 压成一维单值。（R26）
 - **FR-027**: 系统 MUST 支持控权人表反向列出 1–3 个所控实体，并逐个校验回指关系。（R25）
-- **FR-028**: 控权人持股 / 表决权门槛 MUST 作为带生效日期的监管参数按实体形式取值（法团与合伙不同），MUST NOT 硬编码为常数。（R27）
+- **FR-028**: 控权人持股 / 表决权门槛 MUST 作为带生效日期的监管参数按实体形式取值，实体形式枚举 MUST 限于表单脚注给出的 `{CORPORATION(25%), PARTNERSHIP(0%)}`；形式不在枚举内或业务日期早于 `effective_from` MUST 走 `MANUAL_TRIAGE`，MUST NOT 以默认值代入（CHK010）。MUST NOT 硬编码为常数。（R27）
 
 **签署与声明**
 
@@ -206,7 +216,7 @@
 **文档头与跨文档链接键**
 
 - **FR-044**: 系统 MUST 保留文档头的收件财务机构名称与地址，用于确认该表单确实是提交给本机构的。（R01、R02）
-- **FR-045**: 系统 MUST 保留文档头的机构参考号（Ref. No.）。实体表与控权人表之间的跨文档链接 MUST 以 Ref. No. 为主键、以控权人姓名 + 出生日期为兜底印证，以支撑 FR-025 与 FR-027；两个信号不一致或均不可用时 MUST 降级为 `MANUAL_TRIAGE`。任何自动建立的链接 MUST 带置信度标记，低置信 MUST NOT 被当作已确认。（R03）
+- **FR-045**: 系统 MUST 保留文档头的机构参考号（Ref. No.）。实体表与控权人表之间的跨文档链接 MUST 以 Ref. No. 为主键、以控权人姓名 + 出生日期为兜底印证，以支撑 FR-025 与 FR-027；两个信号不一致或均不可用时 MUST 降级为 `MANUAL_TRIAGE`。任何自动建立的链接 MUST 带置信度标记，低置信 MUST NOT 被当作已确认。置信度为类别枚举，「低置信」的判据 MUST 来自外部规则配置的可信集合（`trusted_link_confidences`，当前 = `HIGH`；HIGH 要求 Ref. No. 与姓名双信号印证），MUST NOT 以数值阈值或代码常数硬编码（CHK006）。（R03）
 
 **敏感数据保护**
 
